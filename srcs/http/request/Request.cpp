@@ -10,65 +10,107 @@ Request::Request(std::string req){
 }
 Request& Request::operator=(const Request& other){
     this->req = other.req;
-    this->method = other.method;
-    this->target = other.target;
-    this->HttpVersion = other.HttpVersion;
+    this->requestLine.method = other.requestLine.method;
+    this->requestLine.target = other.requestLine.target;
+    this->requestLine.httpVersion = other.requestLine.httpVersion;
     return (*this);
 }
 
-void Request::parseRequest(){
-    std::stringstream reqStream(this->req);
-    std::string reqLine;
-
-    getline(reqStream, reqLine, '\n');
-    parseRequestLine(reqLine);
-}
-void Request::setMethod(std::string& method){
-    std::cout << "methos = " << method<< std::endl;
+HttpStatusCode Request::setMethod(std::string& method){
     if (method == "GET")
-        this->method = GET;
+        this->requestLine.method = GET;
     else if (method == "POST")
-        this->method = POST;
+        this->requestLine.method = POST;
     else if (method == "DELETE")
-        this->method = DELETE;
-    else{
-        std::cout << "in set Method" << std::endl;
-        throw BadRequest();
-    }
+        this->requestLine.method = DELETE;
+    else
+        return (BAD_REQUEST);
+    return (OK);
 }
 
-void Request::setTarget(std::string& target){
-    std::cout << "target = " << target<< std::endl;
-}
-void Request::setHttpVersion(std::string& httpVersion){
-    if (httpVersion.length() != 9){
-        std::cout << "in set http version" << std::endl;
-        throw BadRequest();
+HttpStatusCode Request::setTarget(std::string& target){
+    std::deque<std::string> deque;
+    std::stringstream targetStream(target);
+    std::string path;
+
+    if (target.empty() || target.at(0) != '/')
+        return (BAD_REQUEST);
+    while(!targetStream.eof()){
+        std::getline(targetStream, path, '/');
+        if (!path.empty() && path != "."){
+            if (path == ".."){
+                if (!deque.empty())
+                    deque.pop_back();
+            }
+            else
+                deque.push_back(path);
+        }
     }
-    
+    this->requestLine.target.append("/");
+    while(deque.size()){
+        this->requestLine.target.append(deque.front());
+        deque.pop_front();
+        if (deque.size())
+            this->requestLine.target.append("/");
+    }
+    if (target.length() > 1 && target.at(target.length() - 1) == '/' && target.at(target.length() - 2) != '/' )
+        this->requestLine.target.append("/");
+    return (OK);
 }
 
-void Request::parseRequestLine(std::string& reqLine){
-    if (reqLine.at(reqLine.length() - 1) != '\r'){
-        std::cout << "in set parseRequestLine" << std::endl;
-        throw BadRequest();
-    }
+HttpStatusCode Request::setHttpVersion(std::string& httpVersion){
+
+    if (httpVersion != "HTTP/1.1\r")
+        return (HTTP_VERSION_NOT_SUPPORTED);
+    else
+        this->requestLine.httpVersion = httpVersion;
+    return (OK);
+}
+
+HttpStatusCode Request::parseRequestLine(std::string& reqLine){
+    if (reqLine.at(reqLine.length() - 1) != '\r')
+        return (BAD_REQUEST);
     std::string line;
     std::stringstream lineStream(reqLine);
-    getline(lineStream, line, ' ');
-    setMethod(line);
-    getline(lineStream, line, ' ');
-    setTarget(line);
-    getline(lineStream, line, ' ');
-    setHttpVersion(line);
+    HttpStatusCode statusCode;
 
-    if (!lineStream.eof()){
-        std::cout << "in set parseRequestLine" << std::endl;
-        throw BadRequest();
+    getline(lineStream, line, ' ');
+    if ((statusCode = setMethod(line)) == OK){
+        getline(lineStream, line, ' ');
+        if ((statusCode = setTarget(line)) == OK){
+            getline(lineStream, line, ' ');
+            if ((statusCode = setHttpVersion(line)) != OK)
+                return (statusCode);
+        }
+        else
+            return (statusCode);
     }
+    else 
+        return (statusCode);
+
+    if (!lineStream.eof())
+        return (BAD_REQUEST);
+    std::cout << "method = " << this->requestLine.method << std::endl;
+    std::cout << "target = " << this->requestLine.target << std::endl;
+    std::cout << "httpVersion = " << this->requestLine.httpVersion << std::endl;
+    return (OK);
 
 }
 
-const char* Request::BadRequest::what() const throw(){
-    return ("bad request");
+// HttpStatusCode Request::parseRequestHeaders( std::stringstream& req){
+
+// }
+
+HttpStatusCode Request::parseRequest(){
+    std::stringstream reqStream(this->req);
+    std::string reqLine;
+    HttpStatusCode httpStatus;
+
+    getline(reqStream, reqLine, '\n');
+    if ((httpStatus = parseRequestLine(reqLine)) == OK){
+        
+    }
+    else
+        return (BAD_REQUEST);
+    return (OK);
 }
