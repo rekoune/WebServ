@@ -5,6 +5,7 @@
 # include <string>
 # include <sstream>
 # include <exception>
+# include <deque>
 
 enum Method{
     GET,
@@ -12,30 +13,48 @@ enum Method{
     DELETE
 };
 
+enum HttpStatusCode{
+    CONTINUE = 100, 
+    
+    OK = 200,
+    CREATED = 201,
+    NO_CONTENT = 204,
+
+    BAD_REQUEST = 400,
+    UNAUTHORIZED = 401,
+    FORBIDDEN = 403,
+    NOT_FOUND = 404,
+    METHOD_NOT_ALLOWED = 405,
+    CONTENT_TOO_LARGE= 413,
+
+    INTERNAL_SERVER_ERROR = 500,
+    NOT_IMPLEMENTED = 501,
+    HTTP_VERSION_NOT_SUPPORTED = 505
+};
+
+typedef struct ReqLine{
+    Method method;
+    std::string target;
+    std::string httpVersion;
+} RequestLine;
+
 class Request{
     private:
         Request();
         std::string req;
-        Method method;
-        std::string target;
-        std::string HttpVersion;
+        RequestLine requestLine;
     public:
         Request(std::string req);
         ~Request();
         Request( const Request& other);
         Request& operator=( const Request& other);
-        class BadRequest;
-        void parseRequest();
-        void parseRequestLine(std::string& reqLine);
-        void setMethod(std::string& method);
-        void setTarget(std::string& target);
-        void setHttpVersion(std::string& httpVersion);
+        HttpStatusCode parseRequest();
+        HttpStatusCode parseRequestLine(std::string& reqLine);
+        HttpStatusCode parseRequestHeaders(std::stringstream& req);
+        HttpStatusCode setMethod(std::string& method);
+        HttpStatusCode setTarget(std::string& target);
+        HttpStatusCode setHttpVersion(std::string& httpVersion);
 
-};
-
-class Request::BadRequest : public std::exception {
-    public:
-    const char* what() const throw();
 };
 
 # endif
