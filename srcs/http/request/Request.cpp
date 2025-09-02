@@ -5,9 +5,11 @@ Request::~Request(){}
 Request::Request(const Request& other){
     *this = other;
 }
-Request::Request(std::string req){
-    this->req = req;
+Request::Request(std::vector<char> req){
+    this->bodyIndex = splitHttpRequest(req);
+    this->body = req;
 }
+
 Request& Request::operator=(const Request& other){
     this->req = other.req;
     this->requestLine.method = other.requestLine.method;
@@ -18,11 +20,11 @@ Request& Request::operator=(const Request& other){
 
 HttpStatusCode Request::setMethod(std::string& method){
     if (method == "GET")
-        this->requestLine.method = GET;
+        this->requestLine.method = "GET";
     else if (method == "POST")
-        this->requestLine.method = POST;
+        this->requestLine.method = "POST";
     else if (method == "DELETE")
-        this->requestLine.method = DELETE;
+        this->requestLine.method = "DELETE";
     else
         return (BAD_REQUEST);
     return (OK);
@@ -122,12 +124,41 @@ HttpStatusCode Request::parseRequestHeaders( std::stringstream& req){
     return (OK);
 }
 
+HttpStatusCode Request::parseBody(){
+    this->body.erase(this->body.begin(), this->body.begin() + bodyIndex);
+    return OK;
+}
+//delete
 void Request::printHeaders(){
     std::map<std::string, std::string>::iterator it = this->headers.begin();
     while(it != this->headers.end()){
         std::cout << "H > " << it->first << ":" << it->second << std::endl;
         it++;
     }
+}
+void Request::printBody(){
+    std::cout << "body size : " << body.size() << std::endl;
+    std::cout << "body : |";
+    for(size_t i = 0; i < body.size(); i++){
+        std::cout <<body.at(i) ;
+    }
+    std::cout << "| end" << std::endl;
+}
+
+int    Request::splitHttpRequest(std::vector<char>& req){
+    size_t i = 0;
+
+    while(i < req.size()){
+        if (req.at(i) == '\r' && i + 3 < req.size()){
+            if (req.at(i + 1) == '\n' && req.at(i + 2) == '\r' && req.at(i + 3) == '\n'){
+                this->req.append("\r\n\r\n");
+                return (i + 4);
+            }
+        }
+        this->req.push_back(req.at(i));
+        i++;
+    }
+    return (i);
 }
 
 HttpStatusCode Request::parseRequest(){
@@ -139,6 +170,8 @@ HttpStatusCode Request::parseRequest(){
     if ((httpStatus = parseRequestLine(reqLine)) == OK){
         if ((httpStatus = parseRequestHeaders(reqStream)) == OK){
             printHeaders();
+            parseBody();
+            printBody();
         }
         else
             return (httpStatus);

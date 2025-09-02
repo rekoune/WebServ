@@ -6,12 +6,9 @@
 # include <sstream>
 # include <exception>
 # include <deque>
-
-enum Method{
-    GET,
-    POST,
-    DELETE
-};
+# include <map>
+# include <vector>
+# include "Utils.hpp"
 
 enum HttpStatusCode{
     CONTINUE = 100, 
@@ -33,7 +30,7 @@ enum HttpStatusCode{
 };
 
 typedef struct ReqLine{
-    Method method;
+    std::string method;
     std::string target;
     std::string httpVersion;
 } RequestLine;
@@ -43,17 +40,25 @@ class Request{
         Request();
         std::string req;
         RequestLine requestLine;
+        std::map<std::string, std::string> headers;
+        std::vector<char> body;
+        size_t bodyIndex;
     public:
-        Request(std::string req);
+        Request(std::vector<char> req);
         ~Request();
         Request( const Request& other);
         Request& operator=( const Request& other);
         HttpStatusCode parseRequest();
         HttpStatusCode parseRequestLine(std::string& reqLine);
         HttpStatusCode parseRequestHeaders(std::stringstream& req);
+        HttpStatusCode parseBody();
         HttpStatusCode setMethod(std::string& method);
         HttpStatusCode setTarget(std::string& target);
         HttpStatusCode setHttpVersion(std::string& httpVersion);
+        int           splitHttpRequest(std::vector<char>& req);
+        //delete
+        void printHeaders();
+        void printBody();
 
 };
 
