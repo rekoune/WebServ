@@ -1,4 +1,4 @@
-SRC= main.cpp request/Request.cpp
+SRC= main.cpp request/Request.cpp ../utils/Utils.cpp
 OBJ = $(SRC:.cpp=.o)
 NAME = Request
 

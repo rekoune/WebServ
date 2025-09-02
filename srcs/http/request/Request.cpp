@@ -97,9 +97,38 @@ HttpStatusCode Request::parseRequestLine(std::string& reqLine){
 
 }
 
-// HttpStatusCode Request::parseRequestHeaders( std::stringstream& req){
+HttpStatusCode Request::parseRequestHeaders( std::stringstream& req){
+    std::string line;
+    std::string key, value;
 
-// }
+    if (req.eof())
+        return (BAD_REQUEST);
+    getline(req, line, '\n');
+    while(!req.eof() && line != "\r"){
+        if (line.empty())
+            return (BAD_REQUEST);
+        std::stringstream headerStream(line);
+        getline(headerStream, key, ':');
+        getline(headerStream, value);
+        if ((!Utils::isBlank(key) && key.find(' ') != std::string::npos) || value.at(value.length() - 1) != '\r')
+            return (BAD_REQUEST);
+        value.erase(value.length() - 1, 1);
+        if (!Utils::isBlank(key) && !Utils::isBlank(value))
+            this->headers.insert(std::pair<std::string, std::string> (key, value));
+        getline(req, line, '\n');
+    }
+    if (req.eof())
+        return (BAD_REQUEST);
+    return (OK);
+}
+
+void Request::printHeaders(){
+    std::map<std::string, std::string>::iterator it = this->headers.begin();
+    while(it != this->headers.end()){
+        std::cout << "H > " << it->first << ":" << it->second << std::endl;
+        it++;
+    }
+}
 
 HttpStatusCode Request::parseRequest(){
     std::stringstream reqStream(this->req);
@@ -108,7 +137,11 @@ HttpStatusCode Request::parseRequest(){
 
     getline(reqStream, reqLine, '\n');
     if ((httpStatus = parseRequestLine(reqLine)) == OK){
-        
+        if ((httpStatus = parseRequestHeaders(reqStream)) == OK){
+            printHeaders();
+        }
+        else
+            return (httpStatus);
     }
     else
         return (BAD_REQUEST);
