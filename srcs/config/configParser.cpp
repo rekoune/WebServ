@@ -25,11 +25,82 @@ std::string cleanLine(std::string line)
 void	configStructInit(std::string line, ServerConfig& currentServer)
 {
 	//filling the struct of server
-	if ( line.find("root") == 0)
+	std::size_t  pos = 0, end;
+	while ((end = line.find(";", pos)) != std::string::npos)
 	{
-		currentServer.root = cleanLine(line.substr(line.find(" ")));
+		std::string directive = cleanLine( line.substr(pos, end - pos));
+		pos = end + 1;
+		if ( directive.empty())
+			continue;
+		if (directive.find("root") == 0) {
+            currentServer.root = cleanLine(directive.substr(directive.find(" ") + 1));
+        }
+        else if (directive.find("listen") == 0) {
+			std::string value = cleanLine( directive.substr(6));
+			std::size_t colon = value.find(':');
+			std::cout << colon << std::endl;
+			if ( colon != std::string::npos)
+			{
+				currentServer.host = value.substr(0, colon);
+				currentServer.port = std::atoi(value.substr(colon + 1).c_str());
+			}
+			else 
+			{
+				currentServer.host = value; 
+				currentServer.port = 80; 
+			}
+        }
+        else if (directive.find("client_max_body_size") == 0) 
+		{
+            // TODO: parse and convert to int, set currentServer.client_max_body_size
+			std::string value = cleanLine(directive.substr(21));
+			if ( !value.empty())
+				currentServer.client_max_body_size = std::atoi(value.c_str());
+        }
+        else if (directive.find("error_page") == 0) 
+		{
+			std::string value = cleanLine(directive.substr(10));
+			std::istringstream iss(value);
+			int code;
+			std::string path;
+			iss >> code >> path;
+			currentServer.error_pages[code] = path;
+
+	    }
+	}	
+}
+
+
+void	parseLocationBlock(std::istream& file, LocationConfig& current_loc)
+{
+	std::string line;
+	while ( std::getline(file, line))
+	{
+		line = cleanLine(line);
+		if ( line.empty())
+			continue;
+		if ( line == "}")
+			break;
+		if (line.find("root") == 0)
+			current_loc.root = cleanLine(line.substr(line.find(" ") + 1));
+		else if (line.find ("index") == 0)
+			current_loc.index = cleanLine(line.substr(line.find(" ") + 1));
+		else if ( line.find("autoindex") == 0)
+			current_loc.autoindex = (line.find("on") != std::string::npos);
+		else if ( line.find("upload_store") == 0)
+			current_loc.upload_store = cleanLine(line.substr(line.find(" ") + 1));
+		else if ( line.find("cgi_pass") == 0)
+			current_loc.cgi_pass = cleanLine(line.substr(line.find(" ") + 1)); 
+		else if ( line.find("allowed_methods") == 0)
+		{
+			std::string		methods = cleanLine(line.substr(line.find(" ") + 1));
+			std::istringstream iss(methods);
+			std::string 	method;
+			current_loc.allowed_methods.clear();
+			while ( iss >> method )
+				current_loc.allowed_methods.push_back(method);
+		}
 	}
-	
 }
 
 GlobaConfig parseConfig(const std::string& configFilePath)
@@ -68,7 +139,7 @@ GlobaConfig parseConfig(const std::string& configFilePath)
 					if ( remaining  == "}")
 						in_server_block = false;
 					else 
-						configStructInit(line, currentserver);
+						configStructInit(remaining, currentserver);
 				}
 				continue ;
 			}
@@ -113,16 +184,49 @@ GlobaConfig parseConfig(const std::string& configFilePath)
 			if ( line == "}")
 			{
 				globalConfig.servers.push_back(currentserver);
+				currentserver = ServerConfig();
 				in_server_block = false;
+			}
+			else if (line.find("location") == 0)
+			{
+				LocationConfig current_loc;
+
+				size_t	loc_start = line.find("location") + 8;
+				size_t	brace_pos = line.find("{", loc_start);
+				if ( loc_start == std::string::npos)
+				{
+					std::cerr << "Malformed location block better use opening brace in the first line \n";
+					continue ;  
+				}
+				current_loc.path = cleanLine(brace_pos != std::string::npos ? line.substr(loc_start, brace_pos - loc_start)
+					: line.substr(loc_start));
+				
+				if (brace_pos == std::string::npos)
+				{
+					while (std::getline(file, line))
+					{
+						line = cleanLine(line);
+						if ( line.empty())
+							continue;
+						if ( line == "{")
+							break ; 
+					}
+				}
+
+
+
+				parseLocationBlock(file, current_loc);
+				currentserver.locations.push_back(current_loc);
+
+				
+
+
 			}
 			else 
 				configStructInit(line, currentserver);
 		}
-
-		
-
-		
     }
+
 	if (waiting_for_brace)
 		std::cerr << "ERROR : NO SERVER BLOCK\n";
     return globalConfig;
