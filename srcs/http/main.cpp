@@ -1,4 +1,6 @@
 # include "../../includes/Request.hpp"
+# include "../../includes/RequestHandler.hpp"
+# include "../../includes/HttpHandler.hpp"
 
 int main (){
     std::vector<char> vecReq;
@@ -15,14 +17,10 @@ int main (){
     vecReq.push_back('b');
     vecReq.push_back('\0');
     vecReq.push_back('c');
-    Request req(vecReq);
-    HttpStatusCode status = req.parseRequest();
-    std::cout << "status = " << status << std::endl;
-    // std::string line;
-    // std::stringstream test;
-    // test << "abdellah";
 
-    // getline(test, line);
-    // std::cout << "line = " << line << std::endl;
-    // std::cout << "test = " << test.str() << std::endl;
+    GlobaConfig config = parseConfig("config.conf");
+    HttpHandler http(vecReq, config.servers[0]);
+    HttpStatusCode status = http.handel();
+    std::cout << "status = " << status << std::endl;
+    
 }

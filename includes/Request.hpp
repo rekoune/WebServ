@@ -9,6 +9,7 @@
 # include <map>
 # include <vector>
 # include "Utils.hpp"
+# include "config/configStructs.hpp"
 
 enum HttpStatusCode{
     CONTINUE = 100, 
@@ -37,25 +38,31 @@ typedef struct ReqLine{
 
 class Request{
     private:
-        Request();
         std::string req;
         RequestLine requestLine;
         std::map<std::string, std::string> headers;
         std::vector<char> body;
         size_t bodyIndex;
-    public:
-        Request(std::vector<char> req);
-        ~Request();
-        Request( const Request& other);
-        Request& operator=( const Request& other);
-        HttpStatusCode parseRequest();
+
         HttpStatusCode parseRequestLine(std::string& reqLine);
         HttpStatusCode parseRequestHeaders(std::stringstream& req);
         HttpStatusCode parseBody();
         HttpStatusCode setMethod(std::string& method);
         HttpStatusCode setTarget(std::string& target);
         HttpStatusCode setHttpVersion(std::string& httpVersion);
-        int           splitHttpRequest(std::vector<char>& req);
+        int            splitHttpRequest(std::vector<char>& req);
+    public:
+        Request();
+        Request(std::vector<char> req);
+        ~Request();
+        Request( const Request& other);
+        Request& operator=( const Request& other);
+
+        HttpStatusCode                      parseRequest();
+        void                                setRequest(std::vector<char> req);
+        RequestLine                         getRequestLine() const;
+        std::map<std::string, std::string>  getHeaders() const;
+        std::vector<char>                   getBody() const;
         //delete
         void printHeaders();
         void printBody();
