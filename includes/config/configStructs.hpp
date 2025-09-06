@@ -6,6 +6,8 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <stdlib.h>
+#include <sstream>
 
 
 struct LocationConfig
@@ -19,6 +21,8 @@ struct LocationConfig
 	std::string					upload_store;
     std::vector<std::string>	allowed_methods;
     std::string					cgi_pass;
+
+    LocationConfig(): autoindex(false) {}
 
 };
 
