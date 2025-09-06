@@ -10,12 +10,28 @@ Request::Request(std::vector<char> req){
     this->body = req;
 }
 
+void Request::setRequest(std::vector<char> req){
+    this->bodyIndex = splitHttpRequest(req);
+    this->body = req;
+}
+
 Request& Request::operator=(const Request& other){
     this->req = other.req;
     this->requestLine.method = other.requestLine.method;
     this->requestLine.target = other.requestLine.target;
     this->requestLine.httpVersion = other.requestLine.httpVersion;
     return (*this);
+}
+
+
+RequestLine Request::getRequestLine() const{
+    return (this->requestLine);
+}
+std::map<std::string, std::string>  Request::getHeaders() const{
+    return (this->headers);
+}
+std::vector<char>   Request::getBody() const{
+    return (this->body);
 }
 
 HttpStatusCode Request::setMethod(std::string& method){
@@ -92,9 +108,9 @@ HttpStatusCode Request::parseRequestLine(std::string& reqLine){
 
     if (!lineStream.eof())
         return (BAD_REQUEST);
-    std::cout << "method = " << this->requestLine.method << std::endl;
-    std::cout << "target = " << this->requestLine.target << std::endl;
-    std::cout << "httpVersion = " << this->requestLine.httpVersion << std::endl;
+    // std::cout << "method = " << this->requestLine.method << std::endl;
+    // std::cout << "target = " << this->requestLine.target << std::endl;
+    // std::cout << "httpVersion = " << this->requestLine.httpVersion << std::endl;
     return (OK);
 
 }
@@ -166,12 +182,14 @@ HttpStatusCode Request::parseRequest(){
     std::string reqLine;
     HttpStatusCode httpStatus;
 
+    if (this->req.empty())
+        return (BAD_REQUEST);
     getline(reqStream, reqLine, '\n');
     if ((httpStatus = parseRequestLine(reqLine)) == OK){
         if ((httpStatus = parseRequestHeaders(reqStream)) == OK){
-            printHeaders();
+            // printHeaders();
             parseBody();
-            printBody();
+            // printBody();
         }
         else
             return (httpStatus);
