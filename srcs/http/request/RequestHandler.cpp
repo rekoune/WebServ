@@ -30,7 +30,6 @@ HttpStatusCode RequestHandler::findLocation(std::vector<LocationConfig> location
     int matchedIndex = -1;
 
     for(size_t i = 0; i < locations.size(); i++){
-        std::cout << "req targit = " << reqTarget << ", location = " << locations[i].path << std::endl;
         if(Utils::isStartWith(reqTarget, locations.at(i).path)){
             if (matchedLenght < (int)locations.at(i).path.length()){
                 matchedLenght = locations.at(i).path.length();
@@ -44,12 +43,83 @@ HttpStatusCode RequestHandler::findLocation(std::vector<LocationConfig> location
     return (OK);
 }
 
+HttpStatusCode  RequestHandler::isMethodAllowed(std::vector<std::string> allowedMethods, std::string reqMethod){
+    if (allowedMethods.empty() && reqMethod == "GET")
+        return (OK);
+    for(size_t i = 0; i < allowedMethods.size(); i++){
+        if (allowedMethods.at(i) == reqMethod)
+            return (OK);
+    }
+    return (METHOD_NOT_ALLOWED);
+}
+
+HttpStatusCode RequestHandler::dirHandling(std::string& path, PathTypes& pathType, LocationConfig& location){
+    std::string temp(path);
+
+    temp.append("/");
+    temp.append(location.index);
+    if (access(temp.c_str(), F_OK) == 0){
+        path = temp;
+        pathType = F;
+        return (OK);
+    }
+    if (location.autoindex)
+        pathType = DIR;
+    else
+        return (FORBIDDEN);
+   return (OK);
+}
+
+bool RequestHandler::isScript(std::string& path, LocationConfig& location){
+    (void)path;
+    (void)location;
+    return false;
+}
+
+HttpStatusCode RequestHandler::fileHandling(std::string& path, PathTypes& pathType, LocationConfig& location){
+    if (isScript(path, location)){
+        pathType = SCRIPT;
+        return (OK);
+    }
+    pathType = F;
+    return (OK);
+}
+
+HttpStatusCode RequestHandler::resolveResourceType(std::string& path, PathTypes& pathType, LocationConfig& location){
+    const char * c_path;
+    struct stat type;
+    HttpStatusCode status;
+
+    c_path = path.c_str();
+    if (stat(c_path, &type) == -1)
+        return (NOT_FOUND);
+    if (S_ISDIR(type.st_mode))
+        status = dirHandling(path, pathType, location);
+    else if (S_ISREG(type.st_mode))
+        status = fileHandling(path, pathType, location);
+    else
+        return (FORBIDDEN);
+    return (status);
+}
+
 HttpStatusCode RequestHandler::handle(){
     LocationConfig location;
     HttpStatusCode status;
+    PathTypes   pathType;
+    std::string path;
 
     status = findLocation(server.locations, req.getRequestLine().target, location);
-    std::cout << "location = " << location.path << std::endl;
+    if (status == OK)
+        status = isMethodAllowed(location.allowed_methods, req.getRequestLine().method);
+    if (status == OK){
+        path = location.root;
+        if (path.at(path.length() -1) == '/')
+            path.erase(path.end() -1);
+        path.append(req.getRequestLine().target);
+        std::cout<< "full path == " << path << std::endl;
+        status = resolveResourceType(path, pathType, location);
+        std::cout << "final path = " << path << " path type = " << pathType << std::endl;
+    }
 
     return (status);
 }

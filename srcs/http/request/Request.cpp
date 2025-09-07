@@ -135,7 +135,7 @@ HttpStatusCode Request::parseRequestHeaders( std::stringstream& req){
             this->headers.insert(std::pair<std::string, std::string> (key, value));
         getline(req, line, '\n');
     }
-    if (req.eof())
+    if (req.eof() || headers.empty() || headers.find("Host") == headers.end())
         return (BAD_REQUEST);
     return (OK);
 }
@@ -195,6 +195,6 @@ HttpStatusCode Request::parseRequest(){
             return (httpStatus);
     }
     else
-        return (BAD_REQUEST);
+        return (httpStatus);
     return (OK);
 }
