@@ -14,10 +14,19 @@ enum PathTypes{
     DIR,
 };
 
+struct HttpResponseInfo{
+    HttpStatusCode status;
+    std::string     path;
+    PathTypes       type;
+    LocationConfig  location;
+};
+
 class RequestHandler{
     private:
         Request req;
         ServerConfig server;
+        HttpResponseInfo resInfo;
+
         HttpStatusCode  findLocation(std::vector<LocationConfig> locations, std::string reqTarget, LocationConfig& resultLocation);
         HttpStatusCode  resolveResourceType(std::string& path, PathTypes& pathType, LocationConfig& location);
         HttpStatusCode  dirHandling(std::string& path, PathTypes& pathType, LocationConfig& location);
@@ -33,7 +42,8 @@ class RequestHandler{
         RequestHandler& operator=(const RequestHandler& other);
         void setRequest(const Request& req);
         void setServer(const ServerConfig& server);
-        HttpStatusCode handle();
+        HttpResponseInfo handle();
+        HttpResponseInfo getResponseInfo() const;
 
 };
 

@@ -3,12 +3,16 @@
 
 # include "Request.hpp"
 # include "RequestHandler.hpp"
+# include "Response.hpp"
 
 class HttpHandler{
     private:
         Request req;
         ServerConfig server;
         RequestHandler reqHandler;
+        HttpResponseInfo resInfo;
+        Response response;
+
     public:
         HttpHandler();
         HttpHandler (std::vector<char> req, const ServerConfig& server);
@@ -18,7 +22,8 @@ class HttpHandler{
         void setRequest(const Request& req);
         void setServer(const ServerConfig& server);
         void setRequestHandler(const RequestHandler& reqHandler);
-        HttpStatusCode handel();
+        void handel();
+        std::vector<char> getResponse();
 };
 
 # endif
