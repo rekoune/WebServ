@@ -49,9 +49,25 @@ void printStatus(HttpStatusCode status){
 }
 
 
+void printFileType(PathTypes type){
+    std::cout << "type : ";
+    switch (type)
+    {
+    case F:
+        std::cout << "FILE" << std::endl;
+        break;
+    case SCRIPT:
+        std::cout << "SCRIPT" << std::endl;
+        break;
+    case DIR:
+        std::cout << "DIR" << std::endl;
+        break;
+    }
+}
+
 int main (){
     std::vector<char> vecReq;
-    std::string reqline ("GET /home HTTP/1.1\r\nHost: localhost\r\n\r\n");
+    std::string reqline ("GET /../ HTTP/1.1\r\nHost: localhost\r\n\r\n");
     for(size_t i = 0; i < reqline.length(); i++){
         vecReq.push_back(reqline[i]);
     }
@@ -67,7 +83,15 @@ int main (){
 
     GlobaConfig config = parseConfig("config.conf");
     HttpHandler http(vecReq, config.servers[0]);
-    HttpStatusCode status = http.handel();
-    printStatus(status);
+    http.handel();
+    // printStatus(resInfo.status);
+    // if (resInfo.status == OK){
+    //     std::cout << "path = " << resInfo.path << std::endl;
+    //     printFileType(resInfo.type);
+    // }
+    std::vector<char> response =  http.getResponse();
+    for(size_t i =0; i < response.size(); i++){
+        std::cout << response[i] ;
+    }
     
 }

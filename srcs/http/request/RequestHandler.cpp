@@ -24,6 +24,9 @@ void RequestHandler::setServer(const ServerConfig& server){
     this->server = server;
 }
 
+HttpResponseInfo RequestHandler::getResponseInfo() const {
+    return (this->resInfo);
+}
 
 HttpStatusCode RequestHandler::findLocation(std::vector<LocationConfig> locations, std::string reqTarget, LocationConfig& resultLocation){
     int matchedLenght = -1;
@@ -102,7 +105,7 @@ HttpStatusCode RequestHandler::resolveResourceType(std::string& path, PathTypes&
     return (status);
 }
 
-HttpStatusCode RequestHandler::handle(){
+HttpResponseInfo RequestHandler::handle(){
     LocationConfig location;
     HttpStatusCode status;
     PathTypes   pathType;
@@ -116,10 +119,12 @@ HttpStatusCode RequestHandler::handle(){
         if (path.at(path.length() -1) == '/')
             path.erase(path.end() -1);
         path.append(req.getRequestLine().target);
-        std::cout<< "full path == " << path << std::endl;
         status = resolveResourceType(path, pathType, location);
-        std::cout << "final path = " << path << " path type = " << pathType << std::endl;
     }
+    this->resInfo.path = path;
+    this->resInfo.type = pathType;
+    this->resInfo.status = status;
+    this->resInfo.location = location;
 
-    return (status);
+    return (this->resInfo);
 }

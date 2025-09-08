@@ -28,11 +28,18 @@ void HttpHandler::setRequestHandler(const RequestHandler& reqHandler){
     this->reqHandler = reqHandler;
 }
 
-HttpStatusCode HttpHandler::handel(){
-    HttpStatusCode status;
-    if ((status = this->req.parseRequest()) == OK){
+void HttpHandler::handel(){
+    HttpResponseInfo resInfo;
+    if ((resInfo.status  = this->req.parseRequest()) == OK){
         this->reqHandler = RequestHandler(this->req, this->server);
-        status = this->reqHandler.handle();
+        resInfo = this->reqHandler.handle();
     }
-    return status;
+    this->resInfo = resInfo;
+}
+
+std::vector<char> HttpHandler::getResponse(){
+    Response res(this->resInfo);
+
+    res.handel();
+    return (res.getResponse());
 }

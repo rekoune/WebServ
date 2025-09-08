@@ -1,4 +1,4 @@
-SRC= main.cpp request/Request.cpp request/RequestHandler.cpp HttpHandler.cpp ../utils/Utils.cpp ../config/configParser.cpp
+SRC= main.cpp request/Request.cpp  response/Response.cpp request/RequestHandler.cpp HttpHandler.cpp ../utils/Utils.cpp ../config/configParser.cpp
 OBJ = $(SRC:.cpp=.o)
 NAME = Request
 
