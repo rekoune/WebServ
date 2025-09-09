@@ -7,6 +7,8 @@
 # include <string>
 # include "Utils.hpp"
 # include <sstream>
+# include <fstream>
+# include <dirent.h>
 
 struct ResElements{
     std::string statusLine;
@@ -16,17 +18,26 @@ struct ResElements{
 
 class Response{
     private:
-        HttpResponseInfo    resInfo;
-        ResElements         resElements;
-        std::vector<char>   response;
+        //cames from the request class
+        HttpResponseInfo                    resInfo;
+        // generated on this class 
+        ResElements                         resElements;
+        std::vector<char>                   response;
+        std::map<std::string, std::string>  fileTypes;
         
         void                                errorHandling();
         void                                successHandling();
         std::string                         getStatusLine();
-        void                                generateStatusLine(std::string& str, long status, std::string message);
         std::vector<char>                   generateErrorBody();
-        std::map<std::string, std::string>  generateErrorHeaders();
+        std::map<std::string, std::string>  generateHeaders();
         std::string                         getStatusMessage(HttpStatusCode status);
+        std::vector<char>                   getBodyFromFile(std::string& path);
+        void                                setFileTypes();
+        void                                listDirectory();
+        void                                handelGET();
+        void                                handelPOST();
+        void                                generateListingBody(DIR* dir);
+        void                                buildResponse();
 
     public:
         Response();

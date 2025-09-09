@@ -56,3 +56,40 @@ std::string Utils::mapToString(std::map<std::string, std::string>& container){
     }
     return (str);
 }
+
+std::string Utils::getDate(){
+    std::time_t now;
+    std::tm localTime;
+    char    date[100];
+
+    now = std::time(NULL);
+    localTime = *std::localtime(&now);
+    
+    std::strftime(date, sizeof(date), "%a, %d %b %Y %H:%M:%S GMT", &localTime);
+    std::string strDate(date);
+    return (strDate);
+}
+
+std::string Utils::getFileType(std::map<std::string, std::string>& fileTypes, std::string fileName){
+    size_t found = fileName.find(".");
+    std::map<std::string, std::string>::iterator typeIt;
+    if (found != std::string::npos){
+        found++;
+        typeIt = fileTypes.find(&fileName[found]);
+        if (typeIt != fileTypes.end()){
+            return (typeIt->second);
+        }
+    }
+    return ("text/plain");
+}
+
+//if the file Path is a directory it returns an empty string
+std::string Utils::getFileName(std::string filePath){
+    std::stringstream ss(filePath);
+    std::string fileName;
+
+    getline(ss, fileName, '/');
+    while(!ss.eof())
+        getline(ss, fileName, '/');
+    return (fileName);
+}

@@ -14,6 +14,7 @@ RequestHandler::RequestHandler(const RequestHandler& other){
 RequestHandler& RequestHandler::operator=(const RequestHandler& other){
     this->req = other.req;
     this->server = other.server;
+    this->resInfo = other.resInfo;
     return (*this);
 }
 
@@ -58,16 +59,19 @@ HttpStatusCode  RequestHandler::isMethodAllowed(std::vector<std::string> allowed
 
 HttpStatusCode RequestHandler::dirHandling(std::string& path, PathTypes& pathType, LocationConfig& location){
     std::string temp(path);
+    const char* c_path;
+    struct stat type;
 
     temp.append("/");
     temp.append(location.index);
-    if (access(temp.c_str(), F_OK) == 0){
+    c_path = temp.c_str();
+    if (stat(c_path, &type) != -1 && S_ISREG(type.st_mode)){
         path = temp;
         pathType = F;
         return (OK);
     }
     if (location.autoindex)
-        pathType = DIR;
+        pathType = DIR_LS;
     else
         return (FORBIDDEN);
    return (OK);
@@ -112,8 +116,12 @@ HttpResponseInfo RequestHandler::handle(){
     std::string path;
 
     status = findLocation(server.locations, req.getRequestLine().target, location);
-    if (status == OK)
+    if (status == OK){
+        //delete
+        location.allowed_methods.push_back("GET");
+        location.allowed_methods.push_back("POST");
         status = isMethodAllowed(location.allowed_methods, req.getRequestLine().method);
+    }
     if (status == OK){
         path = location.root;
         if (path.at(path.length() -1) == '/')
@@ -125,6 +133,8 @@ HttpResponseInfo RequestHandler::handle(){
     this->resInfo.type = pathType;
     this->resInfo.status = status;
     this->resInfo.location = location;
+    this->resInfo.server = server;
+    this->resInfo.req = req;
 
     return (this->resInfo);
 }

@@ -11,7 +11,7 @@
 enum PathTypes{
     F,
     SCRIPT,
-    DIR,
+    DIR_LS,
 };
 
 struct HttpResponseInfo{
@@ -19,6 +19,8 @@ struct HttpResponseInfo{
     std::string     path;
     PathTypes       type;
     LocationConfig  location;
+    ServerConfig    server;
+    Request         req;
 };
 
 class RequestHandler{
