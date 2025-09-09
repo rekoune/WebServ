@@ -178,7 +178,7 @@ int    Request::splitHttpRequest(std::vector<char>& req){
         i++;
     }
     return (i);
-}
+} 
 
 HttpStatusCode Request::parseRequest(){
     std::stringstream reqStream(this->req);
