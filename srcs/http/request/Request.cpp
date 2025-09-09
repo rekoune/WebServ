@@ -17,9 +17,10 @@ void Request::setRequest(std::vector<char> req){
 
 Request& Request::operator=(const Request& other){
     this->req = other.req;
-    this->requestLine.method = other.requestLine.method;
-    this->requestLine.target = other.requestLine.target;
-    this->requestLine.httpVersion = other.requestLine.httpVersion;
+    this->requestLine = other.requestLine;
+    this->headers = other.headers;
+    this->body = other.body;
+    this->bodyIndex = other.bodyIndex;
     return (*this);
 }
 
@@ -108,9 +109,7 @@ HttpStatusCode Request::parseRequestLine(std::string& reqLine){
 
     if (!lineStream.eof())
         return (BAD_REQUEST);
-    // std::cout << "method = " << this->requestLine.method << std::endl;
-    // std::cout << "target = " << this->requestLine.target << std::endl;
-    // std::cout << "httpVersion = " << this->requestLine.httpVersion << std::endl;
+
     return (OK);
 
 }
@@ -136,6 +135,10 @@ HttpStatusCode Request::parseRequestHeaders( std::stringstream& req){
         getline(req, line, '\n');
     }
     if (req.eof() || headers.empty() || headers.find("Host") == headers.end())
+        return (BAD_REQUEST);
+    else if (this->requestLine.method == "POST" &&
+        headers.find("Content-Length") == headers.end() &&
+        headers.find("Transfer-Encoding") == headers.end())
         return (BAD_REQUEST);
     return (OK);
 }

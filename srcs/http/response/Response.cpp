@@ -9,6 +9,7 @@ Response& Response::operator=(const Response& other){
     this->resInfo = other.resInfo;
     this->resElements = other.resElements;
     this->response = other.response;
+    this->fileTypes = other.fileTypes;
     return (*this);
 }
 Response::Response(const HttpResponseInfo info){
@@ -21,59 +22,33 @@ std::vector<char> Response::getResponse () const {
     return (this->response);
 }
 
-void Response::generateStatusLine(std::string& str, long status, std::string message){
-    str.append(Utils::toString(status));
-    str.append(" ");
-    str.append(message);
-    str.append("\r\n");
+void    Response::setFileTypes(){
+    fileTypes.insert(std::pair<std::string, std::string> ("html", "text/html"));
+    fileTypes.insert(std::pair<std::string, std::string> ("htm", "text/html"));
+    fileTypes.insert(std::pair<std::string, std::string> ("css", "text/css"));
+    fileTypes.insert(std::pair<std::string, std::string> ("txt", "text/plain"));
+
+    fileTypes.insert(std::pair<std::string, std::string> ("gif", "image/gif"));
+    fileTypes.insert(std::pair<std::string, std::string> ("jpg", "image/jpeg"));
+    fileTypes.insert(std::pair<std::string, std::string> ("jpeg", "image/jpeg"));
+    fileTypes.insert(std::pair<std::string, std::string> ("png", "image/png"));
+
+    fileTypes.insert(std::pair<std::string, std::string> ("mp4", "video/mp4"));
+    fileTypes.insert(std::pair<std::string, std::string> ("mov", "video/quicktime"));
+
+    fileTypes.insert(std::pair<std::string, std::string> ("js", "application/javascript"));
+    fileTypes.insert(std::pair<std::string, std::string> ("pdf", "application/pdf"));
 }
 
 std::string Response::getStatusLine(){
     std::string statusLine;
 
     statusLine.append("HTTP/1.1 ");
-    switch (resInfo.status)
-    {
-        case CONTINUE:
-            generateStatusLine(statusLine, CONTINUE, "CONTINUE");
-            break;
-        case OK:
-            generateStatusLine(statusLine, OK, "OK");
-            break;
-        case CREATED:
-            generateStatusLine(statusLine, CREATED, "CREATED");
-            break;
-        case NO_CONTENT:
-            generateStatusLine(statusLine, NO_CONTENT, "NO_CONTENT");
-            break;
-        case BAD_REQUEST:
-            generateStatusLine(statusLine, BAD_REQUEST, "BAD_REQUEST");
-            break;
-        case UNAUTHORIZED:
-            generateStatusLine(statusLine, UNAUTHORIZED, "UNAUTHORIZED");
-            break;
-        case FORBIDDEN:
-            generateStatusLine(statusLine, FORBIDDEN, "FORBIDDEN");
-            break;
-        case NOT_FOUND:
-            generateStatusLine(statusLine, NOT_FOUND, "NOT_FOUND");
-            break;
-        case METHOD_NOT_ALLOWED:
-            generateStatusLine(statusLine, METHOD_NOT_ALLOWED, "METHOD_NOT_ALLOWED");
-            break;
-        case CONTENT_TOO_LARGE:
-            generateStatusLine(statusLine, CONTENT_TOO_LARGE, "CONTENT_TOO_LARGE");
-            break;
-        case INTERNAL_SERVER_ERROR:
-            generateStatusLine(statusLine, INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR");
-            break;
-        case NOT_IMPLEMENTED:
-            generateStatusLine(statusLine, NOT_IMPLEMENTED, "NOT_IMPLEMENTED");
-            break;
-        case HTTP_VERSION_NOT_SUPPORTED:
-            generateStatusLine(statusLine, HTTP_VERSION_NOT_SUPPORTED, "HTTP_VERSION_NOT_SUPPORTED");
-            break;
-    }
+    statusLine.append(Utils::toString(resInfo.status));
+    statusLine.append(" ");
+    statusLine.append(getStatusMessage(resInfo.status));
+    statusLine.append("\r\n");
+
     return (statusLine);
 }
 
@@ -114,6 +89,7 @@ std::vector<char>  Response::generateErrorBody(){
     std::stringstream bodyStream;
     std::vector<char> body;
 
+    resInfo.path = "error.html";
     bodyStream << "<html>\n<head><title>";
     bodyStream << Utils::toString(this->resInfo.status);
     bodyStream << " ";
@@ -127,32 +103,137 @@ std::vector<char>  Response::generateErrorBody(){
     return (body);
 }
 
-std::map<std::string, std::string>  Response::generateErrorHeaders(){
+std::map<std::string, std::string>  Response::generateHeaders(){
     std::map<std::string, std::string> headers;
 
     headers.insert(std::pair<std::string, std::string> ("Server", "WebServer"));
-    headers.insert(std::pair<std::string, std::string> ("Date", "Mon, 08 Sep 2025 14:39:23 GMT"));
-    headers.insert(std::pair<std::string, std::string> ("Content-Type", "text/html"));
+    headers.insert(std::pair<std::string, std::string> ("Date", Utils::getDate()));
+    headers.insert(std::pair<std::string, std::string> ("Content-Type", Utils::getFileType(fileTypes, Utils::getFileName(resInfo.path))));
     headers.insert(std::pair<std::string, std::string> ("Content-Length", Utils::toString(resElements.body.size())));
     headers.insert(std::pair<std::string, std::string> ("Connection", "keep-alive"));
 
     return (headers);
 }
 
-void    Response::errorHandling(){
-    resElements.statusLine = getStatusLine();
-    resElements.body = generateErrorBody();
-    resElements.headers = generateErrorHeaders();
+std::vector<char>   Response::getBodyFromFile(std::string& path){
+    std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
 
+    std::streamsize size;
+
+    file.seekg(0, std::ios::end);
+    size = file.tellg();
+    file.seekg(0, std::ios::beg);
+    std::vector<char> body(size);
+    file.read(&body[0], size);
+    file.close();
+    return (body);
+}
+
+void    Response::buildResponse(){
     Utils::pushInVector(response, resElements.statusLine);
     Utils::pushInVector(response, Utils::mapToString(resElements.headers));
     response.insert(response.end(), resElements.body.begin(), resElements.body.end());
+}
 
+
+void    Response::errorHandling(){
+    std::map<int, std::string>::iterator errorPage;
+    if ((errorPage = resInfo.server.error_pages.find(resInfo.status)) != resInfo.server.error_pages.end()){
+        std::string errorPath;
+
+        errorPath.append(resInfo.location.root);
+        errorPath.append("/");
+        errorPath.append(errorPage->second);
+        resInfo.path = errorPath;
+        if (access(errorPath.c_str(), F_OK) == -1 || access(errorPath.c_str(), R_OK) == -1){
+            resInfo.status = INTERNAL_SERVER_ERROR;
+            resElements.body = generateErrorBody();
+        }
+        else
+            resElements.body = getBodyFromFile(errorPath);
+
+    }
+    else
+        resElements.body = generateErrorBody();
+    resElements.statusLine = getStatusLine();
+    resElements.headers = generateHeaders();
+    buildResponse();
+}
+
+void    Response::generateListingBody(DIR* dir){
+    struct dirent* dirContent;
+    
+    Utils::pushInVector(resElements.body, "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Directory Listing</title>\n</head>\n<body>\n <ul>\n");
+    while((dirContent = readdir(dir))){
+        Utils::pushInVector(resElements.body, "  <li><a href=\"");
+        Utils::pushInVector(resElements.body, dirContent->d_name);
+        Utils::pushInVector(resElements.body, "\">");
+        Utils::pushInVector(resElements.body, dirContent->d_name);
+        Utils::pushInVector(resElements.body, "</a></li>\n");
+    }
+    Utils::pushInVector(resElements.body, " </ul>\n</body>\n</html>\n");
+}
+
+void    Response::listDirectory(){
+    DIR* dir;
+
+    dir = opendir(resInfo.path.c_str());
+    if (dir == NULL){
+        resInfo.status = FORBIDDEN;
+        errorHandling();
+        return;
+    }
+    generateListingBody(dir);
+    closedir(dir);
+}
+
+void    Response::handelGET(){
+    if (resInfo.type == F){
+        if (access(resInfo.path.c_str(), R_OK) == -1)
+        {
+            resInfo.status = FORBIDDEN;
+            errorHandling();
+        }
+        resElements.body = getBodyFromFile(resInfo.path);
+    }
+    else if (resInfo.type == DIR_LS){
+        listDirectory();
+    }
+    else if (resInfo.type == SCRIPT){
+        std::cout << "The request Target Is A Script" << std::endl;
+    }
+    resElements.statusLine = getStatusLine();
+    resElements.headers = generateHeaders();
+    buildResponse();
+}
+
+void    Response::handelPOST(){
+    if (resInfo.req.getBody().empty()){
+        resInfo.status = BAD_REQUEST;
+        errorHandling();
+    }
+    else if (resInfo.req.getBody().size() > resInfo.server.client_max_body_size){
+        resInfo.status = CONTENT_TOO_LARGE;
+        errorHandling();
+    }
+}
+
+void    Response::successHandling(){
+    if (resInfo.req.getRequestLine().method == "GET"){
+        handelGET();
+    }
+    else if (resInfo.req.getRequestLine().method == "POST"){
+        handelPOST();
+    }
 }
 
 void Response::handel(){
+    setFileTypes();
     if (resInfo.status != OK){
         errorHandling();
     }
+    else
+        successHandling();
+
 }
 

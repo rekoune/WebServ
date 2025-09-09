@@ -15,6 +15,8 @@ HttpHandler& HttpHandler::operator=(const HttpHandler& other){
     this->req = other.req;
     this->server = other.server;
     this->reqHandler = other.reqHandler;
+    this->resInfo = other.resInfo;
+    this->response = other.response;
     return (*this);
 }
 

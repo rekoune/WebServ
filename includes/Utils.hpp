@@ -6,6 +6,7 @@
 # include <vector>
 # include <map>
 # include <sstream>
+# include <ctime>
 
 class Utils{
     public:
@@ -14,6 +15,9 @@ class Utils{
         static void pushInVector(std::vector<char>& vec, const std::string& str);
         static std::string toString(long number);
         static std::string mapToString(std::map<std::string, std::string>& container);
+        static std::string getDate();
+        static std::string getFileName(std::string filePath);
+        static std::string getFileType(std::map<std::string, std::string>& fileTypes, std::string fileName);
 };
 
 # endif
