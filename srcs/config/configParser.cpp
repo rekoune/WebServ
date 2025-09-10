@@ -71,29 +71,34 @@ void	configStructInit(std::string line, ServerConfig& currentServer)
 }
 
 
-void	parseLocationBlock(std::istream& file, LocationConfig& current_loc)
+void	parseLocationBlock(std::string line, LocationConfig& current_loc)
 {
-	std::string line;
-	while ( std::getline(file, line))
+	size_t end, pos = 0;
+	while ( (end = line.find(";", pos)) != std::string::npos)
 	{
-		line = cleanLine(line);
-		if ( line.empty())
+		std::string directive = cleanLine(line.substr(pos, end - pos));
+		pos = end + 1;
+		if ( directive.empty())
 			continue;
-		if ( line == "}")
-			break;
-		if (line.find("root") == 0)
-			current_loc.root = cleanLine(line.substr(line.find(" ") + 1));
-		else if (line.find ("index") == 0)
-			current_loc.index = cleanLine(line.substr(line.find(" ") + 1));
-		else if ( line.find("autoindex") == 0)
-			current_loc.autoindex = (line.find("on") != std::string::npos);
-		else if ( line.find("upload_store") == 0)
-			current_loc.upload_store = cleanLine(line.substr(line.find(" ") + 1));
-		else if ( line.find("cgi_pass") == 0)
-			current_loc.cgi_pass = cleanLine(line.substr(line.find(" ") + 1)); 
-		else if ( line.find("allowed_methods") == 0)
+		if (directive.find("root") == 0)
+			current_loc.root = cleanLine(directive.substr(directive.find(" ") + 1));
+		else if (directive.find ("index") == 0)
 		{
-			std::string		methods = cleanLine(line.substr(line.find(" ") + 1));
+			std::string	index_paths = cleanLine(directive.substr(directive.find(" ") + 1));
+			std::string index_path;
+			std::istringstream	iss(index_paths);
+			while (iss >> index_path)
+				current_loc.index.push_back(index_path);
+		}
+		else if ( directive.find("autoindex") == 0)
+			current_loc.autoindex = (directive.find("on") != std::string::npos);
+		else if ( directive.find("upload_store") == 0)
+			current_loc.upload_store = cleanLine(directive.substr(directive.find(" ") + 1));
+		else if ( directive.find("cgi_pass") == 0)
+			current_loc.cgi_pass = cleanLine(directive.substr(directive.find(" ") + 1)); 
+		else if ( directive.find("allowed_methods") == 0)
+		{
+			std::string		methods = cleanLine(directive.substr(directive.find(" ") + 1));
 			std::istringstream iss(methods);
 			std::string 	method;
 			current_loc.allowed_methods.clear();
@@ -212,15 +217,17 @@ GlobaConfig parseConfig(const std::string& configFilePath)
 							break ; 
 					}
 				}
+				while ( std::getline(file, line))
+				{
+					line = cleanLine(line);
+					if ( line.empty())
+						continue;
+					if ( line == "}")
+						break;				
+					parseLocationBlock(line, current_loc);
+				}
 
-
-
-				parseLocationBlock(file, current_loc);
 				currentserver.locations.push_back(current_loc);
-
-				
-
-
 			}
 			else 
 				configStructInit(line, currentserver);
