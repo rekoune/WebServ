@@ -35,7 +35,13 @@ int main(int ac, char **av)
         {
             std::cout << "path: " << iter_loc->path << std::endl;
             std::cout << "root: " << iter_loc->root << std::endl;
-            std::cout << "index: " << iter_loc->index << std::endl;
+            std::cout << "index: ";
+            for (std::vector<std::string>::iterator iter_index = iter_loc->index.begin(); iter_index != iter_loc->index.end(); iter_index++ )
+            {
+                std::cout << *iter_index << " " ;
+            }
+            std::cout << std::endl;
+
             std::cout << "autoindex: " << iter_loc->autoindex << std::endl;
             std::cout << "upload_store: " << iter_loc->upload_store << std::endl;
             std::cout << "cgi_pass: " << iter_loc->cgi_pass << std::endl;
