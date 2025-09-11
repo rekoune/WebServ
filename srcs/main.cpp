@@ -18,7 +18,12 @@ int main(int ac, char **av)
         std::cout << "PRINGTING THE STRUCT : \n"; 
 
         std::cout << "iter->host: " << iter->host << std::endl;
-        std::cout << "iter->port: " << iter->port << std::endl;
+        std::cout << "iter->port: " ;
+        for ( std::vector<int>::iterator iter_port = iter->port.begin(); iter_port != iter->port.end(); iter_port++)
+        {
+            std::cout << *iter_port << " ";
+        }
+        std::cout << std::endl;
         std::cout << "iter->root: " << iter->root << std::endl;
         std::cout << "iter->client_max_body_size: " << iter->client_max_body_size << std::endl;
         

@@ -22,18 +22,20 @@ struct LocationConfig
     std::vector<std::string>	allowed_methods;
     std::string					cgi_pass;
 
-    LocationConfig(): autoindex(false) {}
+    LocationConfig():  index(1, "index.html") ,autoindex(false){}
 
 };
 
 struct ServerConfig 
 {
     std::string					host;
-    int        					port;
+    std::vector<int>        	port;
     std::string					root;
     size_t						client_max_body_size;
     std::map<int, std::string>	error_pages;
 	std::vector<LocationConfig>	locations;
+    ServerConfig() 
+        : host("0.0.0.0"), port(1, 80){}
 	
 };
 

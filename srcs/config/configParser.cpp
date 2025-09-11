@@ -37,25 +37,57 @@ void	configStructInit(std::string line, ServerConfig& currentServer)
         }
         else if (directive.find("listen") == 0) {
 			std::string value = cleanLine( directive.substr(6));
-			std::size_t colon = value.find(':');
-			std::cout << colon << std::endl;
-			if ( colon != std::string::npos)
-			{
-				currentServer.host = value.substr(0, colon);
-				currentServer.port = std::atoi(value.substr(colon + 1).c_str());
-			}
-			else 
-			{
-				currentServer.host = value; 
-				currentServer.port = 80; 
-			}
+			// std::size_t colon = value.find(':');
+			// std::cout << colon << std::endl;
+			// if ( colon != std::string::npos)
+			// {
+			// 	currentServer.host = value.substr(0, colon);
+			// 	currentServer.port = std::atoi(value.substr(colon + 1).c_str());  // I HANDLE HERE THE HOST AND PORTS AS PAIRS (127.0.0.1:8080)
+			// }
+			// else 
+			// {
+			// 	currentServer.host = value; 
+			// 	currentServer.port = 80; 
+			// }
+			currentServer.host = cleanLine(directive.substr(directive.find(" ") + 1));
         }
+		else if (directive.find("port") == 0)
+		{
+			std::string	value = cleanLine(directive.substr(4));
+			std::istringstream	iss(value);
+			int port;
+			while (iss >> port)
+				currentServer.port.push_back(port);
+		}
         else if (directive.find("client_max_body_size") == 0) 
 		{
             // TODO: parse and convert to int, set currentServer.client_max_body_size
+			// IM DOING IT NWO IGUESS 
 			std::string value = cleanLine(directive.substr(21));
 			if ( !value.empty())
-				currentServer.client_max_body_size = std::atoi(value.c_str());
+			{
+				size_t 		len = value.length();
+				char 		suffix = value[len - 1];
+				int			multiplier = 1;
+				if ( suffix == 'k' || suffix == 'K')
+				{
+					multiplier = 1024;
+					len--;
+				}
+				if ( suffix == 'm' || suffix == 'M')
+				{
+					multiplier = 1024 * 1024;
+					len--;
+				}
+				if ( suffix == 'g' || suffix == 'G')
+				{
+					multiplier = 1024 * 1024 * 1024;
+					len--;
+				}
+				std::string number_value = value.substr(0, len);
+				size_t number = std::atoi(number_value.c_str());
+				currentServer.client_max_body_size = number * multiplier;
+			}
         }
         else if (directive.find("error_page") == 0) 
 		{
@@ -226,7 +258,8 @@ GlobaConfig parseConfig(const std::string& configFilePath)
 						break;				
 					parseLocationBlock(line, current_loc);
 				}
-
+				if (current_loc.root.empty())
+					current_loc.root = current_loc.path;
 				currentserver.locations.push_back(current_loc);
 			}
 			else 
