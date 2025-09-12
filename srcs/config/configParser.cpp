@@ -1,5 +1,18 @@
 #include "../../includes/config/configStructs.hpp"
 
+
+bool isitnumber(std::string str)
+{
+	if ( str.empty())
+		return false ;
+	for (size_t i = 0; i < str.length(); i++)
+	{
+		if ( str[i] < '0' || str[i] > '9')
+			return (false);
+	}
+	return true;
+}	
+
 bool isitspace(char c)
 {
 	if (c == 32 || (c >= 9 && c <= 13))
@@ -99,6 +112,14 @@ void	configStructInit(std::string line, ServerConfig& currentServer)
 			currentServer.error_pages[code] = path;
 
 	    }
+		else if (directive.find("cgi_extension") == 0)
+		{
+			std::string	value = cleanLine(directive.substr(13));
+			std::istringstream	iss(value);
+			std::string	extension, interperter;
+			iss >> extension >> interperter;
+			currentServer.cgi_extension[extension] = interperter;
+		}
 	}	
 }
 
@@ -136,6 +157,27 @@ void	parseLocationBlock(std::string line, LocationConfig& current_loc)
 			current_loc.allowed_methods.clear();
 			while ( iss >> method )
 				current_loc.allowed_methods.push_back(method);
+		}
+		else if ( directive.find("return") == 0)
+		{
+			std::istringstream iss ( directive.substr(6));
+			std::string status_str;
+			iss >> status_str;
+			bool is_number = isitnumber(status_str);
+			if ( !is_number)
+			{
+				std::cerr << "return keyword should be followed by redirection status number" << std::endl;
+				return ;
+			}
+			std::string redirection_url;	
+			iss >> redirection_url;
+			if (redirection_url.empty())
+			{
+				std::cerr << "redirection should have a url after redirection status number " << std::endl;
+				return ;
+			}
+			current_loc.redirection_url = redirection_url;
+			current_loc.redirection_status = std::atoi(status_str.c_str());
 		}
 	}
 }
