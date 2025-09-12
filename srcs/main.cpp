@@ -35,11 +35,20 @@ int main(int ac, char **av)
 
         }
 
+        std::cout << "cgi_extension: " << std::endl;
+        for ( std::map<std::string, std::string>::iterator cgi_exten_iter = iter->cgi_extension.begin()
+                ; cgi_exten_iter != iter->cgi_extension.end(); cgi_exten_iter++)
+        {
+            std::cout << cgi_exten_iter->first << " " << cgi_exten_iter->second << std::endl;
+
+        }
+
         std::cout << "location: " << std::endl;
         for (std::vector<LocationConfig>::iterator iter_loc  = iter->locations.begin(); iter_loc != iter->locations.end(); ++iter_loc)
         {
             std::cout << "path: " << iter_loc->path << std::endl;
             std::cout << "root: " << iter_loc->root << std::endl;
+            std::cout << "redirection: " << iter_loc-> redirection_status << " " << iter_loc->redirection_url << std::endl;
             std::cout << "index: ";
             for (std::vector<std::string>::iterator iter_index = iter_loc->index.begin(); iter_index != iter_loc->index.end(); iter_index++ )
             {
@@ -49,7 +58,7 @@ int main(int ac, char **av)
 
             std::cout << "autoindex: " << iter_loc->autoindex << std::endl;
             std::cout << "upload_store: " << iter_loc->upload_store << std::endl;
-            std::cout << "cgi_pass: " << iter_loc->cgi_pass << std::endl;
+            // std::cout << "cgi_pass: " << iter_loc->cgi_pass << std::endl;
             std::cout << "allowed_methods: ";
 
             for (std::vector<std::string>::iterator iter_meths = iter_loc->allowed_methods.begin(); iter_meths != iter_loc->allowed_methods.end(); ++iter_meths)
