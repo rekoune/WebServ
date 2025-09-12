@@ -10,6 +10,7 @@
 # include <vector>
 # include "Utils.hpp"
 # include "config/configStructs.hpp"
+# include <unistd.h>
 
 enum HttpStatusCode{
     CONTINUE = 100, 
@@ -30,6 +31,15 @@ enum HttpStatusCode{
     HTTP_VERSION_NOT_SUPPORTED = 505
 };
 
+enum ParseState {
+    PARSE_START,       
+    PARSE_HEADERS,     
+    PARSE_BODY_LENGTH, 
+    PARSE_BODY_CHUNKED,
+    PARSE_COMPLETE,    
+    PARSE_ERROR        
+};
+
 typedef struct ReqLine{
     std::string method;
     std::string target;
@@ -43,6 +53,10 @@ class Request{
         std::map<std::string, std::string> headers;
         std::vector<char> body;
         size_t bodyIndex;
+        ParseState parseState;
+        long      bodyMaxSize;
+        std::vector<char> chunkBody;
+        size_t clientMaxBodySize;
 
         HttpStatusCode parseRequestLine(std::string& reqLine);
         HttpStatusCode parseRequestHeaders(std::stringstream& req);
@@ -51,6 +65,12 @@ class Request{
         HttpStatusCode setTarget(std::string& target);
         HttpStatusCode setHttpVersion(std::string& httpVersion);
         int            splitHttpRequest(std::vector<char>& req);
+        ParseState     getBodyType();
+        ParseState     unchunk();
+        ParseState     singleChunk(std::vector<char> oneChunk, long sizePos, long bodyPos);
+        ParseState     checkPostHeaders(HttpStatusCode& status);
+
+
     public:
         Request();
         Request(std::vector<char> req);
@@ -63,6 +83,9 @@ class Request{
         RequestLine                         getRequestLine() const;
         std::map<std::string, std::string>  getHeaders() const;
         std::vector<char>                   getBody() const;
+        HttpStatusCode                      appendData(const char* _data, size_t size);
+        bool                                isComplete();
+        void                                setClientMaxBody(size_t clientMaxBodySize);
         //delete
         void printHeaders();
         void printBody();
