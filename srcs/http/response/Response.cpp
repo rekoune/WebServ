@@ -163,6 +163,7 @@ void    Response::errorHandling(){
 void    Response::generateListingBody(DIR* dir){
     struct dirent* dirContent;
     
+    resInfo.path = "list.html";
     Utils::pushInVector(resElements.body, "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Directory Listing</title>\n</head>\n<body>\n <ul>\n");
     while((dirContent = readdir(dir))){
         Utils::pushInVector(resElements.body, "  <li><a href=\"");
@@ -208,11 +209,12 @@ void    Response::handelGET(){
 }
 
 void    Response::handelPOST(){
-    if (resInfo.req.getBody().empty()){
-        resInfo.status = BAD_REQUEST;
-        errorHandling();
-    }
-    else if (resInfo.req.getBody().size() > resInfo.server.client_max_body_size){
+    // if (resInfo.req.getBody().empty()){
+    //     std::cout << "hos hos hos" << std::endl;
+    //     resInfo.status = BAD_REQUEST;
+    //     errorHandling();
+    // }
+     if (resInfo.req.getBody().size() > resInfo.server.client_max_body_size){
         resInfo.status = CONTENT_TOO_LARGE;
         errorHandling();
     }

@@ -23,6 +23,8 @@ class HttpHandler{
         void setServer(const ServerConfig& server);
         void setRequestHandler(const RequestHandler& reqHandler);
         void handel();
+        void appendData(const char* data, size_t size);
+        bool isComplete();
         std::vector<char> getResponse();
 };
 

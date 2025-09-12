@@ -21,6 +21,8 @@ struct HttpResponseInfo{
     LocationConfig  location;
     ServerConfig    server;
     Request         req;
+
+    HttpResponseInfo(): status(OK){};
 };
 
 class RequestHandler{

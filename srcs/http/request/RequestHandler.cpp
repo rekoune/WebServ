@@ -41,8 +41,9 @@ HttpStatusCode RequestHandler::findLocation(std::vector<LocationConfig> location
             }
         }
     }
-    if (matchedIndex == -1)
+    if (matchedIndex == -1){
         return (NOT_FOUND);
+    }
     resultLocation = locations.at(matchedIndex);
     return (OK);
 }
@@ -124,6 +125,7 @@ HttpResponseInfo RequestHandler::handle(){
     }
     if (status == OK){
         path = location.root;
+
         if (path.at(path.length() -1) == '/')
             path.erase(path.end() -1);
         path.append(req.getRequestLine().target);
@@ -135,6 +137,5 @@ HttpResponseInfo RequestHandler::handle(){
     this->resInfo.location = location;
     this->resInfo.server = server;
     this->resInfo.req = req;
-
     return (this->resInfo);
 }
