@@ -108,7 +108,8 @@ std::map<std::string, std::string>  Response::generateHeaders(){
 
     headers.insert(std::pair<std::string, std::string> ("Server", "WebServer"));
     headers.insert(std::pair<std::string, std::string> ("Date", Utils::getDate()));
-    headers.insert(std::pair<std::string, std::string> ("Content-Type", Utils::getFileType(fileTypes, Utils::getFileName(resInfo.path))));
+    if (resInfo.status != NO_CONTENT)
+        headers.insert(std::pair<std::string, std::string> ("Content-Type", Utils::getFileType(fileTypes, Utils::getFileName(resInfo.path))));
     headers.insert(std::pair<std::string, std::string> ("Content-Length", Utils::toString(resElements.body.size())));
     headers.insert(std::pair<std::string, std::string> ("Connection", "keep-alive"));
 
@@ -208,6 +209,23 @@ void    Response::handelGET(){
     buildResponse();
 }
 
+void    Response::handelDELETE(){
+    if (resInfo.type == DIR_LS){
+        resInfo.status = FORBIDDEN;
+        errorHandling();
+    }
+    else if (std::remove(resInfo.path.c_str()) != 0){
+        resInfo.status = INTERNAL_SERVER_ERROR;
+        errorHandling();
+    }
+    else{
+        resInfo.status = NO_CONTENT;
+        resElements.statusLine = getStatusLine();
+        resElements.headers = generateHeaders();
+        buildResponse();
+    }
+}
+
 void    Response::handelPOST(){
     // if (resInfo.req.getBody().empty()){
     //     std::cout << "hos hos hos" << std::endl;
@@ -226,6 +244,10 @@ void    Response::successHandling(){
     }
     else if (resInfo.req.getRequestLine().method == "POST"){
         handelPOST();
+    }
+    else if (resInfo.req.getRequestLine().method == "DELETE")
+    {
+        handelDELETE();
     }
 }
 
