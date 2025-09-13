@@ -15,14 +15,15 @@ class HttpHandler{
 
     public:
         HttpHandler();
-        HttpHandler (std::vector<char> req, const ServerConfig& server);
+        // HttpHandler (std::vector<char> req, const ServerConfig& server);
+        HttpHandler(const ServerConfig& server);
         HttpHandler (const HttpHandler& other);
         ~HttpHandler();
         HttpHandler& operator=(const HttpHandler& other);
-        void setRequest(const Request& req);
+        // void setRequest(const Request& req);
         void setServer(const ServerConfig& server);
-        void setRequestHandler(const RequestHandler& reqHandler);
-        void handel();
+        // void setRequestHandler(const RequestHandler& reqHandler);
+        // void handel();
         void appendData(const char* data, size_t size);
         bool isComplete();
         std::vector<char> getResponse();

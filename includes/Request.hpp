@@ -52,7 +52,7 @@ class Request{
         RequestLine requestLine;
         std::map<std::string, std::string> headers;
         std::vector<char> body;
-        size_t bodyIndex;
+        // size_t bodyIndex;
         ParseState parseState;
         long      bodyMaxSize;
         std::vector<char> chunkBody;
@@ -60,26 +60,27 @@ class Request{
 
         HttpStatusCode parseRequestLine(std::string& reqLine);
         HttpStatusCode parseRequestHeaders(std::stringstream& req);
-        HttpStatusCode parseBody();
+        // HttpStatusCode parseBody();
         HttpStatusCode setMethod(std::string& method);
         HttpStatusCode setTarget(std::string& target);
         HttpStatusCode setHttpVersion(std::string& httpVersion);
-        int            splitHttpRequest(std::vector<char>& req);
-        ParseState     getBodyType();
+        // int            splitHttpRequest(std::vector<char>& req);
+        // ParseState     getBodyType();
         ParseState     unchunk();
         ParseState     singleChunk(std::vector<char> oneChunk, long sizePos, long bodyPos);
         ParseState     checkPostHeaders(HttpStatusCode& status);
+        void           appendBody(const char* _data, size_t size, HttpStatusCode& status);
 
 
     public:
         Request();
-        Request(std::vector<char> req);
+        // Request(std::vector<char> req);
         ~Request();
         Request( const Request& other);
         Request& operator=( const Request& other);
 
         HttpStatusCode                      parseRequest();
-        void                                setRequest(std::vector<char> req);
+        // void                                setRequest(std::vector<char> req);
         RequestLine                         getRequestLine() const;
         std::map<std::string, std::string>  getHeaders() const;
         std::vector<char>                   getBody() const;
