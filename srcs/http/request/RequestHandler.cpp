@@ -121,6 +121,7 @@ HttpResponseInfo RequestHandler::handle(){
         //delete
         location.allowed_methods.push_back("GET");
         location.allowed_methods.push_back("POST");
+        location.allowed_methods.push_back("DELETE");
         status = isMethodAllowed(location.allowed_methods, req.getRequestLine().method);
     }
     if (status == OK){

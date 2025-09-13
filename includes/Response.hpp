@@ -35,6 +35,7 @@ class Response{
         void                                setFileTypes();
         void                                listDirectory();
         void                                handelGET();
+        void                                handelDELETE();
         void                                handelPOST();
         void                                generateListingBody(DIR* dir);
         void                                buildResponse();

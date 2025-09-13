@@ -133,6 +133,10 @@ void    Utils::strToLower (std::string& str){
     }
 }
 
+bool Utils::isReadable(std::string& filePath){
+    return (access(filePath.c_str(), R_OK) == 0);
+}
+
 
 
 

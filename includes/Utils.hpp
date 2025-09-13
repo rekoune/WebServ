@@ -8,6 +8,7 @@
 # include <sstream>
 # include <ctime>
 # include <cstdlib>
+# include <unistd.h>
 
 class Utils{
     public:
@@ -23,6 +24,7 @@ class Utils{
         static long         isContainStr(const char *str, size_t strSize, const char *toContain, size_t _size);
         static long         hexToDec(const char* hex);
         static void         strToLower (std::string& str);
+        static bool         isReadable(std::string& filePath);
 };
 
 # endif

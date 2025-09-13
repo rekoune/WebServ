@@ -357,7 +357,7 @@ HttpStatusCode    Request::appendData(const char* _data, size_t size){
                 parseState = PARSE_ERROR;
                 return (status);
             }
-            if (requestLine.method == "GET")
+            if (requestLine.method == "GET" || requestLine.method == "DELETE")
                   parseState = PARSE_COMPLETE;
             if (parseState == PARSE_BODY_LENGTH){
                 Utils::pushInVector(this->body, &tempBuffer[pos + 4], tempBuffer.size() - pos - 4);
