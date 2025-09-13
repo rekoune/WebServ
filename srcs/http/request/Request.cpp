@@ -7,16 +7,16 @@ Request::~Request(){}
 Request::Request(const Request& other){
     *this = other;
 }
-Request::Request(std::vector<char> req){
-    // this->bodyIndex = splitHttpRequest(req);
-    parseState = PARSE_START;
-    this->body = req;
-}
+// Request::Request(std::vector<char> req){
+//     // this->bodyIndex = splitHttpRequest(req);
+//     parseState = PARSE_START;
+//     this->body = req;
+// }
 
-void Request::setRequest(std::vector<char> req){
-    this->bodyIndex = splitHttpRequest(req);
-    this->body = req;
-}
+// void Request::setRequest(std::vector<char> req){
+//     this->bodyIndex = splitHttpRequest(req);
+//     this->body = req;
+// }
 void Request::setClientMaxBody(size_t clientMaxBodySize){
     this->clientMaxBodySize = clientMaxBodySize;
 }
@@ -26,7 +26,10 @@ Request& Request::operator=(const Request& other){
     this->requestLine = other.requestLine;
     this->headers = other.headers;
     this->body = other.body;
-    this->bodyIndex = other.bodyIndex;
+    this->parseState = other.parseState;
+    this->bodyMaxSize = other.bodyMaxSize;
+    this->chunkBody = other.chunkBody;
+    this->clientMaxBodySize = other.clientMaxBodySize;
     return (*this);
 }
 
@@ -123,8 +126,8 @@ HttpStatusCode Request::parseRequestLine(std::string& reqLine){
 ParseState  Request::checkPostHeaders(HttpStatusCode& status){
     std::map<std::string, std::string>::iterator length, chunked;
 
-    length = headers.find("Content-Length");
-    chunked = headers.find("Transfer-Encoding");
+    length = headers.find("content-length");
+    chunked = headers.find("transfer-encoding");
 
     
     if (length == headers.end() && chunked == headers.end()){
@@ -168,11 +171,13 @@ HttpStatusCode Request::parseRequestHeaders( std::stringstream& req){
         if ((!Utils::isBlank(key) && key.find(' ') != std::string::npos) || value.at(value.length() - 1) != '\r')
             return (BAD_REQUEST);
         value.erase(value.length() - 1, 1);
-        if (!Utils::isBlank(key) && !Utils::isBlank(value))
+        if (!Utils::isBlank(key) && !Utils::isBlank(value)){
+            Utils::strToLower(key);
             this->headers.insert(std::pair<std::string, std::string> (key, value));
+        }
         getline(req, line, '\n');
     }
-    if (req.eof() || headers.empty() || headers.find("Host") == headers.end())
+    if (req.eof() || headers.empty() || headers.find("host") == headers.end())
         return (BAD_REQUEST);
     else if (this->requestLine.method == "POST"){
         parseState = checkPostHeaders(status);
@@ -183,10 +188,10 @@ HttpStatusCode Request::parseRequestHeaders( std::stringstream& req){
     return (OK);
 }
 
-HttpStatusCode Request::parseBody(){
-    this->body.erase(this->body.begin(), this->body.begin() + bodyIndex);
-    return OK;
-}
+// HttpStatusCode Request::parseBody(){
+//     this->body.erase(this->body.begin(), this->body.begin() + bodyIndex);
+//     return OK;
+// }
 //delete
 void Request::printHeaders(){
     std::map<std::string, std::string>::iterator it = this->headers.begin();
@@ -199,27 +204,27 @@ void Request::printBody(){
     std::cout << "body size : " << body.size() << std::endl;
     std::cout << "body : |";
     for(size_t i = 0; i < body.size(); i++){
-        write(1, &body[i], 1) ;
+        std::cout << body[i];
     }
     std::cout << "| end" << std::endl;
     write(1, "\n", 1);
 }
 
-int    Request::splitHttpRequest(std::vector<char>& req){
-    size_t i = 0;
+// int    Request::splitHttpRequest(std::vector<char>& req){
+//     size_t i = 0;
 
-    while(i < req.size()){
-        if (req.at(i) == '\r' && i + 3 < req.size()){
-            if (req.at(i + 1) == '\n' && req.at(i + 2) == '\r' && req.at(i + 3) == '\n'){
-                this->req.append("\r\n\r\n");
-                return (i + 4);
-            }
-        }
-        this->req.push_back(req.at(i));
-        i++;
-    }
-    return (i);
-} 
+//     while(i < req.size()){
+//         if (req.at(i) == '\r' && i + 3 < req.size()){
+//             if (req.at(i + 1) == '\n' && req.at(i + 2) == '\r' && req.at(i + 3) == '\n'){
+//                 this->req.append("\r\n\r\n");
+//                 return (i + 4);
+//             }
+//         }
+//         this->req.push_back(req.at(i));
+//         i++;
+//     }
+//     return (i);
+// } 
 
 HttpStatusCode Request::parseRequest(){
     std::stringstream reqStream(this->req);
@@ -242,23 +247,22 @@ bool    Request::isComplete(){
     return (false);
 }
 
-ParseState  Request::getBodyType(){
-    std::map<std::string, std::string>::iterator it;
+// ParseState  Request::getBodyType(){
+//     std::map<std::string, std::string>::iterator it;
 
-    if (parseState == PARSE_BODY_LENGTH){
-        if (body.size() >= (size_t)bodyMaxSize)
-            return (PARSE_COMPLETE);
-        return (PARSE_BODY_LENGTH);
-    }
-    else if (headers.find("Transfer-Encoding") != headers.end() && headers.find("Transfer-Encoding")->second == "chunked")
-        return (PARSE_BODY_CHUNKED);
-    return (PARSE_COMPLETE);
-}
+//     if (parseState == PARSE_BODY_LENGTH){
+//         if (body.size() >= (size_t)bodyMaxSize)
+//             return (PARSE_COMPLETE);
+//         return (PARSE_BODY_LENGTH);
+//     }
+//     else if (headers.find("transfer-encoding") != headers.end() && headers.find("transfer-encoding")->second == "chunked")
+//         return (PARSE_BODY_CHUNKED);
+//     return (PARSE_COMPLETE);
+// }
 
 
 ParseState     Request::singleChunk(std::vector<char> oneChunk, long sizePos, long bodyPos){
     long    size;
-
     std::vector<char> temp;
     std::vector<char> tempBody;
 
@@ -272,71 +276,42 @@ ParseState     Request::singleChunk(std::vector<char> oneChunk, long sizePos, lo
     if (size != (long)tempBody.size())
         return PARSE_ERROR;
     Utils::pushInVector (body, &tempBody[0], tempBody.size());
-
     return (PARSE_BODY_CHUNKED);
 }
 
 
 ParseState  Request::unchunk(){
-    long sizePos, bodyPos;
+    long sizePos = 0l;
+    long bodyPos = 0l;
     std::vector<char> tempChunk;
     long currentPos = 0;
 
-
-    sizePos = Utils::isContainStr(&chunkBody[0], chunkBody.size(), "\r\n", 2);
-    bodyPos = Utils::isContainStr(&chunkBody[sizePos + 2], chunkBody.size() - sizePos + 2, "\r\n", 2) + 2 + sizePos;
-
-
-    Utils::pushInVector(tempChunk, &chunkBody[0], bodyPos + 2);
-    while((parseState = singleChunk(tempChunk, sizePos, bodyPos)) == PARSE_BODY_CHUNKED){
-        currentPos += bodyPos + 2;
+    while(currentPos < (long)chunkBody.size() && (parseState == PARSE_BODY_CHUNKED)){
         sizePos = Utils::isContainStr(&chunkBody[currentPos], chunkBody.size() - currentPos, "\r\n", 2);
         bodyPos = Utils::isContainStr(&chunkBody[currentPos + sizePos + 2], chunkBody.size() - currentPos - sizePos - 2, "\r\n", 2) + 2 + sizePos;
         tempChunk.clear();
         Utils::pushInVector(tempChunk, &chunkBody[currentPos], (bodyPos + 2));
+        currentPos += bodyPos + 2;
+        parseState = singleChunk(tempChunk, sizePos, bodyPos);
     }
-    if (parseState == PARSE_COMPLETE){
-        sizePos = Utils::isContainStr(&chunkBody[currentPos], chunkBody.size() - currentPos, "0\r\n\r\n", 5);
-        if (sizePos + 5 != (long)(chunkBody.size() - currentPos) || sizePos == -1)
+    if (parseState != PARSE_ERROR){
+        if (chunkBody.size() > 5)
+            bodyPos = chunkBody.size() - 5;
+        else
+            bodyPos = chunkBody.size();
+        sizePos = Utils::isContainStr(&chunkBody[chunkBody.size() - 5], bodyPos, "0\r\n\r\n", 5);
+        if (sizePos == -1){
             parseState = PARSE_ERROR;
+        std::cout << "ya3 ya3 ya3" << std::endl;
+        }
+        else 
+            parseState = PARSE_COMPLETE;
     }
-
     return (parseState);
 }
 
-HttpStatusCode    Request::appendData(const char* _data, size_t size){
-    std::string data(_data, size);
-    size_t pos;
-    HttpStatusCode status = OK;
-
-    if (parseState == PARSE_START){
-        pos = data.find("\r\n\r\n");
-        if (pos == std::string::npos){
-            this->req.append(data);
-        }
-        else{
-            this->req.append(data.begin(), data.begin() + pos + 4);
-            status = parseRequest();
-            if (status != OK){
-                std::cout << "bla bla bla" << std::endl;
-                return (status);
-            }
-            if (requestLine.method == "GET")
-                  parseState = PARSE_COMPLETE;
-            if (parseState == PARSE_BODY_LENGTH){
-                Utils::pushInVector(this->body, &_data[pos + 4], size - pos - 4);
-                if (this->body.size() >= (size_t)bodyMaxSize)
-                    parseState = PARSE_COMPLETE;
-            }
-            else if (parseState == PARSE_BODY_CHUNKED){
-                Utils::pushInVector(chunkBody, &_data[pos + 4], size - pos - 4);
-                if (Utils::isContainStr(&_data[pos + 4], size - pos - 4, "0\r\n\r\n", 5) != -1){
-                    parseState = unchunk();
-                }
-            }
-        }
-    }
-    else if (parseState == PARSE_BODY_LENGTH){
+void    Request::appendBody(const char* _data, size_t size, HttpStatusCode& status){
+    if (parseState == PARSE_BODY_LENGTH){
         Utils::pushInVector(this->body, _data, size);
         if (this->body.size() >= (size_t)bodyMaxSize){
             parseState = PARSE_COMPLETE;
@@ -355,12 +330,51 @@ HttpStatusCode    Request::appendData(const char* _data, size_t size){
             std::cout << "hora hora hora" << std::endl;
             status = BAD_REQUEST;
         }
+    printBody();
     }
     else if (parseState == PARSE_ERROR){
+        std::cout << "billa billa billa" << std::endl;
         status = BAD_REQUEST;
     }
-    // printBody();
 
+}
+
+HttpStatusCode    Request::appendData(const char* _data, size_t size){
+    long pos;
+    HttpStatusCode status = OK;
+    std::vector<char> tempBuffer;
+
+    if (parseState == PARSE_START){
+        Utils::pushInVector(chunkBody, _data, size);
+        pos = Utils::isContainStr(&chunkBody[0], chunkBody.size(), "\r\n\r\n", 4);
+        if (pos != -1){
+            tempBuffer = chunkBody;
+            chunkBody.clear();
+            this->req.append(tempBuffer.begin(), tempBuffer.begin() + pos + 4);
+            status = parseRequest();
+            if (status != OK){
+                std::cout << "bla bla bla" << std::endl;
+                parseState = PARSE_ERROR;
+                return (status);
+            }
+            if (requestLine.method == "GET")
+                  parseState = PARSE_COMPLETE;
+            if (parseState == PARSE_BODY_LENGTH){
+                Utils::pushInVector(this->body, &tempBuffer[pos + 4], tempBuffer.size() - pos - 4);
+                if (this->body.size() >= (size_t)bodyMaxSize)
+                    parseState = PARSE_COMPLETE;
+            }
+            else if (parseState == PARSE_BODY_CHUNKED){
+                Utils::pushInVector(chunkBody, &tempBuffer[pos + 4], tempBuffer.size() - pos - 4);
+                if (Utils::isContainStr(&chunkBody[0], chunkBody.size(), "0\r\n\r\n", 5) != -1){
+                    std::cout << "------------- hona one complete request -----------------" << std::endl;
+                    parseState = unchunk();
+                }
+            }
+        }
+    }
+    else 
+        appendBody(_data, size, status);
     // printHeaders();
     return (status);
 }

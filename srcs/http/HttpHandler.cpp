@@ -3,8 +3,12 @@
 HttpHandler::HttpHandler(){};
 HttpHandler::~HttpHandler(){};
 
-HttpHandler::HttpHandler (std::vector<char> req, const ServerConfig& server){
-    this->req = Request(req);
+// HttpHandler::HttpHandler (std::vector<char> req, const ServerConfig& server){
+//     this->req = Request(req);
+//     this->server = server;
+//     this->req.setClientMaxBody(server.client_max_body_size);
+// }
+HttpHandler::HttpHandler (const ServerConfig& server){
     this->server = server;
     this->req.setClientMaxBody(server.client_max_body_size);
 }
@@ -21,26 +25,26 @@ HttpHandler& HttpHandler::operator=(const HttpHandler& other){
     return (*this);
 }
 
-void HttpHandler::setRequest(const Request& req){
-    this->req = req;
-    this->req.setClientMaxBody(server.client_max_body_size);
-}
+// void HttpHandler::setRequest(const Request& req){
+//     this->req = req;
+//     this->req.setClientMaxBody(server.client_max_body_size);
+// }
 void HttpHandler::setServer(const ServerConfig& server){
     this->server = server;
     this->req.setClientMaxBody(server.client_max_body_size);
 }
-void HttpHandler::setRequestHandler(const RequestHandler& reqHandler){
-    this->reqHandler = reqHandler;
-}
+// void HttpHandler::setRequestHandler(const RequestHandler& reqHandler){
+//     this->reqHandler = reqHandler;
+// }
 
-void HttpHandler::handel(){
-    HttpResponseInfo resInfo;
-    if ((resInfo.status  = this->req.parseRequest()) == OK){
-        this->reqHandler = RequestHandler(this->req, this->server);
-        resInfo = this->reqHandler.handle();
-    }
-    this->resInfo = resInfo;
-}
+// void HttpHandler::handel(){
+//     HttpResponseInfo resInfo;
+//     if ((resInfo.status  = this->req.parseRequest()) == OK){
+//         this->reqHandler = RequestHandler(this->req, this->server);
+//         resInfo = this->reqHandler.handle();
+//     }
+//     this->resInfo = resInfo;
+// }
 
 void HttpHandler::appendData(const char* data, size_t size){
     if (this->resInfo.status == OK)
