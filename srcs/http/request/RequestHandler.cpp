@@ -63,18 +63,23 @@ HttpStatusCode RequestHandler::dirHandling(std::string& path, PathTypes& pathTyp
     const char* c_path;
     struct stat type;
 
-    temp.append("/");
-    temp.append(location.index);
-    c_path = temp.c_str();
-    if (stat(c_path, &type) != -1 && S_ISREG(type.st_mode)){
-        path = temp;
-        pathType = F;
-        return (OK);
+
+    if (resInfo.method == "GET"){
+        temp.append("/");
+        temp.append(location.index);
+        c_path = temp.c_str();
+        if (stat(c_path, &type) != -1 && S_ISREG(type.st_mode)){
+            path = temp;
+            pathType = F;
+            return (OK);
+        }
     }
-    if (location.autoindex)
+    if (location.autoindex || resInfo.method == "POST")
         pathType = DIR_LS;
-    else
+    else{
+        std::cout << "hup hup hup " << std::endl;
         return (FORBIDDEN);
+    }
    return (OK);
 }
 
@@ -99,14 +104,21 @@ HttpStatusCode RequestHandler::resolveResourceType(std::string& path, PathTypes&
     HttpStatusCode status;
 
     c_path = path.c_str();
-    if (stat(c_path, &type) == -1)
+    if (stat(c_path, &type) == -1){
+        if (this->req.getRequestLine().method == "POST"){
+            pathType = F;
+            return (OK);
+        }
         return (NOT_FOUND);
+    }
     if (S_ISDIR(type.st_mode))
         status = dirHandling(path, pathType, location);
     else if (S_ISREG(type.st_mode))
         status = fileHandling(path, pathType, location);
-    else
+    else{
+        std::cout << "ha9 ha9 ha9" << std::endl;
         return (FORBIDDEN);
+    }
     return (status);
 }
 
@@ -117,6 +129,9 @@ HttpResponseInfo RequestHandler::handle(){
     std::string path;
 
     status = findLocation(server.locations, req.getRequestLine().target, location);
+    this->resInfo.method = req.getRequestLine().method;
+    this->resInfo.req = req;
+    this->resInfo.server = server;
     if (status == OK){
         //delete
         location.allowed_methods.push_back("GET");
@@ -136,7 +151,5 @@ HttpResponseInfo RequestHandler::handle(){
     this->resInfo.type = pathType;
     this->resInfo.status = status;
     this->resInfo.location = location;
-    this->resInfo.server = server;
-    this->resInfo.req = req;
     return (this->resInfo);
 }

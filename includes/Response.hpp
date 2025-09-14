@@ -18,9 +18,7 @@ struct ResElements{
 
 class Response{
     private:
-        //cames from the request class
         HttpResponseInfo                    resInfo;
-        // generated on this class 
         ResElements                         resElements;
         std::vector<char>                   response;
         std::map<std::string, std::string>  fileTypes;
@@ -32,6 +30,7 @@ class Response{
         std::map<std::string, std::string>  generateHeaders();
         std::string                         getStatusMessage(HttpStatusCode status);
         std::vector<char>                   getBodyFromFile(std::string& path);
+        HttpStatusCode                      writeBodyInFile(std::string& path, std::vector<char>& body);
         void                                setFileTypes();
         void                                listDirectory();
         void                                handelGET();
@@ -39,6 +38,8 @@ class Response{
         void                                handelPOST();
         void                                generateListingBody(DIR* dir);
         void                                buildResponse();
+        HttpStatusCode                      getUploadPath();
+        HttpStatusCode                      getPathType(std::string path, PathTypes& type);
 
     public:
         Response();

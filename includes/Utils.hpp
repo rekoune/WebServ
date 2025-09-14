@@ -25,6 +25,8 @@ class Utils{
         static long         hexToDec(const char* hex);
         static void         strToLower (std::string& str);
         static bool         isReadable(std::string& filePath);
+        static std::string  findExtensionByMime(std::map<std::string, std::string>& fileTypes, std::string mime);
+        static std::string  randomName(std::string& prefix);
 };
 
 # endif
