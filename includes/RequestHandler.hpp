@@ -20,6 +20,7 @@ struct HttpResponseInfo{
     PathTypes       type;
     LocationConfig  location;
     ServerConfig    server;
+    std::string     method;
     Request         req;
 
     HttpResponseInfo(): status(OK){};

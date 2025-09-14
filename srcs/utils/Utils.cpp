@@ -138,10 +138,31 @@ bool Utils::isReadable(std::string& filePath){
 }
 
 
+std::string  Utils::findExtensionByMime(std::map<std::string, std::string>& fileTypes, std::string mime){
+    std::string extension(".");
+    std::map<std::string, std::string>::iterator it;
 
+    it = fileTypes.begin();
+    for(; it != fileTypes.end(); it++){
+        if (it->second == mime){
+            extension.append(it->first);
+            return (extension);
+        }
+    }
+    extension.append("bin");
+    return (extension);
+}
+
+std::string  Utils::randomName(std::string& prefix){
+    std::stringstream ss;
+
+    ss << prefix;
+    std::srand(std::time(NULL));
+    ss << std::rand();
+    return (ss.str());
+}
 
 // int main (){
-//     std::string str("AbdELlaH Rekou\n\rOUNE");
-//     Utils::strToLower(str);
-//     std::cout << str << std::endl;
+//     std::string a("File");
+//     std::cout << Utils::randomName(a) << std::endl;
 // }

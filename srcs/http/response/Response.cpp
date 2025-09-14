@@ -130,6 +130,21 @@ std::vector<char>   Response::getBodyFromFile(std::string& path){
     return (body);
 }
 
+HttpStatusCode      Response::writeBodyInFile(std::string& path, std::vector<char>& body){
+    HttpStatusCode  status;
+
+    if (access(path.c_str(), F_OK) == 0)
+        status = OK;
+    else
+        status = CREATED;
+    std::ofstream file(path.c_str(), std::ios::out | std::ios::binary);
+    if (!file)
+        return INTERNAL_SERVER_ERROR;
+
+    file.write(&body[0],body.size());
+    return (status);
+}
+
 void    Response::buildResponse(){
     Utils::pushInVector(response, resElements.statusLine);
     Utils::pushInVector(response, Utils::mapToString(resElements.headers));
@@ -156,9 +171,9 @@ void    Response::errorHandling(){
     }
     else
         resElements.body = generateErrorBody();
-    resElements.statusLine = getStatusLine();
-    resElements.headers = generateHeaders();
-    buildResponse();
+    // resElements.statusLine = getStatusLine();
+    // resElements.headers = generateHeaders();
+    // buildResponse();
 }
 
 void    Response::generateListingBody(DIR* dir){
@@ -204,9 +219,9 @@ void    Response::handelGET(){
     else if (resInfo.type == SCRIPT){
         std::cout << "The request Target Is A Script" << std::endl;
     }
-    resElements.statusLine = getStatusLine();
-    resElements.headers = generateHeaders();
-    buildResponse();
+    // resElements.statusLine = getStatusLine();
+    // resElements.headers = generateHeaders();
+    // buildResponse();
 }
 
 void    Response::handelDELETE(){
@@ -220,32 +235,99 @@ void    Response::handelDELETE(){
     }
     else{
         resInfo.status = NO_CONTENT;
-        resElements.statusLine = getStatusLine();
-        resElements.headers = generateHeaders();
-        buildResponse();
+        // resElements.statusLine = getStatusLine();
+        // resElements.headers = generateHeaders();
+        // buildResponse();
     }
+}
+
+HttpStatusCode    Response::getPathType(std::string path, PathTypes& type){
+    struct stat     statType;
+    long            pos;
+    char            lastChar;
+    HttpStatusCode  status = NOT_FOUND;
+
+    if (access(path.c_str(), F_OK) == 0){
+        stat(path.c_str(), &statType);
+        if (S_ISREG(statType.st_mode))
+            type = F;
+        else if (S_ISDIR(statType.st_mode))
+            type = DIR_LS;
+        else
+            return (FORBIDDEN);
+        return (OK);
+    }
+    pos = (long)path.length() - 1;
+    for(; pos >= 0; pos--)
+        if (path.at(pos) == '/')
+            break;
+    lastChar = path.at(path.length() -1);
+    path.erase(path.begin() + pos, path.end());
+    if (stat(path.c_str(), &statType) != -1){
+        if(S_ISDIR(statType.st_mode)){
+            if (lastChar == '/')
+                type = DIR_LS;
+            else
+                type = F;
+            status = OK;
+        }
+    }
+    return status;
+}
+
+HttpStatusCode     Response::getUploadPath(){
+    std::string uploadPath;
+    HttpStatusCode status;
+
+    uploadPath.append(resInfo.location.root);
+    uploadPath.append(resInfo.location.path);
+    uploadPath.append(resInfo.location.upload_store);
+    if (access(uploadPath.c_str(), F_OK) != 0)
+        return INTERNAL_SERVER_ERROR;
+    uploadPath.append(resInfo.path.begin() + resInfo.location.root.length() + resInfo.location.path.length(), resInfo.path.end());
+    status = getPathType(uploadPath, resInfo.type);
+    if (status == OK)
+        resInfo.path = uploadPath;
+    return (status);
 }
 
 void    Response::handelPOST(){
-    // if (resInfo.req.getBody().empty()){
-    //     std::cout << "hos hos hos" << std::endl;
-    //     resInfo.status = BAD_REQUEST;
-    //     errorHandling();
-    // }
-     if (resInfo.req.getBody().size() > resInfo.server.client_max_body_size){
+    std::map<std::string, std::string>::iterator it;
+    std::vector<char> body;
+
+    body = resInfo.req.getBody();
+    if (body.size() > resInfo.server.client_max_body_size){
         resInfo.status = CONTENT_TOO_LARGE;
         errorHandling();
+        return;
     }
+    resInfo.status = getUploadPath();
+    if (resInfo.status != OK){
+        errorHandling();
+        return;
+    }
+    it = resInfo.req.getHeaders().find("content-type");
+    if (it == resInfo.req.getHeaders().end()){
+        if (body.size() != 0){
+            if (resInfo.type == F)
+                resInfo.status = writeBodyInFile(resInfo.path, body);
+            else if (resInfo.type == DIR_LS){
+                std::string prefix("File");
+                resInfo.status = writeBodyInFile(resInfo.path.append("/").append(Utils::randomName(prefix)).append(".bin"), body);
+            }
+            return;
+        }
+    };
 }
 
 void    Response::successHandling(){
-    if (resInfo.req.getRequestLine().method == "GET"){
+    if (resInfo.method == "GET"){
         handelGET();
     }
-    else if (resInfo.req.getRequestLine().method == "POST"){
+    else if (resInfo.method == "POST"){
         handelPOST();
     }
-    else if (resInfo.req.getRequestLine().method == "DELETE")
+    else if (resInfo.method == "DELETE")
     {
         handelDELETE();
     }
@@ -258,6 +340,9 @@ void Response::handel(){
     }
     else
         successHandling();
-
+    resElements.statusLine = getStatusLine();
+    resElements.headers = generateHeaders();
+    buildResponse();
+    // std::cout << "status = " << resInfo.status << std::endl;
 }
 
