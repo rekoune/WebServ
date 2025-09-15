@@ -13,10 +13,11 @@ int main (){
     HttpHandler http(config.servers[0]);
 
     std::string str;
+    std::vector<char> response ;
 
-    // str.append("POST / HTTP/1.1\r\nHost: localhost\r\nTraNsfer-Encoding: chunked\r\n\r\n0\r\n\r\n");
-    str.append("GET /upload/images/dogs/puppy2.jpg HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n");
-    str.append("GET / HTTP/1.1\r\nhost: rekouneHost\r\n\r\n");
+    str.append("DELETE /upload/Files/tst.txt HTTP/1.1\r\nHost: localhost\r\nTraNsfer-Encoding: chunked\r\n\r\n8\r\nabdellah\r\n0\r\n\r\n");
+    // str.append("POST /upload/images/dogs/test.html HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n");
+    // str.append("GET / HTTP/1.1\r\nhost: rekouneHost\r\n\r\n");
     int i =0;
     while(!http.isComplete()){
         if (i == (int)str.length())
@@ -26,7 +27,7 @@ int main (){
     }
     // http.appendData(str.c_str(), str.length());
     if (http.isComplete() == true){
-        std::vector<char> response =  http.getResponse();
+        response =  http.getResponse();
         std::cout << "+++++ The Request is completed, Response :  " << std::endl;
         for(size_t i =0; i < response.size(); i++){
             std::cout << response[i] ;
@@ -35,7 +36,6 @@ int main (){
     else {
         std::cout << "+++++ NO response the request is not Complete!!" << std::endl;
     }
-
     
 }
 

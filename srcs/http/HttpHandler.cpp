@@ -62,6 +62,6 @@ std::vector<char> HttpHandler::getResponse(){
     }
     Response res(this->resInfo);
     res.handel();
-    std::cout << "status = " << resInfo.status << std::endl;
+    // std::cout << "status = " << resInfo.status << std::endl;
     return (res.getResponse());
 }
