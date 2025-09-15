@@ -35,6 +35,7 @@ std::string cleanLine(std::string line)
 	line = line.substr(start, end - start);
 	return (line);
 }
+
 void	configStructInit(std::string line, ServerConfig& currentServer)
 {
 	//filling the struct of server
@@ -123,6 +124,12 @@ void	configStructInit(std::string line, ServerConfig& currentServer)
 	}	
 }
 
+bool	is_valid_status(int given_status)
+{
+	if ( given_status < 300 || given_status > 308)
+		return false ;
+	return true;
+}
 
 void	parseLocationBlock(std::string line, LocationConfig& current_loc)
 {
@@ -147,8 +154,8 @@ void	parseLocationBlock(std::string line, LocationConfig& current_loc)
 			current_loc.autoindex = (directive.find("on") != std::string::npos);
 		else if ( directive.find("upload_store") == 0)
 			current_loc.upload_store = cleanLine(directive.substr(directive.find(" ") + 1));
-		else if ( directive.find("cgi_pass") == 0)
-			current_loc.cgi_pass = cleanLine(directive.substr(directive.find(" ") + 1)); 
+		// else if ( directive.find("cgi_pass") == 0)
+		// 	current_loc.cgi_pass = cleanLine(directive.substr(directive.find(" ") + 1)); 			//TO REMOVE
 		else if ( directive.find("allowed_methods") == 0)
 		{
 			std::string		methods = cleanLine(directive.substr(directive.find(" ") + 1));
@@ -166,14 +173,27 @@ void	parseLocationBlock(std::string line, LocationConfig& current_loc)
 			bool is_number = isitnumber(status_str);
 			if ( !is_number)
 			{
-				std::cerr << "return keyword should be followed by redirection status number" << std::endl;
+				std::cerr << "CONFIG FILE ERROR: return keyword should be followed by redirection status number" << std::endl;
 				return ;
 			}
+			if (!is_valid_status(std::atoi(status_str.c_str())))
+			{
+				std::cerr << "CONFIG FILE ERROR: redirection status is not valid" << std::endl;
+				return ;
+			}
+
 			std::string redirection_url;	
 			iss >> redirection_url;
 			if (redirection_url.empty())
 			{
-				std::cerr << "redirection should have a url after redirection status number " << std::endl;
+				std::cerr << "CONFIG FILE ERROR: redirection should have a url after redirection status number " << std::endl;
+				return ;
+			}
+			std::string extra_parameter;
+			iss >> extra_parameter;
+			if (!extra_parameter.empty())
+			{
+				std::cerr << "CONFIG FILE ERROR: Redirection sytanx : return <redirc_status> <redirec_path>" << std::endl;
 				return ;
 			}
 			current_loc.redirection_url = redirection_url;
@@ -182,15 +202,14 @@ void	parseLocationBlock(std::string line, LocationConfig& current_loc)
 	}
 }
 
-GlobaConfig parseConfig(const std::string& configFilePath)
+bool parseConfig(const std::string& configFilePath, GlobaConfig& globalConfig)
 {
-    GlobaConfig globalConfig;
     std::string line;
     std::ifstream file(configFilePath.c_str());
     if (!file.is_open())
     {
-        std::cerr << "error opening config file: " << configFilePath << std::endl;
-        return globalConfig;
+        std::cerr << "CONFIG FILE ERROR: error opening config file: " << configFilePath << std::endl;
+        return false;
     }
 	bool	in_server_block = false;
 	bool	waiting_for_brace = false;
@@ -200,12 +219,12 @@ GlobaConfig parseConfig(const std::string& configFilePath)
 		line = cleanLine(line);     //	triming and removing comments 
 		if (line.empty())           //  checking if the line is empty
 			continue;
-		// std::cout << line << std::endl; 	// Print for debugging 
+		std::cout << line << std::endl; 	// Print for debug
 		if (!in_server_block)
 		{
 			if ((line.find("server") == 0 && line.find("{") != std::string::npos))
 			{
-				// std::cout << "WE ARE IN THE SERVER BLOCK \n"; // for debug
+				std::cout << "WE ARE IN THE SERVER BLOCK \n"; // for debug
 				//idk if i need to set the flags to true or no TO SEE
 				in_server_block = true;
 				//ADD A NEW SERVER TO THE VECTOR
@@ -224,14 +243,14 @@ GlobaConfig parseConfig(const std::string& configFilePath)
 			}
 			else if ( line.find("server") == 0 &&  line.find("{") == std::string::npos)
 			{
-				// std::cout << "SERVER FOUND, WAITING FOR BRACE  \n"; // for debug
+				std::cout << "SERVER FOUND, WAITING FOR BRACE  \n"; // for debug
 
 				waiting_for_brace = true;
 				continue ;
 			}
 			else if (line.find("{") == 0 && waiting_for_brace)
 			{
-				// std::cout << "FOUND THE '{' WE ARE IN THE SERVER BLOCK \n"; // for debug
+				std::cout << "FOUND THE '{' WE ARE IN THE SERVER BLOCK \n"; // for debug
 
 				in_server_block = true;
 				waiting_for_brace = false ; 
@@ -253,13 +272,13 @@ GlobaConfig parseConfig(const std::string& configFilePath)
 			}
 			else 
 			{
-				std::cerr << "SYNTAX ERROR\n";
+				std::cerr << "CONFIG FILE ERROR: SYNTAX ERROR\n";
 				break;
 			}
 		}
 		else 
 		{
-			// std::cout << "WE ARE IN THE SERVER LINE: " << line << std::endl; // for debug
+			std::cout << "WE ARE IN THE SERVER LINE: " << line << std::endl; // for debug
 			if ( line == "}")
 			{
 				globalConfig.servers.push_back(currentserver);
@@ -272,13 +291,18 @@ GlobaConfig parseConfig(const std::string& configFilePath)
 
 				size_t	loc_start = line.find("location") + 8;
 				size_t	brace_pos = line.find("{", loc_start);
-				if ( loc_start == std::string::npos)
-				{
-					std::cerr << "Malformed location block better use opening brace in the first line \n";
-					continue ;  
-				}
+				// if ( loc_start == std::string::npos )
+				// {
+				// 	std::cerr << "============================CONFIG FILE ERROR: Malformed location block better use opening brace in the first line \n";
+				// 	continue ;  
+				// }
 				current_loc.path = cleanLine(brace_pos != std::string::npos ? line.substr(loc_start, brace_pos - loc_start)
 					: line.substr(loc_start));
+				if ( current_loc.path.empty() )
+				{
+					std::cerr << "CONFIG FILE ERROR: no path for location================= \n";
+					continue ;  
+				}
 				
 				if (brace_pos == std::string::npos)
 				{
@@ -301,15 +325,14 @@ GlobaConfig parseConfig(const std::string& configFilePath)
 					parseLocationBlock(line, current_loc);
 				}
 				if (current_loc.root.empty())
-					current_loc.root = current_loc.path;
+					current_loc.root = currentserver.root;
 				currentserver.locations.push_back(current_loc);
 			}
 			else 
 				configStructInit(line, currentserver);
 		}
     }
-
 	if (waiting_for_brace)
-		std::cerr << "ERROR : NO SERVER BLOCK\n";
-    return globalConfig;
+		std::cerr << "CONFIG FILE ERROR: NO SERVER BLOCK\n";
+    return true;
 }
