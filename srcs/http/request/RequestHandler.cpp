@@ -66,7 +66,7 @@ HttpStatusCode RequestHandler::dirHandling(std::string& path, PathTypes& pathTyp
 
     if (resInfo.method == "GET"){
         temp.append("/");
-        temp.append(location.index);
+        temp.append(location.index[0]);
         c_path = temp.c_str();
         if (stat(c_path, &type) != -1 && S_ISREG(type.st_mode)){
             path = temp;
