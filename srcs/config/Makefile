@@ -1,4 +1,4 @@
-SRC 	=  $(wildcard srcs/config/*.cpp srcs/server/*.cpp srcs/http/*.cpp srcs/utils/*.cpp srcs/main.cpp)
+SRC 	=  $(wildcard *.cpp )
 
 OBJ 	= $(SRC:.cpp=.o) 
 
