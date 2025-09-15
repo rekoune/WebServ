@@ -205,7 +205,7 @@ GlobaConfig parseConfig(const std::string& configFilePath)
 		{
 			if ((line.find("server") == 0 && line.find("{") != std::string::npos))
 			{
-				// std::cout << "WE ARE IN THE SERVER BLOCK \n";
+				// std::cout << "WE ARE IN THE SERVER BLOCK \n"; // for debug
 				//idk if i need to set the flags to true or no TO SEE
 				in_server_block = true;
 				//ADD A NEW SERVER TO THE VECTOR
@@ -224,14 +224,14 @@ GlobaConfig parseConfig(const std::string& configFilePath)
 			}
 			else if ( line.find("server") == 0 &&  line.find("{") == std::string::npos)
 			{
-				// std::cout << "SERVER FOUND, WAITING FOR BRACE  \n";
+				// std::cout << "SERVER FOUND, WAITING FOR BRACE  \n"; // for debug
 
 				waiting_for_brace = true;
 				continue ;
 			}
 			else if (line.find("{") == 0 && waiting_for_brace)
 			{
-				// std::cout << "FOUND THE '{' WE ARE IN THE SERVER BLOCK \n";
+				// std::cout << "FOUND THE '{' WE ARE IN THE SERVER BLOCK \n"; // for debug
 
 				in_server_block = true;
 				waiting_for_brace = false ; 
@@ -259,7 +259,7 @@ GlobaConfig parseConfig(const std::string& configFilePath)
 		}
 		else 
 		{
-			// std::cout << "WE ARE IN THE SERVER LINE: " << line << std::endl;
+			// std::cout << "WE ARE IN THE SERVER LINE: " << line << std::endl; // for debug
 			if ( line == "}")
 			{
 				globalConfig.servers.push_back(currentserver);
