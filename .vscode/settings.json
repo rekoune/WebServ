@@ -1,8 +1,0 @@
-{
-    "files.associations": {
-        "*.tcc": "cpp",
-        "string": "cpp",
-        "istream": "cpp"
-    },
-    "C_Cpp.default.compilerPath": ""
-}
