@@ -330,7 +330,7 @@ void    Request::appendBody(const char* _data, size_t size, HttpStatusCode& stat
             std::cout << "hora hora hora" << std::endl;
             status = BAD_REQUEST;
         }
-    printBody();
+    // printBody();
     }
     else if (parseState == PARSE_ERROR){
         std::cout << "billa billa billa" << std::endl;
