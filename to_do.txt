@@ -4,6 +4,8 @@
 [done]      default root in locaiton is the path of the location 
 [done]      maximum client_max_body_size should be with characters 
 [done]      cgi_extentions handling 
-[    ]      segfault when the { } one of the braces are missed 
+[    ]      segfault when the { } one of the braces are missed
+[	 ]		handle the braces logic
+[	 ]		handle the redirecitons status 
 [    ]      start cgi execution
 [done]      redirections
