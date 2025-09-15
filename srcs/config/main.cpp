@@ -1,4 +1,4 @@
-#include "../includes/config/configStructs.hpp"
+#include "../../includes/config/configStructs.hpp"
 
 int main(int ac, char **av)
 {
