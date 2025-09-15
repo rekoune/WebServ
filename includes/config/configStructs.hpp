@@ -14,7 +14,7 @@ struct LocationConfig
 {
     std::string					path;
     std::string					root;
-    std::string					index;
+    std::vector<std::string>	index;
 
     bool						autoindex;
     
@@ -22,18 +22,25 @@ struct LocationConfig
     std::vector<std::string>	allowed_methods;
     std::string					cgi_pass;
 
-    LocationConfig(): autoindex(false) {}
+    std::string                 redirection_url;
+    int                         redirection_status;
+
+    LocationConfig()
+        :  index(1, "index.html") ,autoindex(false), redirection_url(""), redirection_status(0) {}
 
 };
 
 struct ServerConfig
 {
-    std::string					host;
-    int        					port;
-    std::string					root;
-    size_t						client_max_body_size;
-    std::map<int, std::string>	error_pages;
-	std::vector<LocationConfig>	locations;
+    std::string					        host;
+    std::vector<int>        	        port;
+    std::string					        root;
+    size_t						        client_max_body_size;
+    std::map<int, std::string>	        error_pages;
+	std::vector<LocationConfig>	        locations;
+    std::map<std::string, std::string>  cgi_extension;
+    ServerConfig() 
+        : host("0.0.0.0"), port(1, 80){}
 	
 };
 
