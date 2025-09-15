@@ -4,12 +4,14 @@ int main(int ac, char **av)
 {
     (void)ac;
     GlobaConfig globalconfig;
+	bool		status;
     std::cout << " =========== main ==================\n";
     if ( ac == 2)
-        globalconfig = parseConfig(av[1]);
+        status = parseConfig(av[1], globalconfig);
     else 
         std::cout << " Error : no config file given \n";
     //PRININ SERVERS IN COFIG 
+
     std::vector<ServerConfig>::iterator  iter = globalconfig.servers.begin();
     if ( iter == globalconfig.servers.end())
         std::cout << " the servers vector is empty\n";
