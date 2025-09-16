@@ -37,7 +37,7 @@ void HttpHandler::setServer(const ServerConfig& server){
 //     this->reqHandler = reqHandler;
 // }
 
-// void HttpHandler::handel(){
+// void HttpHandler::handle(){
 //     HttpResponseInfo resInfo;
 //     if ((resInfo.status  = this->req.parseRequest()) == OK){
 //         this->reqHandler = RequestHandler(this->req, this->server);
@@ -56,12 +56,14 @@ bool HttpHandler::isComplete(){
 }
 
 std::vector<char> HttpHandler::getResponse(){
+
     if (this->resInfo.status == OK){
         this->reqHandler = RequestHandler(this->req, this->server);
         this->resInfo = this->reqHandler.handle();
     }
+    
     Response res(this->resInfo);
-    res.handel();
+    res.handle();
     // std::cout << "status = " << resInfo.status << std::endl;
     return (res.getResponse());
 }

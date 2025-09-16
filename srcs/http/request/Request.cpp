@@ -173,6 +173,7 @@ HttpStatusCode Request::parseRequestHeaders( std::stringstream& req){
         value.erase(value.length() - 1, 1);
         if (!Utils::isBlank(key) && !Utils::isBlank(value)){
             Utils::strToLower(key);
+            Utils::trimSpaces(value);
             this->headers.insert(std::pair<std::string, std::string> (key, value));
         }
         getline(req, line, '\n');
@@ -265,7 +266,9 @@ ParseState     Request::singleChunk(std::vector<char> oneChunk, long sizePos, lo
     long    size;
     std::vector<char> temp;
     std::vector<char> tempBody;
-
+// std::cout << "*******************************************" << std::endl;
+// std::cout.write(oneChunk.data(), oneChunk.size());
+// std::cout << "*******************************************" << std::endl;
     Utils::pushInVector(temp, &oneChunk[0], sizePos);
     temp.push_back('\0');
     size = Utils::hexToDec(&temp[0]);
@@ -273,12 +276,13 @@ ParseState     Request::singleChunk(std::vector<char> oneChunk, long sizePos, lo
         return (PARSE_COMPLETE);
     sizePos += 2;
     Utils::pushInVector (tempBody, &oneChunk[sizePos], bodyPos - sizePos);
-    if (size != (long)tempBody.size())
+    if (size != (long)tempBody.size()){
+        //hona hona hona
         return PARSE_ERROR;
+    }
     Utils::pushInVector (body, &tempBody[0], tempBody.size());
     return (PARSE_BODY_CHUNKED);
 }
-
 
 ParseState  Request::unchunk(){
     long sizePos = 0l;
@@ -307,6 +311,7 @@ ParseState  Request::unchunk(){
         else 
             parseState = PARSE_COMPLETE;
     }
+    // std::cout << "body size = " << body.size() << std::endl;
     return (parseState);
 }
 
@@ -352,6 +357,7 @@ HttpStatusCode    Request::appendData(const char* _data, size_t size){
             chunkBody.clear();
             this->req.append(tempBuffer.begin(), tempBuffer.begin() + pos + 4);
             status = parseRequest();
+            // printHeaders();
             if (status != OK){
                 std::cout << "bla bla bla" << std::endl;
                 parseState = PARSE_ERROR;
@@ -375,6 +381,10 @@ HttpStatusCode    Request::appendData(const char* _data, size_t size){
     }
     else 
         appendBody(_data, size, status);
-    // printHeaders();
+    if ((long)body.size() > bodyMaxSize){
+        return BAD_REQUEST;
+    }
+        // printBody();
+    // printHeaders(); 
     return (status);
 }

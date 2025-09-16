@@ -1,3 +1,4 @@
+
 # ifndef RESPONSE_HPP
 # define RESPONSE_HPP
 
@@ -33,13 +34,18 @@ class Response{
         HttpStatusCode                      writeBodyInFile(std::string& path, std::vector<char>& body);
         void                                setFileTypes();
         void                                listDirectory();
-        void                                handelGET();
-        void                                handelDELETE();
-        void                                handelPOST();
+        void                                handleGET();
+        void                                handleDELETE();
+        void                                handlePOST();
         void                                generateListingBody(DIR* dir);
         void                                buildResponse();
         HttpStatusCode                      getUploadPath();
         HttpStatusCode                      getPathType(std::string path, PathTypes& type);
+        HttpStatusCode                      handleContentType();
+        void                                setFullPathByType(std::string& path, PathTypes& pathType, std::string contentType);
+        HttpStatusCode                      handleMultiParts(const std::vector<char>& body, std::string boundary);
+        HttpStatusCode                      handleSinglePart(std::vector<char> singlePart, size_t size);
+        HttpStatusCode                      extractHeaders(std::string bodyHeaders, std::map<std::string, std::string>& headers);
 
     public:
         Response();
@@ -49,7 +55,7 @@ class Response{
         Response&           operator=(const Response& other);
         void                setResInfo(const HttpResponseInfo& info);
         std::vector<char>   getResponse() const;
-        void                handel();
+        void                handle();
 };
 
 # endif

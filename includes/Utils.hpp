@@ -21,12 +21,13 @@ class Utils{
         static std::string  getDate();
         static std::string  getFileName(std::string filePath);
         static std::string  getFileType(std::map<std::string, std::string>& fileTypes, std::string fileName);
+        static std::string  findExtensionByMime(std::map<std::string, std::string>& fileTypes, std::string mime);
         static long         isContainStr(const char *str, size_t strSize, const char *toContain, size_t _size);
         static long         hexToDec(const char* hex);
         static void         strToLower (std::string& str);
         static bool         isReadable(std::string& filePath);
-        static std::string  findExtensionByMime(std::map<std::string, std::string>& fileTypes, std::string mime);
         static std::string  randomName(std::string& prefix);
+        static void         trimSpaces(std::string& str);
 };
 
 # endif
