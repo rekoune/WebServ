@@ -162,7 +162,21 @@ std::string  Utils::randomName(std::string& prefix){
     return (ss.str());
 }
 
+void Utils::trimSpaces(std::string& str){
+    size_t start;
+    long  end;
+
+    start = 0;
+    end = (long)str.length();
+    while(start < str.length() && str[start] == ' ')
+        start++;
+    while(end >= 0 && str[end] == ' ')
+        end--;
+    str = std::string(str.begin() + start, str.begin() + end);
+}
+
 // int main (){
-//     std::string a("File");
-//     std::cout << Utils::randomName(a) << std::endl;
+//     std::string a("             File ");
+//     Utils::trimSpaces(a);
+//     std::cout << "a =" << a << std::endl;
 // }

@@ -4,28 +4,102 @@
 
 
 
-int main (){
+// int main (){
     
 
 
-    GlobaConfig config = parseConfig("config.conf");
+//     GlobaConfig config = parseConfig("config.conf");
   
+//     HttpHandler http(config.servers[0]);
+
+//     std::string str;
+//     std::vector<char> response ;
+//     str.append("POST /upload/Files/ HTTP/1.1\r\nHost:localhost\r\nContent-Length: 214\r\nContent-type: multipart/form-data boundary=abde\r\n\r\n");
+//     str.append("--abde\r\nContent-Disposition: form-data; name=\"file1\";\r\nContent-Type: text/css\r\n\r\nmy body test--abde\r\n");
+//     str.append("Content-Disposition: form-data; name=\"file1\"; filename=\"test2\"\r\nContent-Type: text/css\r\n\r\nmy body test2--abde--\r\n");
+//     // str.append("POST /upload/Files/test.html HTTP/1.1\r\nHost: localhost\r\nContent-Length: 2\r\n\r\nab");
+//     // str.append("GET / HTTP/1.1\r\nhost: rekouneHost\r\n\r\n");
+//     int i =0;
+//     while(!http.isComplete()){
+//         if (i == (int)str.length())
+//             break;
+//         // std::cout << "+++  i == " << i  << "length = " << str.length()<< std::endl;
+//         http.appendData(&str[i++], 1);
+//     }
+//     // http.appendData(str.c_str(), str.length());
+    // if (http.isComplete() == true){
+    //     response =  http.getResponse();
+    //     std::cout << "+++++ The Request is completed, Response :  " << std::endl;
+    //     for(size_t i =0; i < response.size(); i++){
+    //         std::cout << response[i] ;
+    //     }
+    // }
+//     else {
+//         std::cout << "+++++ NO response the request is not Complete!!" << std::endl;
+//     }
+    
+// }
+
+
+#include "../../includes/Request.hpp"
+#include "../../includes/RequestHandler.hpp"
+#include "../../includes/HttpHandler.hpp"
+#include <iostream>
+#include <vector>
+#include <string>
+
+void test_multipart_basic() {
+    std::cout << "=== Test 1: Basic Multipart Form ===\n";
+    
+    GlobaConfig config = parseConfig("config.conf");
     HttpHandler http(config.servers[0]);
-
-    std::string str;
-    std::vector<char> response ;
-
-    str.append("DELETE /upload/Files/tst.txt HTTP/1.1\r\nHost: localhost\r\nTraNsfer-Encoding: chunked\r\n\r\n8\r\nabdellah\r\n0\r\n\r\n");
-    // str.append("POST /upload/images/dogs/test.html HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n");
-    // str.append("GET / HTTP/1.1\r\nhost: rekouneHost\r\n\r\n");
-    int i =0;
-    while(!http.isComplete()){
-        if (i == (int)str.length())
-            break;
-        // std::cout << "+++  i == " << i  << "length = " << str.length()<< std::endl;
-        http.appendData(&str[i++], 1);
+    
+    std::string request = 
+        "POST /upload/Files HTTP/1.1\r\n"
+        "Host: localhost\r\n"
+        "Content-Type: multipart/form-data; boundary=----TestBoundary\r\n"
+        "Content-Length: 186\r\n"
+        "\r\n"
+        "------TestBoundary\r\n"
+        "Content-Disposition: form-data; name=\"text_field\"\r\n"
+        "\r\n"
+        "This is text value\r\n"
+        "------TestBoundary\r\n"
+        "Content-Disposition: form-data; name=\"file\"; filename=\"test.txt\"\r\n"
+        "Content-Type: text/plain\r\n"
+        "\r\n"
+        "File content here\r\n"
+        "------TestBoundary--\r\n";
+    
+    http.appendData(request.c_str(), request.size());
+    
+    if (http.isComplete()) {
+        std::vector<char> response = http.getResponse();
+        std::string resp_str(response.begin(), response.end());
+        std::cout << "Response: " << resp_str.substr(9, 3) << std::endl;
     }
-    // http.appendData(str.c_str(), str.length());
+}
+
+void test_multipart_no_filename() {
+    std::cout << "\n=== Test 2: Multipart Without Filename ===\n";
+    
+    GlobaConfig config = parseConfig("config.conf");
+    HttpHandler http(config.servers[0]);
+    std::vector<char> response;
+    std::string request = 
+        "POST /upload/Files HTTP/1.1\r\n"
+        "Host: localhost\r\n"
+        "Content-Type: multipart/form-data; boundary=----TestBoundary\r\n"
+        "Content-Length: 103\r\n"
+        "\r\n"
+        "------TestBoundary\r\n"
+        "Content-Disposition: form-data; name=\"username\"\r\n"
+        "\r\n"
+        "john_doe\r\n"
+        "------TestBoundary--\r\n";
+    
+    http.appendData(request.c_str(), request.size());
+    std::cout << "complete = " << http.isComplete() << std::endl;
     if (http.isComplete() == true){
         response =  http.getResponse();
         std::cout << "+++++ The Request is completed, Response :  " << std::endl;
@@ -33,10 +107,159 @@ int main (){
             std::cout << response[i] ;
         }
     }
-    else {
-        std::cout << "+++++ NO response the request is not Complete!!" << std::endl;
-    }
+}
+
+void test_url_encoded_form() {
+    std::cout << "\n=== Test 3: URL-encoded Form ===\n";
     
+    GlobaConfig config = parseConfig("config.conf");
+    HttpHandler http(config.servers[0]);
+    std::vector<char> response;
+    std::string request = 
+        "POST /upload/Files/ HTTP/1.1\r\n"
+        "Host: localhost\r\n"
+        "Content-Type: application/x-www-form-urlencoded\r\n"
+        "Content-Length: 24\r\n"
+        "\r\n"
+        "name=John&age=30&city=NY";
+    
+    http.appendData(request.c_str(), request.size());
+    if (http.isComplete() == true){
+        response =  http.getResponse();
+        std::cout << "+++++ The Request is completed, Response :  " << std::endl;
+        for(size_t i =0; i < response.size(); i++){
+            std::cout << response[i] ;
+        }
+    }
+}
+
+void test_chunked_encoding() {
+    std::cout << "\n=== Test 4: Chunked Encoding ===\n";
+    
+    GlobaConfig config = parseConfig("config.conf");
+    HttpHandler http(config.servers[0]);
+    std::vector<char> response;
+    std::string request = "POST /upload HTTP/1.1\r\n"
+        "Host: example.com\r\n"
+        "Transfer-Encoding: chunked\r\n"
+        "Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
+        "\r\n"
+        "1A\r\n"
+        "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
+        "Content-Disposition: form-data; name=\"text\"\r\n"
+        "\r\n"
+        "Hello World!\r\n"
+        "\r\n"
+        "\r\n"
+        "25\r\n"
+        "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
+        "Content-Disposition: form-data; name=\"file\"; filename=\"test.txt\"\r\n"
+        "Content-Type: text/plain\r\n"
+        "\r\n"
+        "This is the content of the file\r\n"
+        "\r\n"
+        "1D\r\n"
+        "------WebKitFormBoundary7MA4YWxkTrZu0gW--\r\n"
+        "\r\n"
+        "0\r\n"
+        "\r\n";
+    // int i = 0;
+    // while(!http.isComplete()){
+    //     if (i == (int)request.length())
+    //         break;
+    //     // std::cout << "+++  i == " << i  << "length = " << str.length()<< std::endl;
+    //     http.appendData(&request[i++], 1);
+    // }
+    http.appendData(request.c_str(), request.size());
+    if (http.isComplete() == true){
+        response =  http.getResponse();
+        std::cout << "+++++ The Request is completed, Response :  " << std::endl;
+        for(size_t i =0; i < response.size(); i++){
+            std::cout << response[i] ;
+        }
+    }
+}
+
+void test_malformed_multipart() {
+    std::cout << "\n=== Test 5: Malformed Multipart (Missing Boundary) ===\n";
+    
+    GlobaConfig config = parseConfig("config.conf");
+    HttpHandler http(config.servers[0]);
+    
+    std::string request = 
+        "POST /upload/Files HTTP/1.1\r\n"
+        "Host: localhost\r\n"
+        "Content-Type: multipart/form-data\r\n"  // Missing boundary!
+        "Content-Length: 50\r\n"
+        "\r\n"
+        "Some garbage data without proper boundaries";
+    
+    http.appendData(request.c_str(), request.size());
+    // Should return 400 Bad Request
+}
+
+void test_large_file() {
+    std::cout << "\n=== Test 6: Large File Upload ===\n";
+    
+    GlobaConfig config = parseConfig("config.conf");
+    HttpHandler http(config.servers[0]);
+    std::vector<char> response;
+    // Create a large string (simulating large file)
+    std::string large_content(5000, 'A'); // 5000 'A's
+    
+    std::string request = 
+        "POST /upload/Files HTTP/1.1\r\n"
+        "Host: localhost\r\n"
+        "Content-Type: text/plain\r\n"
+        "Content-Length: " + std::to_string(large_content.size()) + "\r\n"
+        "\r\n" +
+        large_content;
+    
+    http.appendData(request.c_str(), request.size());
+    if (http.isComplete() == true){
+        response =  http.getResponse();
+        std::cout << "+++++ The Request is completed, Response :  " << std::endl;
+        for(size_t i =0; i < response.size(); i++){
+            std::cout << response[i] ;
+        }
+    }
+}
+
+void test_empty_body() {
+    std::cout << "\n=== Test 7: Empty Body ===\n";
+    
+    GlobaConfig config = parseConfig("config.conf");
+    HttpHandler http(config.servers[0]);
+    std::vector<char> response;
+    std::string request = 
+        "POST /upload/Files HTTP/1.1\r\n"
+        "Host: localhost\r\n"
+        "Content-Length: 0\r\n"
+        "\r\n";
+    
+    http.appendData(request.c_str(), request.size());
+    if (http.isComplete() == true){
+        response =  http.getResponse();
+        std::cout << "+++++ The Request is completed, Response :  " << std::endl;
+        for(size_t i =0; i < response.size(); i++){
+            std::cout << response[i] ;
+        }
+    }
+}
+
+int main() {
+    std::cout << "Starting Comprehensive POST Tests...\n\n";
+    
+    // test_multipart_basic();
+    // test_multipart_no_filename();
+    // test_url_encoded_form();
+    test_chunked_encoding();
+    // test_malformed_multipart();
+    // test_large_file();
+    // test_empty_body();
+    
+    std::cout << "\n=== All Tests Completed ===\n";
+    return 0;
 }
 
 
