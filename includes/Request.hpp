@@ -66,8 +66,12 @@ class Request{
         HttpStatusCode setHttpVersion(std::string& httpVersion);
         // int            splitHttpRequest(std::vector<char>& req);
         // ParseState     getBodyType();
+        // ParseState     unchunk();
+
         ParseState     unchunk();
-        ParseState     singleChunk(std::vector<char> oneChunk, long sizePos, long bodyPos);
+        ParseState     singleChunk(std::vector<char> oneChunk, size_t size);
+
+        // ParseState     singleChunk(std::vector<char> oneChunk, long sizePos, long bodyPos);
         ParseState     checkPostHeaders(HttpStatusCode& status);
         void           appendBody(const char* _data, size_t size, HttpStatusCode& status);
 
