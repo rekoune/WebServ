@@ -58,7 +58,7 @@ void test_multipart_basic() {
         "POST /upload/Files HTTP/1.1\r\n"
         "Host: localhost\r\n"
         "Content-Type: multipart/form-data; boundary=----TestBoundary\r\n"
-        "Content-Length: 186\r\n"
+        "Content-Length: 248\r\n"
         "\r\n"
         "------TestBoundary\r\n"
         "Content-Disposition: form-data; name=\"text_field\"\r\n"
@@ -139,30 +139,48 @@ void test_chunked_encoding() {
     GlobaConfig config = parseConfig("config.conf");
     HttpHandler http(config.servers[0]);
     std::vector<char> response;
-    std::string request = "POST /upload HTTP/1.1\r\n"
-        "Host: example.com\r\n"
-        "Transfer-Encoding: chunked\r\n"
+    std::string request = "POST /upload/Files HTTP/1.1\r\n"
+        "Host: localhost:8080\r\n"
         "Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
-        "\r\n"
-        "1A\r\n"
+        "Transfer-Encoding: chunked\r\n"
+        "Connection: keep-alive\r\n"
+        "\r\n";
+        
+        // First chunk (hex size: 0x9E = 158 bytes)
+       std::string chunk1 =  "D1\r\n"
         "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
-        "Content-Disposition: form-data; name=\"text\"\r\n"
+        "Content-Disposition: form-data; name=\"username\"\r\n"
         "\r\n"
-        "Hello World!\r\n"
-        "\r\n"
-        "\r\n"
-        "25\r\n"
+        "john_doe\r\n"
         "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
-        "Content-Disposition: form-data; name=\"file\"; filename=\"test.txt\"\r\n"
+        "Content-Disposition: form-data; name=\"email\"\r\n"
+        "\r\n"
+        "john@example.com\r\n"
+        "\r\n";
+        
+        // Second chunk (hex size: 0xB4 = 180 bytes)
+        std::string chunk2 = "EF\r\n"
+        "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
+        "Content-Disposition: form-data; name=\"file\"; filename=\"document.txt\"\r\n"
         "Content-Type: text/plain\r\n"
         "\r\n"
-        "This is the content of the file\r\n"
-        "\r\n"
-        "1D\r\n"
-        "------WebKitFormBoundary7MA4YWxkTrZu0gW--\r\n"
-        "\r\n"
-        "0\r\n"
+        "This is the content of the uploaded file.\r\n"
+        "It can contain multiple lines.\r\n"
+        "And various characters!\r\n"
         "\r\n";
+        
+        // Third chunk (hex size: 0x2E = 46 bytes)
+       std::string chunk3 = "2B\r\n"
+        "------WebKitFormBoundary7MA4YWxkTrZu0gW--\r\n"
+        "\r\n";
+        
+        // End of chunks
+        std::string chunk4 = "0\r\n"
+        "\r\n";
+        // std::cout << "chunk1 size = " << chunk1.size() << std::endl;
+        // std::cout << "chunk2 size = " << chunk2.size() << std::endl;
+        // std::cout << "chunk3 size = " << chunk3.size() << std::endl;
+        // std::cout << "chunk4 size = " << chunk4.size() << std::endl;
     // int i = 0;
     // while(!http.isComplete()){
     //     if (i == (int)request.length())
@@ -170,6 +188,7 @@ void test_chunked_encoding() {
     //     // std::cout << "+++  i == " << i  << "length = " << str.length()<< std::endl;
     //     http.appendData(&request[i++], 1);
     // }
+    request.append(chunk1).append(chunk2).append(chunk3).append(chunk4);
     http.appendData(request.c_str(), request.size());
     if (http.isComplete() == true){
         response =  http.getResponse();
@@ -190,11 +209,19 @@ void test_malformed_multipart() {
         "POST /upload/Files HTTP/1.1\r\n"
         "Host: localhost\r\n"
         "Content-Type: multipart/form-data\r\n"  // Missing boundary!
-        "Content-Length: 50\r\n"
+        "Content-Length: 43\r\n"
         "\r\n"
         "Some garbage data without proper boundaries";
     
     http.appendData(request.c_str(), request.size());
+    std::vector<char> response;
+    if (http.isComplete() == true){
+        response =  http.getResponse();
+        std::cout << "+++++ The Request is completed, Response :  " << std::endl;
+        for(size_t i =0; i < response.size(); i++){
+            std::cout << response[i] ;
+        }
+    }
     // Should return 400 Bad Request
 }
 
@@ -205,10 +232,10 @@ void test_large_file() {
     HttpHandler http(config.servers[0]);
     std::vector<char> response;
     // Create a large string (simulating large file)
-    std::string large_content(5000, 'A'); // 5000 'A's
+    std::string large_content(900, 'C'); // 5000 'A's
     
     std::string request = 
-        "POST /upload/Files HTTP/1.1\r\n"
+        "POST /upload/Files/abde HTTP/1.1\r\n"
         "Host: localhost\r\n"
         "Content-Type: text/plain\r\n"
         "Content-Length: " + std::to_string(large_content.size()) + "\r\n"
@@ -250,12 +277,12 @@ void test_empty_body() {
 int main() {
     std::cout << "Starting Comprehensive POST Tests...\n\n";
     
+    // test_chunked_encoding();
     // test_multipart_basic();
     // test_multipart_no_filename();
     // test_url_encoded_form();
-    test_chunked_encoding();
     // test_malformed_multipart();
-    // test_large_file();
+    test_large_file();
     // test_empty_body();
     
     std::cout << "\n=== All Tests Completed ===\n";

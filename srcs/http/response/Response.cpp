@@ -355,6 +355,11 @@ HttpStatusCode  Response::handleSinglePart(std::vector<char> singlePart, size_t 
     HttpStatusCode  status;
     std::vector<char> body;
     std::string path(resInfo.path);
+
+    // std::cout << " >>>>>>>>>>> path before : " << path << std::endl;
+    // std::cout << "===========================================" << std::endl;
+    // std::cout.write(singlePart.data(), size);
+    // std::cout << "===========================================" << std::endl;
     headersPos = Utils::isContainStr(&singlePart[0], size, "\r\n\r\n", 4);
     if (headersPos == -1){
         std::cout << "jo9 jo9 jo9" << std::endl;
@@ -387,6 +392,7 @@ HttpStatusCode  Response::handleSinglePart(std::vector<char> singlePart, size_t 
             }
             else
                 path.append(".bin");
+            // std::cout << ">>>>>>>> path = " << path<< std::endl;
             status = writeBodyInFile(path, body);
         }
         else
@@ -408,9 +414,6 @@ HttpStatusCode  Response::handleMultiParts(const std::vector<char>& body, std::s
     end.append(start).append("--").append("\r\n");
     currentPos = Utils::isContainStr(&body[0], body.size(), start.c_str(), start.length());
     endPos     = Utils::isContainStr(&body[0], body.size(), end.c_str(), end.length());
-    // std::cout << "===========================================" << std::endl;
-    // std::cout.write(body.data(), body.size());
-    // std::cout << "===========================================" << std::endl;
     if (currentPos != 0 || endPos == -1 || endPos + end.length() != body.size()){
         std::cout << "mo9 mo9 mo9" << std::endl;
         return BAD_REQUEST;
