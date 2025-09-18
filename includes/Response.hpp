@@ -56,6 +56,7 @@ class Response{
         void                setResInfo(const HttpResponseInfo& info);
         std::vector<char>   getResponse() const;
         void                handle();
+        void                clear();
 };
 
 # endif
