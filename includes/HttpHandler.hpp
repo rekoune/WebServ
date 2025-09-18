@@ -12,6 +12,7 @@ class HttpHandler{
         RequestHandler reqHandler;
         HttpResponseInfo resInfo;
         Response response;
+        bool        sameReq;
 
     public:
         HttpHandler();

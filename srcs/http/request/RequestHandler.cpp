@@ -5,12 +5,6 @@ RequestHandler::~RequestHandler(){};
 
 RequestHandler::RequestHandler(const Request& req, const ServerConfig& server){
     this->req = req;
-    std::map<std::string, std::string>::iterator it;
-    std::map<std::string, std::string> map = resInfo.req.getHeaders();
-    it = map.find("content-type");
-    for(; it != map.end(); it++){
-        std::cout << "h : " << it->first << ": " << it->second << std::endl;
-    }
     this->server = server;
 }
 RequestHandler::RequestHandler(const RequestHandler& other){

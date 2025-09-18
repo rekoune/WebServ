@@ -161,6 +161,10 @@ void    Response::buildResponse(){
     Utils::pushInVector(response, resElements.statusLine);
     Utils::pushInVector(response, Utils::mapToString(resElements.headers));
     response.insert(response.end(), resElements.body.begin(), resElements.body.end());
+
+    this->resElements.statusLine.clear();
+    this->resElements.headers.clear();
+    this->resElements.body.clear();
 }
 
 
@@ -505,3 +509,6 @@ void Response::handle(){
     // std::cout << "status = " << resInfo.status << std::endl;
 }
 
+void Response::clear(){
+    this->response.clear();
+}
