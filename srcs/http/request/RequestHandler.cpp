@@ -132,13 +132,8 @@ HttpResponseInfo RequestHandler::handle(){
     this->resInfo.method = req.getRequestLine().method;
     this->resInfo.req = req;
     this->resInfo.server = server;
-    if (status == OK){
-        //delete
-        location.allowed_methods.push_back("GET");
-        location.allowed_methods.push_back("POST");
-        location.allowed_methods.push_back("DELETE");
+    if (status == OK)
         status = isMethodAllowed(location.allowed_methods, req.getRequestLine().method);
-    }
     if (status == OK){
         path = location.root;
 
