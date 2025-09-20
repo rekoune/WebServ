@@ -1,4 +1,5 @@
 #include "../../includes/server.hpp"
+#include "../../includes/HttpHandler.hpp"
 
 server::server(){}
 
@@ -113,7 +114,7 @@ void server::acceptClient(int listenFd)
 
 
 
-int ft_recv(struct pollfd& pollfd)
+int ft_recv(struct pollfd& pollfd, HttpHandler& http)
 {
 	char buf[1024];
 	int read;
@@ -123,18 +124,23 @@ int ft_recv(struct pollfd& pollfd)
 	{
 		return 0;
 	}
-	// buf[read] = 0;
+	http.appendData(buf, read);
+	if(http.isComplete())
+	{	
+		pollfd.events = POLLOUT;
+	}
 	std::cout << "the receved bufer : " << buf << std::endl;
-	pollfd.events = POLLOUT;
 	return 1;
 }
 
-int ft_send(struct pollfd& pollfd)
+int ft_send(struct pollfd& pollfd, HttpHandler& http)
 {
-	char d[100] = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 29\r\n\r\n<h1>Hello from Server!  </h1>";
+	// char d[100] = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 29\r\n\r\n<h1>Hello from Server!  </h1>";
 	
-
-	int n  = send(pollfd.fd, d, sizeof(d), 0);
+	std::vector<char> response = http.getResponse();
+	// std::cout << "==================== response ==========================" <<std::endl;
+	// std::cout.write(response.data(), response.size())<< std::endl;
+	int n  = send(pollfd.fd, &response[0], response.size(), 0);
 	if(n > 0)
 	{
 		std::cout << "succufly send!!!!!" << std::endl;
@@ -145,8 +151,12 @@ int ft_send(struct pollfd& pollfd)
 	return 1;
 }
 
-int server::polling()
+int server::polling(std::string& path)
 {
+	////Users/haouky/Desktop/WebServ/srcs/http/config.conf
+	GlobaConfig config = parseConfig(path);
+	HttpHandler http(config.servers[0]);
+
 	while (true)
 	{
 		std::cout << "=======================================start polling================================" << std::endl;
@@ -169,7 +179,7 @@ int server::polling()
 					acceptClient(socketFds[i].fd);
 				else
 				{
-					if(!ft_recv(socketFds[i]))
+					if(!ft_recv(socketFds[i], http))
 					{
 						std::cout << "closing the sockefd : " << socketFds[i].fd << std::endl;
 						close(socketFds[i].fd);
@@ -181,7 +191,7 @@ int server::polling()
 			}
 			else if(socketFds[i].revents & POLLOUT)
 			{
-				ft_send(socketFds[i]);
+				ft_send(socketFds[i], http);
 				n--;
 			}
 
