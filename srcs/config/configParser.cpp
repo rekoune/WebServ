@@ -378,7 +378,7 @@ void	strToUpper(std::string& str)
 
 bool	validateConfig(GlobaConfig& globalConfig)
 {
-	std::cout << "vaaaaaaaaaaaaaaaaaalidate ============= \n";
+	// std::cout << "vaaaaaaaaaaaaaaaaaalidate ============= \n";
 	//Validate the methods
 	std::vector<ServerConfig>::iterator serv_iter = globalConfig.servers.begin();
 	for (; serv_iter != globalConfig.servers.end();
