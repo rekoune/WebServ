@@ -1,4 +1,4 @@
-#include "../../includes/server.hpp"
+#include "../../includes/main_server.hpp"
 #include "../../includes/HttpHandler.hpp"
 
 server::server(){}
@@ -7,6 +7,7 @@ server::~server()
 {
 	// std::cout << "Destroctor: closing socketFds" << std::endl;
 	for(size_t i = 0; i < socketFds.size(); i++){
+		// std::cout << "closing fd : " <<  socketFds[i].fd << std::endl;
 		close(socketFds[i].fd);
 	}
 }
@@ -37,6 +38,12 @@ int server::listen_socket(std::string& ip, std::string& port)
 		return -1;
 	}	
 
+	int opt = 1;
+	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+    	perror("setsockopt(SO_REUSEADDR) failed");
+		//return ?
+	}
+	
 	if(bind(sockfd, res->ai_addr, res->ai_addrlen) == -1){
 		std::cerr << "bind error on " << ip << ":" << port << ": " << strerror(errno) << std::endl;
 		close(sockfd);    
@@ -150,6 +157,13 @@ int ft_send(struct pollfd& pollfd, HttpHandler& http)
 		std::cout << "send failed" << std::endl;
 	return 1;
 }
+int GlobalServer = 1;
+
+void handleSigint(int sig) {
+    (void)sig; 
+    GlobalServer = 0;
+    std::cout << "\nshutting down..." << std::endl;
+}
 
 int server::polling(std::string& path)
 {
@@ -157,7 +171,9 @@ int server::polling(std::string& path)
 	GlobaConfig config = parseConfig(path);
 	HttpHandler http(config.servers[0]);
 
-	while (true)
+	signal(SIGINT, handleSigint);
+
+	while (GlobalServer)
 	{
 		// std::cout << "=======================================start polling================================" << std::endl;
 		int n = poll(&socketFds[0], socketFds.size(), -1);
@@ -197,7 +213,7 @@ int server::polling(std::string& path)
 
 		}
 	}
-		
+	return 1;
 }
 
  
