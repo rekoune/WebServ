@@ -8,7 +8,10 @@ int main (){
     
 
     //srcs/http/config.conf
-    GlobaConfig config = parseConfig("config.conf");
+    GlobaConfig config ;
+    if (!parseConfig("config.conf", config)){
+        return(1);
+    }
     std::cout << "max body size == " << config.servers[0].client_max_body_size << std::endl;
   
     HttpHandler http(config.servers[0]);
