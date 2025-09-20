@@ -5,9 +5,9 @@ server::server(){}
 
 server::~server()
 {
-	// std::cout << "Destroctor: closing socketFds" << std::endl;
+	std::cout << "Destroctor: closing socketFds" << std::endl;
 	for(size_t i = 0; i < socketFds.size(); i++){
-		// std::cout << "closing fd : " <<  socketFds[i].fd << std::endl;
+		std::cout << "closing fd : " <<  socketFds[i].fd << std::endl;
 		close(socketFds[i].fd);
 	}
 }
@@ -16,7 +16,7 @@ int server::listen_socket(std::string& ip, std::string& port)
 {
 	struct addrinfo *res, info;
 
-	// std::cout << "creat a listen socket in : |" << ip << ":" << port << std::endl;
+	std::cout << "creat a listen socket in : |" << ip << ":" << port << std::endl;
 
 	std::memset(&info, 0, sizeof(info));
 	info.ai_family = AF_INET;       
@@ -67,7 +67,6 @@ int server::listen_socket(std::string& ip, std::string& port)
 	listenersNbr++;
 	listenFds.push_back(sockfd);
 	socketFds.push_back(create_pollfd(sockfd, POLLIN));	
-
 	return sockfd;
 }
 
@@ -170,7 +169,6 @@ int server::polling(std::string& path)
 	////Users/haouky/Desktop/WebServ/srcs/http/config.conf
 	GlobaConfig config = parseConfig(path);
 	HttpHandler http(config.servers[0]);
-
 	signal(SIGINT, handleSigint);
 
 	while (GlobalServer)
