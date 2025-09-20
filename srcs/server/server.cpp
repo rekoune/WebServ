@@ -168,10 +168,12 @@ void handleSigint(int sig) {
 int server::polling(std::string& path)
 {
 	////Users/haouky/Desktop/WebServ/srcs/http/config.conf
-	GlobaConfig config = parseConfig(path);
+	GlobaConfig config ;
+	if (parseConfig(path, config) == false)
+		exit(1);
 	HttpHandler http(config.servers[0]);
 
-	signal(SIGINT, handleSigint);
+	signal(SIGINT, handleSigint); 
 
 	while (GlobalServer)
 	{

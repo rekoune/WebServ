@@ -10,7 +10,7 @@
 #include <sstream>
 
 enum searchServerStatus{
-	CONTINUE,
+	CONTINUE_SRV,
 	FALSE_RETURN
 };
 
