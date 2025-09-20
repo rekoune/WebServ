@@ -7,7 +7,7 @@
 int main (){
     
 
-
+    //srcs/http/config.conf
     GlobaConfig config = parseConfig("config.conf");
   
     HttpHandler http(config.servers[0]);

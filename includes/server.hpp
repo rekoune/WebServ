@@ -29,7 +29,7 @@ public:
 
 	int listen_socket(std::string& ip, std::string& port);
 	struct pollfd create_pollfd(int fd, short events);
-	int polling();
+	int polling(std::string& path);
 
 	void acceptClient(int listenFd);
 
