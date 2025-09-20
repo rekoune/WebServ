@@ -59,12 +59,12 @@ bool	configStructInit(std::string line, ServerConfig& currentServer)
 		pos = end + 1;
 		if ( directive.empty())
 			continue;
-		std::cout << "==============" << directive[7] << std::endl;
-		std::cout << "==============" << directive << std::endl;
-		std::cout << "==============length" << directive.length() << std::endl;
+		// std::cout << "==============" << directive[7] << std::endl;
+		// std::cout << "==============" << directive << std::endl;
+		// std::cout << "==============length" << directive.length() << std::endl;
 
 		if (directive.find("root") == 0 && directive.length() > 4 &&  isitspace (directive[4])) {
-			std::cout << "=============IS SPACE A SAHBI \n";
+			// std::cout << "=============IS SPACE A SAHBI \n";
             currentServer.root = cleanLine(directive.substr(directive.find(" ") + 1));
         }
         else if (directive.find("listen") == 0 && directive.length() > 6 && isitspace( directive[6])) {
@@ -74,7 +74,7 @@ bool	configStructInit(std::string line, ServerConfig& currentServer)
 			{
 				std::string ip_str = value.substr(0, colon);
 				std::string	port_str = value.substr(colon + 1);
-				std::cout << "===========================port_str: " << port_str << std::endl;
+				// std::cout << "===========================port_str: " << port_str << std::endl;
 				if (!isitnumber(port_str))
 				{
 					std::cerr << "CONFIG FILE ERROR : port is not a valid number" << std::endl;
@@ -125,7 +125,13 @@ bool	configStructInit(std::string line, ServerConfig& currentServer)
 					len--;
 				}
 				std::string number_value = value.substr(0, len);
-				size_t number = std::atoi(number_value.c_str());
+				if ( !isitnumber(number_value) )
+				{
+					std::cerr << "CONFIG FILE ERROR : INVALID CLIENT BODY SIZE" << std::endl;
+					return false;
+				}
+				size_t number = std::atoll(number_value.c_str());
+				// std::cout << "Nuuuuumber =====================: " << number << std::endl;
 				currentServer.client_max_body_size = number * multiplier;
 			}
         }
@@ -133,19 +139,44 @@ bool	configStructInit(std::string line, ServerConfig& currentServer)
 		{
 			std::string value = cleanLine(directive.substr(10));
 			std::istringstream iss(value);
+			std::vector<int> codes;
 			std::string  code_str;
-			std::string path;
 			int code;
-			iss >> code_str ;
-			code = std::atoi(code_str.c_str());
-			if (!isitnumber(code_str) || code < 300 || code > 599)
+
+			while (iss >> code_str)
 			{
-				std::cerr << "CONFIG FILE ERROR : HTTP ERROR NUMBER NOT VALID " << std::endl;
-				return false;
+				if ( isitnumber(code_str))
+				{
+					code = std::atoi(code_str.c_str());
+					if (code < 300 || code > 599)
+					{
+						std::cerr << "CONFIG FILE ERROR : HTTP ERROR NUMBER NOT VALID " << std::endl;
+						return false;
+					}
+					codes.push_back(code);
+				}
+				else 
+				{
+					break;
+				}
 			}
 
-			currentServer.error_pages[code] = path;
-
+			std::string path = code_str;
+			if (path.empty() || codes.empty())
+			{
+				std::cerr << "CONFIG FILE ERROR : error_page missing code or path" << std::endl;
+				return false;
+			}
+			std::string extra_parameter;
+			iss >> extra_parameter;
+			if (!extra_parameter.empty())
+			{
+				std::cerr << "CONFIG FILE ERROR : error_page too many path arguments" << std::endl;
+				return false ;
+			}
+			for (size_t i = 0; i < codes.size(); i++)
+				currentServer.error_pages[codes[i]] = path;
+			
 	    }
 		else if (directive.find("cgi_extension") == 0 && directive.length() > 13 &&  isitspace (directive[13]))
 		{
@@ -160,7 +191,7 @@ bool	configStructInit(std::string line, ServerConfig& currentServer)
 	}
 	if ( valid_directive == false)
 	{
-		/* put back cerr  */std::cout << "CONFIG FILE ERROR : UNDIFINED KEYWORD IN THE SERVER BLOCK. " << std::endl;
+		/* put back cerr  */std::cerr << "CONFIG FILE ERROR : UNDIFINED KEYWORD IN THE SERVER BLOCK. " << std::endl;
 		return false;
 	}
 	return true;
@@ -190,9 +221,9 @@ bool	parseLocationBlock(std::string line, LocationConfig& current_loc)
 		pos = end + 1;
 		if ( directive.empty())
 			continue;
-		if (directive.find("root") == 0)
+		if (directive.find("root") == 0 && directive.length() > 4 &&  isitspace (directive[4]))
 			current_loc.root = cleanLine(directive.substr(directive.find(" ") + 1));
-		else if (directive.find ("index") == 0)
+		else if (directive.find ("index") == 0 && directive.length() > 5 &&  isitspace (directive[5]))
 		{
 			std::string	index_paths = cleanLine(directive.substr(directive.find(" ") + 1));
 			std::string index_path;
@@ -200,13 +231,26 @@ bool	parseLocationBlock(std::string line, LocationConfig& current_loc)
 			while (iss >> index_path)
 				current_loc.index.push_back(index_path);
 		}
-		else if ( directive.find("autoindex") == 0)
-			current_loc.autoindex = (directive.find("on") != std::string::npos);
-		else if ( directive.find("upload_store") == 0)
+		else if ( directive.find("autoindex") == 0 && directive.length() > 9 &&  isitspace (directive[9]))
+		{
+			// std::istringstream iss(directive.substr(9));
+
+			std::string 	keyword = cleanLine(directive.substr(9));
+			if ( keyword == "on" || keyword == "ON")
+				current_loc.autoindex = true;
+			else if ( keyword == "off" || keyword == "OFF")
+				current_loc.autoindex = false;
+			else
+			{
+				std::cerr << "CONFIG FILE ERROR: INVALID AUTOINDEX DIRECTIVE" << std::endl;
+				return false;				
+			} 
+		}
+		else if ( directive.find("upload_store") == 0 && directive.length() > 12 &&  isitspace (directive[12]))
 			current_loc.upload_store = cleanLine(directive.substr(directive.find(" ") + 1));
 		// else if ( directive.find("cgi_pass") == 0)
 		// 	current_loc.cgi_pass = cleanLine(directive.substr(directive.find(" ") + 1)); 			//TO REMOVE
-		else if ( directive.find("allowed_methods") == 0)
+		else if ( directive.find("allowed_methods") == 0 && directive.length() > 15 &&  isitspace (directive[15]))
 		{
 			std::string		methods = cleanLine(directive.substr(directive.find(" ") + 1));
 			std::istringstream iss(methods);
@@ -215,7 +259,7 @@ bool	parseLocationBlock(std::string line, LocationConfig& current_loc)
 			while ( iss >> method )
 				current_loc.allowed_methods.push_back(method);
 		}
-		else if ( directive.find("return") == 0)
+		else if ( directive.find("return") == 0 && directive.length() > 6 &&  isitspace (directive[6]))
 		{
 			std::istringstream iss ( directive.substr(6));
 			std::string status_str;
@@ -267,7 +311,7 @@ searchServerStatus	searchForServer(bool &in_server_block,  std::string& line, Se
 {
 	if ((line.find("server") == 0 && line.find("{") != std::string::npos))
 	{
-		std::cout << "WE ARE IN THE SERVER BLOCK \n"; // for debug
+		// std::cout << "WE ARE IN THE SERVER BLOCK \n"; // for debug
 		//idk if i need to set the flags to true or no TO SEE
 		in_server_block = true;
 		//ADD A NEW SERVER TO THE VECTOR
@@ -290,13 +334,13 @@ searchServerStatus	searchForServer(bool &in_server_block,  std::string& line, Se
 	}
 	else if ( line.find("server") == 0 &&  line.find("{") == std::string::npos)
 	{
-		std::cout << "SERVER FOUND, WAITING FOR BRACE  \n"; // for debug
+		// std::cout << "SERVER FOUND, WAITING FOR BRACE  \n"; // for debug
 		waiting_for_brace = true;
 		return CONTINUE ;
 	}
 	else if (line.find("{") == 0 && waiting_for_brace)
 	{
-		std::cout << "FOUND THE '{' WE ARE IN THE SERVER BLOCK \n"; // for debug
+		// std::cout << "FOUND THE '{' WE ARE IN THE SERVER BLOCK \n"; // for debug
 		in_server_block = true;
 		waiting_for_brace = false ; 
 		//SKIP the {
@@ -320,6 +364,89 @@ searchServerStatus	searchForServer(bool &in_server_block,  std::string& line, Se
 		std::cerr << "CONFIG FILE ERROR: SYNTAX ERROR uknown config keyword\n";
 		return FALSE_RETURN;
 	}
+}
+void	strToUpper(std::string& str)
+{
+	size_t i = 0; 
+	while (i < str.size())
+	{
+		if ( str[i] >= 97 && str[i] <= 122)
+			str[i] -= 32;
+		i++;
+	}
+}
+
+bool	validateConfig(GlobaConfig& globalConfig)
+{
+	std::cout << "vaaaaaaaaaaaaaaaaaalidate ============= \n";
+	//Validate the methods
+	std::vector<ServerConfig>::iterator serv_iter = globalConfig.servers.begin();
+	for (; serv_iter != globalConfig.servers.end();
+			serv_iter++ )
+	{
+		for (std::vector<LocationConfig>::iterator loc_iter = serv_iter->locations.begin() ; loc_iter != serv_iter->locations.end(); loc_iter++)
+		{
+			for (std::vector<std::string>::iterator metho_iter = loc_iter->allowed_methods.begin(); metho_iter != loc_iter->allowed_methods.end(); metho_iter++)
+			{
+				strToUpper(*metho_iter);
+				if (*metho_iter != "GET"
+					&& *metho_iter != "POST"
+					&& *metho_iter != "PUT"
+					&& *metho_iter != "DELETE"
+					&& *metho_iter != "PATCH"
+					&& *metho_iter != "HEAD"
+					&& *metho_iter != "OPTIONS"
+					&& *metho_iter != "CONNECT"
+					&& *metho_iter != "TRACE")
+				{
+					std::cerr << "CONFIG FILE ERROR: INVALID HTTP METHOD" << std::endl;
+					return false;
+				}
+			}
+
+		}
+
+	}
+	serv_iter = globalConfig.servers.begin();
+	//Validate the ips format
+	for (;serv_iter != globalConfig.servers.end(); serv_iter++)
+	{
+
+		for (std::map<std::string, std::vector<int> >::iterator host_iter =  serv_iter->host_port.begin(); host_iter != serv_iter->host_port.end(); host_iter++)
+		{
+			// std::string host_str = host_iter->first;
+			std::istringstream iss(host_iter->first);
+			char 				dot = 'd';
+			int 				num;
+			int i = 0 ;
+			while  (iss >> num )
+			{
+				dot = 0;
+				iss >> dot;
+				if (num < 0 || num > 255)
+				{
+					std::cerr << "CONFIG FILE ERROR: IP RANGE FORM 0 TO 255" << std::endl;
+					return false ;
+				}
+					
+				if ( i == 3)
+					break;
+				if ( dot != '.')
+				{
+					std::cerr << "CONFIG FILE ERROR: IP SYNTAX NOT VALID" << std::endl;
+					return false;
+				}
+				i++;
+			}
+			if ( dot )
+			{
+					std::cerr << "CONFIG FILE ERROR: IP SYNTAX NOT VALID1" << std::endl;
+					return false;
+			}
+ 
+		}
+	}
+	return true;
 }
 
 void	fillDefaults(GlobaConfig& globalConfig)
@@ -357,7 +484,7 @@ bool parseConfig(const std::string& configFilePath, GlobaConfig& globalConfig)
 		line = cleanLine(line);     //	triming and removing comments 
 		if (line.empty())           //  checking if the line is empty
 			continue;
-		std::cout << line << std::endl; 	// Print for debug
+		// std::cout << line << std::endl; 	// Print for debug
 		if (!in_server_block)
 		{
 			searchServerStatus status = searchForServer(in_server_block, line, currentserver, globalConfig,  waiting_for_brace);
@@ -368,7 +495,7 @@ bool parseConfig(const std::string& configFilePath, GlobaConfig& globalConfig)
 		}
 		else 
 		{
-			std::cout << "WE ARE IN THE SERVER LINE: " << line << std::endl; // for debug
+			// std::cout << "WE ARE IN THE SERVER LINE: " << line << std::endl; // for debug
 			
 			is_serv_brace_closed = false;
 			if ( line == "}")
@@ -441,7 +568,7 @@ bool parseConfig(const std::string& configFilePath, GlobaConfig& globalConfig)
 					if (!parseLocationBlock(line, current_loc))
 						return false;
 				}
-				std::cout << "is_LOC_BRACE_CLOSED :" << is_loc_brace_closed << std::endl;
+				// std::cout << "is_LOC_BRACE_CLOSED :" << is_loc_brace_closed << std::endl; // debug
 				if ( file.eof() && is_loc_brace_closed == false)
 				{
 					std::cerr << "CONFIG FILE ERROR: location braces not close" << std::endl;
@@ -473,5 +600,7 @@ bool parseConfig(const std::string& configFilePath, GlobaConfig& globalConfig)
 		return false;
 	}
 	fillDefaults(globalConfig);
+	if ( !validateConfig(globalConfig))
+		return false ;
 	return true;
 }
