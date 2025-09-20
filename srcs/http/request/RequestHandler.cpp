@@ -142,9 +142,11 @@ HttpResponseInfo RequestHandler::handle(){
         path.append(req.getRequestLine().target);
         status = resolveResourceType(path, pathType, location);
     }
-    this->resInfo.path = path;
-    this->resInfo.type = pathType;
     this->resInfo.status = status;
-    this->resInfo.location = location;
+    if (status == OK || status == CREATED){
+        this->resInfo.path = path;
+        this->resInfo.type = pathType;
+        this->resInfo.location = location;
+    }
     return (this->resInfo);
 }
