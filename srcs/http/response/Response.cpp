@@ -194,11 +194,16 @@ void    Response::errorHandling(){
 
 void    Response::generateListingBody(DIR* dir){
     struct dirent* dirContent;
+    std::string oldPath;
+    std::string target;
     
+    target = resInfo.req.getRequestLine().target;
+    target.append("/");
     resInfo.path = "list.html";
     Utils::pushInVector(resElements.body, "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Directory Listing</title>\n</head>\n<body>\n <ul>\n");
     while((dirContent = readdir(dir))){
         Utils::pushInVector(resElements.body, "  <li><a href=\"");
+        Utils::pushInVector(resElements.body, target);
         Utils::pushInVector(resElements.body, dirContent->d_name);
         Utils::pushInVector(resElements.body, "\">");
         Utils::pushInVector(resElements.body, dirContent->d_name);
