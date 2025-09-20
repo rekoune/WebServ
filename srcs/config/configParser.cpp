@@ -330,13 +330,13 @@ searchServerStatus	searchForServer(bool &in_server_block,  std::string& line, Se
 			else 
 				configStructInit(remaining, currentserver);
 		}
-		return CONTINUE ;
+		return CONTINUE_SRV ;
 	}
 	else if ( line.find("server") == 0 &&  line.find("{") == std::string::npos)
 	{
 		// std::cout << "SERVER FOUND, WAITING FOR BRACE  \n"; // for debug
 		waiting_for_brace = true;
-		return CONTINUE ;
+		return CONTINUE_SRV ;
 	}
 	else if (line.find("{") == 0 && waiting_for_brace)
 	{
@@ -357,7 +357,7 @@ searchServerStatus	searchForServer(bool &in_server_block,  std::string& line, Se
 			else 
 				configStructInit(remaining , currentserver);
 		}
-		return CONTINUE ;
+		return CONTINUE_SRV ;
 	}
 	else 
 	{
@@ -488,7 +488,7 @@ bool parseConfig(const std::string& configFilePath, GlobaConfig& globalConfig)
 		if (!in_server_block)
 		{
 			searchServerStatus status = searchForServer(in_server_block, line, currentserver, globalConfig,  waiting_for_brace);
-			if ( status == CONTINUE)
+			if ( status == CONTINUE_SRV)
 				continue;
 			else if (status == FALSE_RETURN)
 				return false ;
