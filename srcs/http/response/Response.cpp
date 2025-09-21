@@ -145,6 +145,12 @@ std::vector<char>   Response::getBodyFromFile(std::string& path){
 HttpStatusCode      Response::writeBodyInFile(std::string& path, std::vector<char>& body){
     HttpStatusCode  status;
 
+    // std::cout << "======================== bodysize =  ======================" << std::endl;
+    // std::cout << body.size() << std::endl;
+    // std::cout.write(body.data(), body.size()) << std::endl;
+
+    if (body.empty())
+        return OK;
     if (access(path.c_str(), F_OK) == 0)
         status = OK;
     else
@@ -152,7 +158,6 @@ HttpStatusCode      Response::writeBodyInFile(std::string& path, std::vector<cha
     std::ofstream file(path.c_str(), std::ios::out | std::ios::binary);
     if (!file)
         return INTERNAL_SERVER_ERROR;
-
     file.write(&body[0],body.size());
     return (status);
 }
@@ -374,8 +379,10 @@ HttpStatusCode  Response::handleSinglePart(std::vector<char> singlePart, size_t 
     HttpStatusCode  status;
     std::vector<char> body;
     std::string path(resInfo.path);
+    // std::cout << " single size = " << size << std::endl;
+    // std::cout << " single size = " << singlePart.size() << std::endl;
 
-    // std::cout << " >>>>>>>>>>> path before : " << path << std::endl;
+    // // std::cout << " >>>>>>>>>>> path before : " << path << std::endl;
     // std::cout << "==================Single part =======================" << std::endl;
     // std::cout.write(singlePart.data(), size);
     // std::cout << "===========================================" << std::endl;
@@ -387,6 +394,9 @@ HttpStatusCode  Response::handleSinglePart(std::vector<char> singlePart, size_t 
     else{
         std::string hed(singlePart.begin(), singlePart.begin() + headersPos + 2);
         status = extractHeaders(hed, headers);
+        // std::cout << "==> size = " << size << " , header pos = " << headersPos << std::endl;
+        if(headersPos + 4 == (long)size)
+            return OK;
         if (status == OK){
             body = std::vector<char>(singlePart.begin() + headersPos + 4, singlePart.begin() + headersPos + 4 + (size - headersPos - 4));
             std::map<std::string, std::string>::iterator contentType = headers.find("content-type");
@@ -441,7 +451,8 @@ HttpStatusCode  Response::handleMultiParts(const std::vector<char>& body, std::s
     currentPos = start.length() + 2;
     while(currentPos < endPos){
         nextPos = Utils::isContainStr(&body[currentPos], body.size() - currentPos, start.c_str(), start.length());
-        status = handleSinglePart(std::vector<char>(body.begin() + currentPos, body.begin() + nextPos + currentPos), nextPos);
+        // std::cout << "next pos = " << nextPos << " , endpos = "  << endPos << ", current = " << currentPos << std::endl;
+        status = handleSinglePart(std::vector<char>(body.begin() + currentPos, body.begin() + nextPos + currentPos), nextPos  - 2);
         if (status != OK && status != CREATED){
             std::cout << "za3 za3 za3" << std::endl;
             return status;
@@ -465,7 +476,6 @@ HttpStatusCode Response::handleContentType(){
     }
     else if (it->second.find("multipart/form-data") != std::string::npos){
         size_t  BoundPos;
-        
         if ((BoundPos = it->second.find("boundary=")) != std::string::npos && resInfo.type == DIR_LS){
             status = handleMultiParts(resInfo.req.getBody(), &it->second[BoundPos + 9]);
         }
