@@ -71,6 +71,8 @@ std::string         Response::getStatusMessage(HttpStatusCode status){
             return ("CONTINUE");
         case OK:
             return ("OK");
+        case PARTIAL_CONTENT:
+            return ("PARTIAL_CONTENT");
         case CREATED:
             return ("CREATED");
         case NO_CONTENT:
@@ -115,8 +117,7 @@ std::vector<char>  Response::generateErrorBody(){
     return (body);
 }
 
-std::map<std::string, std::string>  Response::generateHeaders(){
-    std::map<std::string, std::string> headers;
+std::map<std::string, std::string>  Response::generateHeaders(std::map<std::string, std::string>& headers){
 
     headers.insert(std::pair<std::string, std::string> ("Server", "WebServer"));
     headers.insert(std::pair<std::string, std::string> ("Date", Utils::getDate()));
@@ -124,20 +125,43 @@ std::map<std::string, std::string>  Response::generateHeaders(){
         headers.insert(std::pair<std::string, std::string> ("Content-Type", Utils::getFileType(fileTypes, Utils::getFileName(resInfo.path))));
     headers.insert(std::pair<std::string, std::string> ("Content-Length", Utils::toString(resElements.body.size())));
     headers.insert(std::pair<std::string, std::string> ("Connection", "keep-alive"));
+    headers.insert(std::pair<std::string, std::string> ("Accept-Ranges", "bytes"));
 
     return (headers);
 }
 
 std::vector<char>   Response::getBodyFromFile(std::string& path){
     std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
+    std::map<std::string, std::string> headers = resInfo.req.getHeaders();
+    std::map<std::string, std::string>::iterator it = headers.find("range");
+
 
     std::streamsize size;
+    size_t startPos = 0;
 
-    file.seekg(0, std::ios::end);
+    file.seekg(startPos, std::ios::end);
     size = file.tellg();
-    file.seekg(0, std::ios::beg);
+    if (it != headers.end()){
+        std::string range(it->second.begin() + 6, it->second.end());
+        startPos = Utils::strToNumber(range);
+        if (startPos >= (size_t)size)
+            startPos = 0;
+        size = 2 * 1024 * 1024;
+        resInfo.status = PARTIAL_CONTENT;
+        std::cout << "start pos = " << startPos << " , size = " << size << " , size + range = " << size + startPos << " , total size = " << file.tellg() << std::endl;
+        std::string contentRange("bytes ");
+        contentRange.append(Utils::toString(startPos));
+        contentRange.append("-");
+        contentRange.append(Utils::toString(startPos + size));
+        contentRange.append("/");
+        contentRange.append(Utils::toString(file.tellg()));
+        resElements.headers.insert(std::pair<std::string, std::string> ("Content-Range", contentRange));
+    }
+
+    file.seekg(startPos, std::ios::beg);
     std::vector<char> body(size);
     file.read(&body[0], size);
+    std::cout << "body size = " << body.size() << std::endl;
     file.close();
     return (body);
 }
@@ -530,7 +554,7 @@ void Response::handle(){
     else
         successHandling();
     resElements.statusLine = getStatusLine();
-    resElements.headers = generateHeaders();
+    generateHeaders(resElements.headers);
     buildResponse();
     // std::cout << "status = " << resInfo.status << std::endl;
 }
