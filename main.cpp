@@ -12,6 +12,6 @@ int main(int c, char **v)
 	std::string path(v[3]);
 	if(serv.listen_socket(ip, port) == -1)
 		return 1;
-
+	
 	serv.polling(path);
 }

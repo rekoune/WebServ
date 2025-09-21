@@ -1,8 +1,10 @@
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
+
 #include <iostream>
 #include <vector>
+#include <deque>
 #include <netdb.h>
 #include <poll.h>
 #include <fcntl.h> 
@@ -11,12 +13,15 @@
 #include <unistd.h>
 
 
-//wait connections 
-// #define BACKLOG 10
+#include "../../includes/HttpHandler.hpp"
+
+#define BUFFER 4096
 class server {
 private:
 	std::vector<struct pollfd> socketFds;
 	std::vector<int> listenFds;
+	std::deque<HttpHandler> socketHttp;
+
 
 	bool is_listener(int fd);
 	unsigned int listenersNbr;
