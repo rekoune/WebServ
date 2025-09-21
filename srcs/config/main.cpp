@@ -28,11 +28,11 @@ int main(int ac, char **av)
         	std::cout << "PRINGTING THE STRUCT : " << server_num++ << std::endl; 
 
         	std::cout << "iter->host_port: "  << std::endl;
-			for (std::map<std::string, std::vector<int> >::iterator host_port_iter = iter->host_port.begin(); host_port_iter != iter->host_port.end(); host_port_iter++)
+			for (std::map<std::string, std::vector<std::string> >::iterator host_port_iter = iter->host_port.begin(); host_port_iter != iter->host_port.end(); host_port_iter++)
 			{
 				std::cout << std::endl;
 				std::cout << host_port_iter->first << ": ";
-				for (std::vector<int> :: iterator port_iter = host_port_iter->second.begin(); port_iter != host_port_iter->second.end(); port_iter++)
+				for (std::vector<std::string> :: iterator port_iter = host_port_iter->second.begin(); port_iter != host_port_iter->second.end(); port_iter++)
 				{
 					std::cout << *port_iter << " ";
 				}
