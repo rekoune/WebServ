@@ -126,16 +126,17 @@ int ft_recv(struct pollfd& pollfd, HttpHandler& http)
 	int read;
 
 	read = recv(pollfd.fd, buf, sizeof(buf), 0);
-	if(!read)
+	if(read)
 	{
-		return 0;
+		http.appendData(buf, read);
 	}
-	http.appendData(buf, read);
 	if(http.isComplete())
 	{	
 		pollfd.events = POLLOUT;
 	}
+	// std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
 	// std::cout << "the receved bufer : " << buf << std::endl;
+	// std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
 	return 1;
 }
 
@@ -176,16 +177,16 @@ int server::polling(std::string& path)
 
 	while (GlobalServer)
 	{
-		// std::cout << "=======================================start polling================================" << std::endl;
+		std::cout << "=======================================start polling================================" << std::endl;
 		int n = poll(&socketFds[0], socketFds.size(), -1);
 		if(n < 0)
 			std::cerr << "Poll : " << strerror(errno) << std::endl;
 
 		for(size_t i = 0; i < socketFds.size() && n > 0 ; i++){
-			// std::cout << "nbr of client left to handle : " << n << std::endl;
+			std::cout << "nbr of client left to handle : " << n << std::endl;
 			if(socketFds[i].revents & (POLLHUP | POLLERR | POLLNVAL))
 			{
-				// std::cout << "closing the sockefd : " << socketFds[i].fd << std::endl;
+				std::cout << "closing the sockefd : " << socketFds[i].fd << std::endl;
 				close(socketFds[i].fd);
 				socketFds.erase(socketFds.begin() + i);
 				i--;
