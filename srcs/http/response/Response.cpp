@@ -194,11 +194,21 @@ void    Response::errorHandling(){
 
 void    Response::generateListingBody(DIR* dir){
     struct dirent* dirContent;
+    std::string oldPath;
+    std::string target;
+    std::string elementName;
     
+    target = resInfo.req.getRequestLine().target;
+    if (target.at(target.length() -1) != '/')
+        target.append("/");
     resInfo.path = "list.html";
     Utils::pushInVector(resElements.body, "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Directory Listing</title>\n</head>\n<body>\n <ul>\n");
     while((dirContent = readdir(dir))){
+        elementName = dirContent->d_name;
+        if (elementName == "." || elementName == "..")
+            continue;
         Utils::pushInVector(resElements.body, "  <li><a href=\"");
+        Utils::pushInVector(resElements.body, target);
         Utils::pushInVector(resElements.body, dirContent->d_name);
         Utils::pushInVector(resElements.body, "\">");
         Utils::pushInVector(resElements.body, dirContent->d_name);
@@ -310,8 +320,9 @@ HttpStatusCode     Response::getUploadPath(){
 
 void    Response::setFullPathByType(std::string& path, PathTypes& pathType, std::string contentType){
     if (pathType == F){
-        if (contentType.empty())
+        if (contentType.empty() || contentType == Utils::getFileType(fileTypes, Utils::getFileName(path))){
             return;
+        }
         else
             path.append(Utils::findExtensionByMime(fileTypes, contentType));
     }
@@ -350,6 +361,10 @@ HttpStatusCode  Response::extractHeaders(std::string bodyHeaders, std::map<std::
         std::cout << "9al 9al 9al" << std::endl;
         return BAD_REQUEST;
     }
+    // std::cout << "*********************************** Multi Part Headers *********************************************" << std::endl;
+    // std::string str = Utils::mapToString(headers);
+    // std::cout.write(str.c_str(), str.length()) << std::endl;;
+    // std::cout << "****************************************************************************************************" << std::endl;
     return OK;
 }
 
@@ -361,7 +376,7 @@ HttpStatusCode  Response::handleSinglePart(std::vector<char> singlePart, size_t 
     std::string path(resInfo.path);
 
     // std::cout << " >>>>>>>>>>> path before : " << path << std::endl;
-    // std::cout << "===========================================" << std::endl;
+    // std::cout << "==================Single part =======================" << std::endl;
     // std::cout.write(singlePart.data(), size);
     // std::cout << "===========================================" << std::endl;
     headersPos = Utils::isContainStr(&singlePart[0], size, "\r\n\r\n", 4);
@@ -392,7 +407,8 @@ HttpStatusCode  Response::handleSinglePart(std::vector<char> singlePart, size_t 
                 path.append(Utils::randomName(prefix));
             }
             if (contentType != headers.end()){
-                path.append(Utils::findExtensionByMime(fileTypes, contentType->second));
+                if (contentType->second != Utils::getFileType(fileTypes, Utils::getFileName(path)))
+                    path.append(Utils::findExtensionByMime(fileTypes, contentType->second));
             }
             else
                 path.append(".bin");
