@@ -174,61 +174,17 @@ void Utils::trimSpaces(std::string& str){
     str = std::string(str.begin() + start, str.begin() + end);
 }
 
+size_t       Utils::strToNumber(std::string& str){
+    size_t nb;
+    std::stringstream ss(str);
+
+    ss >> nb;
+    return (nb);
+}
+
 // int main (){
-//     std::string a("             File ");
-//     Utils::trimSpaces(a);
-//     std::cout << "a =" << a << std::endl;
+//     std::string a("12234458888888889999");
+//     size_t b = Utils::strToNumber(a);
+//     std::cout << "a = " << b << std::endl;
 // }
 
-
-
-
-// ParseState  Request::unchunk2(){
-// // std::cout << "*******************chunk body********************" << std::endl;
-// // std::cout.write(chunkBody.data(), chunkBody.size());
-// // std::cout << "*******************************************" << std::endl;
-// //     std::cout <<  "Hello world" << std::endl;
-//     long    currentPos = 0;
-//     long    sizePos = 0;
-//     long    size;
-//     ParseState status;
-//     std::vector<char> tempSize;
-
-
-
-//     sizePos = Utils::isContainStr(&chunkBody[0], chunkBody.size(), "\r\n", 2);
-//     if (sizePos == -1)
-//         return PARSE_ERROR;
-//     Utils::pushInVector(tempSize, &chunkBody[0], sizePos);
-//     tempSize.push_back('\0');
-//     size = Utils::hexToDec(&tempSize[0]);
-//     if (size == -1){
-//         std::cout << "hona hona hona" << std::endl;
-//         return PARSE_ERROR;
-//     }
-//     else if (size == 0)
-//         return (PARSE_COMPLETE);
-//     currentPos += sizePos + 2;
-//     std::vector<char> tempChunk(chunkBody.begin() + currentPos, chunkBody.end());
-//     while((status = singleChunk2(tempChunk, size)) == PARSE_BODY_CHUNKED){
-//         currentPos += size;
-//         if (chunkBody[currentPos] != '\r' || chunkBody[currentPos + 1] != '\n')
-//             return PARSE_ERROR;
-//         currentPos += 2;
-//         sizePos = Utils::isContainStr(&chunkBody[currentPos], chunkBody.size() - currentPos, "\r\n", 2);
-//         tempSize.clear();
-//         Utils::pushInVector(tempSize, &chunkBody[currentPos], sizePos);
-//         tempSize.push_back('\0');
-//         size = Utils::hexToDec(&tempSize[0]);
-//         currentPos += sizePos + 2;
-//         tempChunk.clear();
-//         Utils::pushInVector(tempChunk, &chunkBody[currentPos], chunkBody.size() - currentPos);
-//     }
-//     std::cout << "body size = " << body.size() << std::endl;
-// std::cout << "******************* BODY ****************************" << std::endl;
-// std::cout.write(body.data(), body.size());
-// std::cout << std::endl;
-// std::cout << "*****************************************************" << std::endl;
-// std::cout << "status = " << status << std::endl;
-//     exit(1);
-// }

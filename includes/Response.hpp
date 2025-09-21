@@ -28,7 +28,7 @@ class Response{
         void                                successHandling();
         std::string                         getStatusLine();
         std::vector<char>                   generateErrorBody();
-        std::map<std::string, std::string>  generateHeaders();
+        std::map<std::string, std::string>  generateHeaders(std::map<std::string, std::string>& headers);
         std::string                         getStatusMessage(HttpStatusCode status);
         std::vector<char>                   getBodyFromFile(std::string& path);
         HttpStatusCode                      writeBodyInFile(std::string& path, std::vector<char>& body);

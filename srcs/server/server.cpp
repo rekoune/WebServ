@@ -7,7 +7,7 @@ server::~server()
 {
 	std::cout << "Destroctor: closing socketFds" << std::endl;
 	for(size_t i = 0; i < socketFds.size(); i++){
-		// std::cout << "closing fd : " <<  socketFds[i].fd << std::endl;
+		std::cout << "closing fd : " <<  socketFds[i].fd << std::endl;
 		close(socketFds[i].fd);
 	}
 }
@@ -113,7 +113,7 @@ void server::acceptClient(int listenFd)
 		unsigned short client_port = ntohs(client_addr.sin_port);
 
 		std::cout << "New connection from: " << client_ip << ":" << client_port << std::endl;
-		// std::cout << "client nbr: " << socketFds.size() << " FD : " << clientFd << std::endl;
+		std::cout << "client nbr: " << socketFds.size() << " FD : " << clientFd << std::endl;
 		std::memset(&client_addr, 0, client_len);
 	}
 }
@@ -134,6 +134,7 @@ int ft_recv(struct pollfd& pollfd, HttpHandler& http)
 	{	
 		pollfd.events = POLLOUT;
 	}
+	// std::cout << "Readed Data = " << read << std::endl;
 	// std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
 	// std::cout << "the receved bufer : " << buf << std::endl;
 	// std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
@@ -147,10 +148,11 @@ int ft_send(struct pollfd& pollfd, HttpHandler& http)
 	std::vector<char> response = http.getResponse();
 	// std::cout << "==================== response ==========================" <<std::endl;
 	// std::cout.write(response.data(), response.size())<< std::endl;
+	std::cout << "Response Size = " << response.size() << std::endl;
 	int n  = send(pollfd.fd, &response[0], response.size(), 0);
 	if(n > 0)
 	{
-		// std::cout << "succufly send!!!!!" << std::endl;
+		std::cout << "succufly send!!!!!" << std::endl;
 		pollfd.events = POLLIN;
 	}
 	else
@@ -199,7 +201,7 @@ int server::polling(std::string& path)
 				{
 					if(!ft_recv(socketFds[i], http))
 					{
-						// std::cout << "closing the sockefd : " << socketFds[i].fd << std::endl;
+						std::cout << "closing the sockefd : " << socketFds[i].fd << std::endl;
 						close(socketFds[i].fd);
 						socketFds.erase(socketFds.begin() + i);
 						i--;
