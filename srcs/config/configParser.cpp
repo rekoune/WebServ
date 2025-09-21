@@ -73,7 +73,7 @@ bool	configStructInit(std::string line, ServerConfig& currentServer)
 			if ( colon != std::string::npos)
 			{
 				std::string ip_str = value.substr(0, colon);
-				std::string	port_str = value.substr(colon + 1);
+				std::string	port_str = cleanLine(value.substr(colon + 1));
 				// std::cout << "===========================port_str: " << port_str << std::endl;
 				if (!isitnumber(port_str))
 				{
@@ -86,10 +86,10 @@ bool	configStructInit(std::string line, ServerConfig& currentServer)
 					std::cerr << "CONFIG FILE ERROR : port is not a valid port number" << std::endl;
 					return false ;
 				}
-				currentServer.host_port[ip_str].push_back(port_int);
+				currentServer.host_port[ip_str].push_back(port_str);
 			}
 			else 
-				currentServer.host_port[value].push_back(80);
+				currentServer.host_port[value].push_back("80");
         }
 		// else if (directive.find("port") == 0)
 		// {
@@ -365,96 +365,14 @@ searchServerStatus	searchForServer(bool &in_server_block,  std::string& line, Se
 		return FALSE_RETURN;
 	}
 }
-void	strToUpper(std::string& str)
-{
-	size_t i = 0; 
-	while (i < str.size())
-	{
-		if ( str[i] >= 97 && str[i] <= 122)
-			str[i] -= 32;
-		i++;
-	}
-}
 
-bool	validateConfig(GlobaConfig& globalConfig)
-{
-	// std::cout << "vaaaaaaaaaaaaaaaaaalidate ============= \n";
-	//Validate the methods
-	std::vector<ServerConfig>::iterator serv_iter = globalConfig.servers.begin();
-	for (; serv_iter != globalConfig.servers.end();
-			serv_iter++ )
-	{
-		for (std::vector<LocationConfig>::iterator loc_iter = serv_iter->locations.begin() ; loc_iter != serv_iter->locations.end(); loc_iter++)
-		{
-			for (std::vector<std::string>::iterator metho_iter = loc_iter->allowed_methods.begin(); metho_iter != loc_iter->allowed_methods.end(); metho_iter++)
-			{
-				strToUpper(*metho_iter);
-				if (*metho_iter != "GET"
-					&& *metho_iter != "POST"
-					&& *metho_iter != "PUT"
-					&& *metho_iter != "DELETE"
-					&& *metho_iter != "PATCH"
-					&& *metho_iter != "HEAD"
-					&& *metho_iter != "OPTIONS"
-					&& *metho_iter != "CONNECT"
-					&& *metho_iter != "TRACE")
-				{
-					std::cerr << "CONFIG FILE ERROR: INVALID HTTP METHOD" << std::endl;
-					return false;
-				}
-			}
-
-		}
-
-	}
-	serv_iter = globalConfig.servers.begin();
-	//Validate the ips format
-	for (;serv_iter != globalConfig.servers.end(); serv_iter++)
-	{
-
-		for (std::map<std::string, std::vector<int> >::iterator host_iter =  serv_iter->host_port.begin(); host_iter != serv_iter->host_port.end(); host_iter++)
-		{
-			// std::string host_str = host_iter->first;
-			std::istringstream iss(host_iter->first);
-			char 				dot = 'd';
-			int 				num;
-			int i = 0 ;
-			while  (iss >> num )
-			{
-				dot = 0;
-				iss >> dot;
-				if (num < 0 || num > 255)
-				{
-					std::cerr << "CONFIG FILE ERROR: IP RANGE FORM 0 TO 255" << std::endl;
-					return false ;
-				}
-					
-				if ( i == 3)
-					break;
-				if ( dot != '.')
-				{
-					std::cerr << "CONFIG FILE ERROR: IP SYNTAX NOT VALID" << std::endl;
-					return false;
-				}
-				i++;
-			}
-			if ( dot )
-			{
-					std::cerr << "CONFIG FILE ERROR: IP SYNTAX NOT VALID1" << std::endl;
-					return false;
-			}
- 
-		}
-	}
-	return true;
-}
 
 void	fillDefaults(GlobaConfig& globalConfig)
 {
 	for (std::vector<ServerConfig>::iterator serv_iter = globalConfig.servers.begin(); serv_iter != globalConfig.servers.end(); serv_iter++)
 	{
 		if (serv_iter->host_port.empty())
-			serv_iter->host_port["0.0.0.0"].push_back(8000);
+			serv_iter->host_port["0.0.0.0"].push_back("8000");
 
 		// if (serv_iter->root.empty())
 		// 	serv_iter->root = "/";
