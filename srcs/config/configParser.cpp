@@ -53,8 +53,19 @@ bool	duplicated(std::string ip_str, std::string port_str, std::map<std::string, 
 	return false ;
 }
 
-bool	configStructInit(std::string line, ServerConfig& currentServer)
+// bool	duplicatedInOtherServ(std::vector<ServerConfig> servers, std::string ip_str, std::string port_str)
+// {
+// 	for (std::vector<ServerConfig>::iterator serv_iter = servers.begin(); serv_iter != servers.end(); serv_iter++)
+// 	{
+// 		if (duplicated(ip_str, port_str, serv_iter->host_port))
+// 			return true;
+// 	}
+// 	return false ;
+// }
+
+bool	configStructInit(std::string line, ServerConfig& currentServer, std::vector<ServerConfig>& servers)
 {
+	(void)servers;
 	bool	valid_directive = true;
 	if (line.find("server") == 0 && line.find("server_name") == std::string::npos)
 	{
@@ -81,7 +92,8 @@ bool	configStructInit(std::string line, ServerConfig& currentServer)
 				std::cerr << "CONFIG FILE ERROR : duplacated server_name " << std::endl;
 				return false ;				
 			}
-			std::istringstream iss(cleanLine(directive.substr(11 + 1)));
+			std::string i_server_name = cleanLine(directive.substr(11 + 1));
+			std::istringstream iss(i_server_name);
 			iss >> currentServer.server_name;
 			std::string extra_parameter;
 			iss >> extra_parameter;
@@ -114,8 +126,10 @@ bool	configStructInit(std::string line, ServerConfig& currentServer)
 					std::cerr << "CONFIG FILE ERROR : port is not a valid port number" << std::endl;
 					return false ;
 				}
-				if ( !duplicated(ip_str, port_str, currentServer.host_port))
+				if ( !duplicated(ip_str, port_str, currentServer.host_port)/*  && !duplicatedInOtherServ(servers, ip_str, port_str) */)
+				{
 					currentServer.host_port[ip_str].push_back(port_str);
+				}
 			}
 			else 
 				currentServer.host_port[value].push_back("80");
@@ -333,7 +347,6 @@ bool	parseLocationBlock(std::string line, LocationConfig& current_loc)
 		return false ;
 	}
 	return true;
-
 }
 
 searchServerStatus	searchForServer(bool &in_server_block,  std::string& line, ServerConfig& currentserver, GlobaConfig& globalConfig, bool& waiting_for_brace)
@@ -357,7 +370,7 @@ searchServerStatus	searchForServer(bool &in_server_block,  std::string& line, Se
 				currentserver = ServerConfig();
 			}
 			else 
-				configStructInit(remaining, currentserver);
+				configStructInit(remaining, currentserver, globalConfig.servers);
 		}
 		return CONTINUE_SRV ;
 	}
@@ -384,7 +397,7 @@ searchServerStatus	searchForServer(bool &in_server_block,  std::string& line, Se
 				globalConfig.servers.push_back(currentserver);
 			}
 			else 
-				configStructInit(remaining , currentserver);
+				configStructInit(remaining , currentserver, globalConfig.servers);
 		}
 		return CONTINUE_SRV ;
 	}
@@ -525,7 +538,7 @@ bool parseConfig(const std::string& configFilePath, GlobaConfig& globalConfig)
 					current_loc.root = currentserver.root;
 				currentserver.locations.push_back(current_loc);
 			}
-			else if (!configStructInit(line, currentserver))
+			else if (!configStructInit(line, currentserver, globalConfig.servers))
 				return false;
 
 			// std::cout << "is_serv_brace_closed :" <<  is_serv_brace_closed << std::endl;
