@@ -40,7 +40,7 @@ struct ServerConfig
     // std::vector<int>        	        port;
 
 
-	std::map<std::string, std::vector<int> >	host_port;
+	std::map<std::string, std::vector<std::string>>	host_port;
     std::string					        		root;
     size_t						        		client_max_body_size;
     std::map<int, std::string>	        		error_pages;
@@ -53,7 +53,6 @@ struct ServerConfig
 };
 
 
-
 struct	GlobaConfig
 {
 	std::vector<ServerConfig>	servers;
@@ -61,6 +60,7 @@ struct	GlobaConfig
 
 // GlobaConfig parseConfig(const std::string& configFilePath);
 bool parseConfig(const std::string& configFilePath, GlobaConfig& globalConfig);
+bool	validateConfig(GlobaConfig& globalConfig);
 
 
 #endif
