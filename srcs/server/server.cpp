@@ -7,6 +7,7 @@ server::~server()
 {
 	std::cout << "Destroctor: closing socketFds" << std::endl;
 	for(size_t i = 0; i < socketFds.size(); i++){
+		// std::cout << "closing fd : " <<  socketFds[i].fd << std::endl;
 		close(socketFds[i].fd);
 	}
 }
@@ -66,7 +67,6 @@ int server::listen_socket(std::string& ip, std::string& port)
 	listenersNbr++;
 	listenFds.push_back(sockfd);
 	socketFds.push_back(create_pollfd(sockfd, POLLIN));	
-
 	return sockfd;
 }
 
@@ -113,7 +113,7 @@ void server::acceptClient(int listenFd)
 		unsigned short client_port = ntohs(client_addr.sin_port);
 
 		std::cout << "New connection from: " << client_ip << ":" << client_port << std::endl;
-		std::cout << "client nbr: " << socketFds.size() << " FD : " << clientFd << std::endl;
+		// std::cout << "client nbr: " << socketFds.size() << " FD : " << clientFd << std::endl;
 		std::memset(&client_addr, 0, client_len);
 	}
 }
@@ -135,7 +135,7 @@ int ft_recv(struct pollfd& pollfd, HttpHandler& http)
 	{	
 		pollfd.events = POLLOUT;
 	}
-	std::cout << "the receved bufer : " << buf << std::endl;
+	// std::cout << "the receved bufer : " << buf << std::endl;
 	return 1;
 }
 
@@ -149,7 +149,7 @@ int ft_send(struct pollfd& pollfd, HttpHandler& http)
 	int n  = send(pollfd.fd, &response[0], response.size(), 0);
 	if(n > 0)
 	{
-		std::cout << "succufly send!!!!!" << std::endl;
+		// std::cout << "succufly send!!!!!" << std::endl;
 		pollfd.events = POLLIN;
 	}
 	else
@@ -166,23 +166,26 @@ void handleSigint(int sig) {
 
 int server::polling(std::string& path)
 {
-	GlobaConfig config = parseConfig(path);
+	////Users/haouky/Desktop/WebServ/srcs/http/config.conf
+	GlobaConfig config ;
+	if (parseConfig(path, config) == false)
+		exit(1);
 	HttpHandler http(config.servers[0]);
 
-	signal(SIGINT, handleSigint);
+	signal(SIGINT, handleSigint); 
 
 	while (Working_flage)
 	{
-		std::cout << "=======================================start polling================================" << std::endl;
+		// std::cout << "=======================================start polling================================" << std::endl;
 		int NbrOfActiveSockets = poll(&socketFds[0], socketFds.size(), -1);
 		if(NbrOfActiveSockets < 0)
 			std::cerr << "Poll : " << strerror(errno) << std::endl;
 
 		for(size_t i = 0; i < socketFds.size() && NbrOfActiveSockets > 0 ; i++){
-			std::cout << "nbr of client left to handle : " << NbrOfActiveSockets << std::endl;
-			if((socketFds[i].revents & (POLLHUP | POLLERR | POLLNVAL)) && Working_flage)
+			// std::cout << "nbr of client left to handle : " << n << std::endl;
+			if(socketFds[i].revents & (POLLHUP | POLLERR | POLLNVAL))
 			{
-				std::cout << "closing the sockefd : " << socketFds[i].fd << std::endl;
+				// std::cout << "closing the sockefd : " << socketFds[i].fd << std::endl;
 				close(socketFds[i].fd);
 				socketFds.erase(socketFds.begin() + i);
 				i--;
@@ -195,7 +198,7 @@ int server::polling(std::string& path)
 				{
 					if(!ft_recv(socketFds[i], http))
 					{
-						std::cout << "closing the sockefd : " << socketFds[i].fd << std::endl;
+						// std::cout << "closing the sockefd : " << socketFds[i].fd << std::endl;
 						close(socketFds[i].fd);
 						socketFds.erase(socketFds.begin() + i);
 						i--;
