@@ -42,6 +42,7 @@ struct ServerConfig
 	std::string											server_name;
 	std::map<std::string, std::vector<std::string> >	host_port;
     std::string					        				root;
+	size_t												duplicated_host_index;
     size_t						        				client_max_body_size;
     std::map<int, std::string>	        				error_pages;
 	std::vector<LocationConfig>	        				locations;
