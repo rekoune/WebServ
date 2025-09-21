@@ -11,9 +11,12 @@
 #include <arpa/inet.h> 
 #include <sys/socket.h>
 #include <unistd.h>
+#include <cstring>
+#include <cerrno>
 
 
-#include "../../includes/HttpHandler.hpp"
+
+#include "HttpHandler.hpp"
 
 #define BUFFER 4096
 class server {

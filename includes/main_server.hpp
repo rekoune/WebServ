@@ -3,7 +3,9 @@
 
 #include "server.hpp"
 
-
+#include <csignal>
+#include <cstring>   // for memset, st
+#include <cerrno>    // for errno
 
 
 
