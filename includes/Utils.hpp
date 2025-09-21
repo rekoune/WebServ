@@ -28,6 +28,7 @@ class Utils{
         static bool         isReadable(std::string& filePath);
         static std::string  randomName(std::string& prefix);
         static void         trimSpaces(std::string& str);
+        static size_t       strToNumber(std::string& str);
 };
 
 # endif
