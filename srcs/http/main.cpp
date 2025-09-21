@@ -18,11 +18,14 @@ int main (){
 
     std::string str;
     std::vector<char> response ;
-    // str.append("POST /upload/Files/ HTTP/1.1\r\nHost:localhost\r\nContent-Length: 214\r\nContent-type: multipart/form-data boundary=abde\r\n\r\n");
-    // str.append("--abde\r\nContent-Disposition: form-data; name=\"file1\";\r\nContent-Type: text/css\r\n\r\nmy body test--abde\r\n");
+    std::string content("--abdellah\r\nContent-Disposition: form-data; name=\"file1\"; filename=\"\"\r\nContent-Type: text/css\r\n\r\n--abdellah--\r\n");
+    str.append("POST /upload/Files/ HTTP/1.1\r\nHost:localhost\r\nContent-Length: ");
+    str.append(Utils::toString(content.length()));
+    str.append("\r\nContent-type: multipart/form-data boundary=abdellah\r\n\r\n");
+    str.append(content);
     // str.append("Content-Disposition: form-data; name=\"file1\"; filename=\"test2\"\r\nContent-Type: text/css\r\n\r\nmy body test2--abde--\r\n");
     // str.append("POST /upload/Files/test.html HTTP/1.1\r\nHost: localhost\r\nContent-Length: 2\r\n\r\nab");
-    str.append("GET /upload/content/images/chabiba.jpg.jpeg HTTP/1.1\r\nhost: rekouneHost\r\nContent-Length: 16\r\n\r\nabdellah");
+    // str.append("POST /upload/content/images/chabiba.jpg.jpeg HTTP/1.1\r\nhost: rekouneHost\r\nContent-Length: 16\r\n\r\nabdellah");
     // int i =0;
     // while(!http.isComplete()){
     //     if (i == (int)str.length())
