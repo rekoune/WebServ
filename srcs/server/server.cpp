@@ -3,16 +3,47 @@
 
 server::server(){}
 
+server::server(std::vector<ServerConfig>&	servers){
+
+	std::map<std::string, int> iportToSocket;
+	std::map<std::string, int>::iterator socketIt;
+
+	for(size_t i = 0; i < servers.size(); i++)
+	{
+		std::map<std::string, std::vector<std::string> >& host_port = servers[i].host_port;
+		std::map<std::string, std::vector<std::string> >::iterator it = host_port.begin();
+
+		while(it != host_port.end()){
+			for(size_t i = 0; i < it->second.size(); i++){
+				std::string socket = it->first + ":" + it->second[i];
+				std::cout<< "socket ip:port : |"<< socket << "|" << std::endl;
+				socketIt = iportToSocket.find(socket);
+				if(socketIt != iportToSocket.end())
+					listenToHosts[socketIt->second].push_back(servers[i]);
+				else
+				{
+					int socketfd;
+					if((socketfd = listen_socket(it->first, it->second[i])) != -1){
+						listenToHosts[socketfd].push_back(servers[i]);
+						iportToSocket[socket] = socketfd;
+					}
+				}
+			}
+			it++;
+		}
+	}
+}
+
 server::~server()
 {
 	std::cout << "Destroctor: closing socketFds" << std::endl;
 	for(size_t i = 0; i < socketFds.size(); i++){
-		// std::cout << "closing fd : " <<  socketFds[i].fd << std::endl;
+		std::cout << "closing fd : " <<  socketFds[i].fd << std::endl;
 		close(socketFds[i].fd);
 	}
 }
 
-int server::listen_socket(std::string& ip, std::string& port)
+int server::listen_socket(const std::string& ip, const std::string& port)
 {
 	struct addrinfo *res, info;
 
@@ -65,7 +96,7 @@ int server::listen_socket(std::string& ip, std::string& port)
 	//ERROR ?
 
 	listenersNbr++;
-	listenFds.push_back(sockfd);
+	// listenFds.push_back(sockfd);
 	socketFds.push_back(create_pollfd(sockfd, POLLIN));	
 	return sockfd;
 }
@@ -82,11 +113,19 @@ struct pollfd server::create_pollfd(int fd, short events)
 
 bool server::is_listener(int fd)
 {
-	for(size_t i = 0; i < listenFds.size(); i++){
-		if(fd == listenFds[i])
+	std::map<int, std::vector<ServerConfig> >::iterator it = listenToHosts.begin();
+	while(it != listenToHosts.end())
+	{
+		if(fd == it->first)
 			return true;
+		it++;
 	}
 	return false;
+	
+	// for(size_t i = 0; i < listenFds.size(); i++){
+	// 	if(fd == listenFds[i])
+	// 		return true;
+	// }
 }
 
 
@@ -106,56 +145,57 @@ void server::acceptClient(int listenFd)
 		int flags = fcntl(clientFd, F_GETFL, 0);
 		fcntl(clientFd, F_SETFL, flags | O_NONBLOCK);
 		//ERROR ?
-		
+
+		clients.push_back(client(listenToHosts[listenFd]));
 		socketFds.push_back(create_pollfd(clientFd, POLLIN));
 
 		inet_ntop(AF_INET, &(client_addr.sin_addr), client_ip, INET_ADDRSTRLEN);
 		unsigned short client_port = ntohs(client_addr.sin_port);
 
 		std::cout << "New connection from: " << client_ip << ":" << client_port << std::endl;
-		// std::cout << "client nbr: " << socketFds.size() << " FD : " << clientFd << std::endl;
+		std::cout << "client nbr: " << socketFds.size() << " FD : " << clientFd << std::endl;
 		std::memset(&client_addr, 0, client_len);
 	}
 }
 
 
 
-int ft_recv(struct pollfd& pollfd, HttpHandler& http)
+int server::ft_recv(struct pollfd& pollfd, int i)
 {
 	char buf[BUFFER];
 	int read;
 
 	read = recv(pollfd.fd, buf, sizeof(buf), 0);
-	if(!read)
+	if(!clients[i].isHostSeted())
 	{
-		return 0;
+		clients[i].appendFirstRequest(buf, read);
+		return read;
 	}
-	http.appendData(buf, read);
-	if(http.isComplete())
-	{	
+	clients[i].appendData(buf, read);
+	if(clients[i].isComplete())
 		pollfd.events = POLLOUT;
-	}
-	// std::cout << "the receved bufer : " << buf << std::endl;
+	std::cout << "the receved bufer : " << buf << std::endl;
 	return 1;
 }
 
-int ft_send(struct pollfd& pollfd, HttpHandler& http)
+int server::ft_send(struct pollfd& pollfd, int i)
 {
-	// char d[100] = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 29\r\n\r\n<h1>Hello from Server!  </h1>";
 	
-	std::vector<char> response = http.getResponse();
+	std::vector<char> response = clients[i].getResponse();
 	// std::cout << "==================== response ==========================" <<std::endl;
 	// std::cout.write(response.data(), response.size())<< std::endl;
 	int n  = send(pollfd.fd, &response[0], response.size(), 0);
+	
 	if(n > 0)
 	{
-		// std::cout << "succufly send!!!!!" << std::endl;
+		std::cout << "succufly send!!!!!" << std::endl;
 		pollfd.events = POLLIN;
 	}
 	else
 		std::cout << "send failed" << std::endl;
 	return 1;
 }
+
 int Working_flage = 1;
 
 void handleSigint(int sig) {
@@ -164,28 +204,23 @@ void handleSigint(int sig) {
     std::cout << "\nshutting down..." << std::endl;
 }
 
-int server::polling(std::string& path)
+int server::polling()
 {
-	////Users/haouky/Desktop/WebServ/srcs/http/config.conf
-	GlobaConfig config ;
-	if (parseConfig(path, config) == false)
-		exit(1);
-	HttpHandler http(config.servers[0]);
 
 	signal(SIGINT, handleSigint); 
 
 	while (Working_flage)
 	{
-		// std::cout << "=======================================start polling================================" << std::endl;
+		std::cout << "=======================================start polling================================" << std::endl;
 		int NbrOfActiveSockets = poll(&socketFds[0], socketFds.size(), -1);
 		if(NbrOfActiveSockets < 0)
 			std::cerr << "Poll : " << strerror(errno) << std::endl;
 
 		for(size_t i = 0; i < socketFds.size() && NbrOfActiveSockets > 0 ; i++){
-			// std::cout << "nbr of client left to handle : " << n << std::endl;
+			std::cout << "nbr of client left to handle : " << NbrOfActiveSockets << std::endl;
 			if(socketFds[i].revents & (POLLHUP | POLLERR | POLLNVAL))
 			{
-				// std::cout << "closing the sockefd : " << socketFds[i].fd << std::endl;
+				std::cout << "closing the sockefd : " << socketFds[i].fd << std::endl;
 				close(socketFds[i].fd);
 				socketFds.erase(socketFds.begin() + i);
 				i--;
@@ -196,9 +231,9 @@ int server::polling(std::string& path)
 					acceptClient(socketFds[i].fd);
 				else
 				{
-					if(!ft_recv(socketFds[i], http))
+					if(!ft_recv(socketFds[i], i - listenersNbr))
 					{
-						// std::cout << "closing the sockefd : " << socketFds[i].fd << std::endl;
+						std::cout << "closing the sockefd : " << socketFds[i].fd << std::endl;
 						close(socketFds[i].fd);
 						socketFds.erase(socketFds.begin() + i);
 						i--;
@@ -208,7 +243,7 @@ int server::polling(std::string& path)
 			}
 			else if((socketFds[i].revents & POLLOUT)  && Working_flage)
 			{
-				ft_send(socketFds[i], http);
+				ft_send(socketFds[i], i - listenersNbr);
 				NbrOfActiveSockets--;
 			}
 
