@@ -146,7 +146,7 @@ std::vector<char>   Response::getBodyFromFile(std::string& path){
         startPos = Utils::strToNumber(range);
         if (startPos >= (size_t)size)
             startPos = 0;
-        size = 2 * 1024 * 1024;
+        size = 110 * 1024; //to kb
         resInfo.status = PARTIAL_CONTENT;
         std::cout << "start pos = " << startPos << " , size = " << size << " , size + range = " << size + startPos << " , total size = " << file.tellg() << std::endl;
         std::string contentRange("bytes ");
