@@ -465,7 +465,7 @@ HttpStatusCode    Request::appendData(const char* _data, size_t size){
         return BAD_REQUEST;
     }
         // printBody();
-    printHeaders(); 
-    std::cout << "=================================================" << std::endl;
+    // printHeaders(); 
+    // std::cout << "=================================================" << std::endl;
     return (status);
 }
