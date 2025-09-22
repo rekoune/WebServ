@@ -15,10 +15,12 @@ bool client::isHostSeted(){
 void client::setHost(std::string &host){
 
 	for(size_t i = 0; i < myServers.size() ; i++){
-		if(host == myServers[i].server_name){
-			socketHttp.setServer(myServers[i]);
-			hostSeted = true;
-			return ;
+		for(size_t j = 0; j < myServers[i].server_name.size();j++){
+			if(host == myServers[i].server_name[j]){
+				socketHttp.setServer(myServers[i]);
+				hostSeted = true;
+				return ;
+			}
 		}
 		std::map<std::string, std::vector<std::string> >::iterator it = myServers[i].host_port.begin();
 		while (it != myServers[i].host_port.end()){

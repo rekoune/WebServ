@@ -11,6 +11,7 @@ int main(int ac, char **av)
         if (!parseConfig(av[1], globalconfig))
 		{
 			std::cout << "returned false \n";
+			// while (1){}
 			return (1);			
 		}
 	}
@@ -26,6 +27,13 @@ int main(int ac, char **av)
 		while (iter != globalconfig.servers.end())
 		{
         	std::cout << "PRINGTING THE STRUCT : " << server_num++ << std::endl; 
+			std::cout << "server_name: " << std::endl;
+			for (std::vector<std::string>::iterator server_num_iter = iter->server_name.begin(); server_num_iter != iter->server_name.end(); server_num_iter++)
+			{
+			 	std::cout << *server_num_iter <<  std::endl;
+
+			}
+
 
         	std::cout << "iter->host_port: "  << std::endl;
 			for (std::map<std::string, std::vector<std::string> >::iterator host_port_iter = iter->host_port.begin(); host_port_iter != iter->host_port.end(); host_port_iter++)
