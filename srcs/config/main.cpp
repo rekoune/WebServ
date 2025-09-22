@@ -27,8 +27,12 @@ int main(int ac, char **av)
 		while (iter != globalconfig.servers.end())
 		{
         	std::cout << "PRINGTING THE STRUCT : " << server_num++ << std::endl; 
+			std::cout << "server_name: " << std::endl;
+			for (std::vector<std::string>::iterator server_num_iter = iter->server_name.begin(); server_num_iter != iter->server_name.end(); server_num_iter++)
+			{
+			 	std::cout << *server_num_iter <<  std::endl;
 
-			std::cout << "server_name: " << iter->server_name <<  std::endl;
+			}
 
 
         	std::cout << "iter->host_port: "  << std::endl;
