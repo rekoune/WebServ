@@ -171,10 +171,13 @@ int server::ft_recv(struct pollfd& pollfd, int i)
 		clients[i].appendFirstRequest(buf, read);
 		return read;
 	}
-	clients[i].appendData(buf, read);
-	if(clients[i].isComplete())
-		pollfd.events = POLLOUT;
-	std::cout << "the receved bufer : " << buf << std::endl;
+	if(read){
+		clients[i].appendData(buf, read);
+		if(clients[i].isComplete()){
+			pollfd.events = POLLOUT;
+		}
+	}
+	// std::cout << "the receved bufer : " << buf << std::endl;
 	return 1;
 }
 
