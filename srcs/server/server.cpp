@@ -124,6 +124,7 @@ int ft_recv(struct pollfd& pollfd, HttpHandler& http)
 {
 	char buf[BUFFER];
 	int read;
+	static size_t counter = 0;
 
 	read = recv(pollfd.fd, buf, sizeof(buf), 0);
 	if(read)
@@ -134,10 +135,11 @@ int ft_recv(struct pollfd& pollfd, HttpHandler& http)
 	{	
 		pollfd.events = POLLOUT;
 	}
-	// std::cout << "Readed Data = " << read << std::endl;
 	// std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
 	// std::cout << "the receved bufer : " << buf << std::endl;
 	// std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+	counter += read;
+	std::cout << "Readed Data = " << counter << std::endl;
 	return 1;
 }
 
@@ -157,6 +159,7 @@ int ft_send(struct pollfd& pollfd, HttpHandler& http)
 	}
 	else
 		std::cout << "send failed" << std::endl;
+	std::cout << "Response Size from hamza  = " << n << std::endl;
 	return 1;
 }
 int Working_flage = 1;
