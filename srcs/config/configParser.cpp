@@ -1,4 +1,4 @@
-#include "../../includes/config/configStructs.hpp"
+ #include "../../includes/config/configStructs.hpp"
 
 
 bool isitnumber(std::string str)
@@ -19,6 +19,7 @@ bool isitspace(char c)
 		return true;
 	return false;
 }
+
 std::string cleanLine(std::string line)
 {
     size_t  hashpos = line.find("#");
@@ -63,6 +64,17 @@ bool	duplicated(std::string ip_str, std::string port_str, std::map<std::string, 
 // 	return false ;
 // }
 
+bool	duplicated_server_name(std::string current_server_name, ServerConfig current_server)
+{
+	for (std::vector<std::string>::iterator serv_name_iter = current_server.server_name.begin(); serv_name_iter != current_server.server_name.end(); serv_name_iter++)
+	{
+		if ( current_server_name == *serv_name_iter)
+			return true;
+	}
+	return false ;
+
+}
+
 bool	configStructInit(std::string line, ServerConfig& currentServer, std::vector<ServerConfig>& servers)
 {
 	(void)servers;
@@ -81,20 +93,18 @@ bool	configStructInit(std::string line, ServerConfig& currentServer, std::vector
 	std::size_t  pos = 0, end;
 	while ((end = line.find(";", pos)) != std::string::npos)
 	{
+		std::string	server_name;
 		std::string directive = cleanLine( line.substr(pos, end - pos));
 		pos = end + 1;
 		if ( directive.empty())
 			continue;
 		if (directive.find("server_name") == 0 && directive.length() > 11 && isitspace(directive[11]))
 		{
-			if (!currentServer.server_name.empty())
-			{
-				std::cerr << "CONFIG FILE ERROR : duplacated server_name " << std::endl;
-				return false ;				
-			}
 			std::string i_server_name = cleanLine(directive.substr(11 + 1));
 			std::istringstream iss(i_server_name);
-			iss >> currentServer.server_name;
+			iss >> server_name;
+			if ( !duplicated_server_name(server_name, currentServer))
+				currentServer.server_name.push_back(server_name);
 			std::string extra_parameter;
 			iss >> extra_parameter;
 			if (!extra_parameter.empty())
