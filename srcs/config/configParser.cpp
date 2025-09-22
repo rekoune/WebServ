@@ -1,4 +1,4 @@
-#include "../../includes/config/configStructs.hpp"
+ #include "../../includes/config/configStructs.hpp"
 
 
 bool isitnumber(std::string str)
@@ -19,6 +19,7 @@ bool isitspace(char c)
 		return true;
 	return false;
 }
+
 std::string cleanLine(std::string line)
 {
     size_t  hashpos = line.find("#");
@@ -37,11 +38,48 @@ std::string cleanLine(std::string line)
 }
 
 // bool is_str_exist_in_str_vec(std::string str, std::vector<std::string> str_vec);
-
-bool	configStructInit(std::string line, ServerConfig& currentServer)
+bool	duplicated(std::string ip_str, std::string port_str, std::map<std::string, std::vector<std::string> > host_port)
 {
+	for (std::map<std::string, std::vector<std::string> >::iterator map_iter = host_port.begin(); map_iter != host_port.end(); map_iter++)
+	{
+		if (ip_str == map_iter->first)
+		{
+			for (std::vector<std::string>::iterator str_iter = map_iter->second.begin(); str_iter != map_iter->second.end(); str_iter++)
+			{
+				if (port_str == *str_iter)
+					return true;
+			}
+		}
+	}
+	return false ;
+}
+
+// bool	duplicatedInOtherServ(std::vector<ServerConfig> servers, std::string ip_str, std::string port_str)
+// {
+// 	for (std::vector<ServerConfig>::iterator serv_iter = servers.begin(); serv_iter != servers.end(); serv_iter++)
+// 	{
+// 		if (duplicated(ip_str, port_str, serv_iter->host_port))
+// 			return true;
+// 	}
+// 	return false ;
+// }
+
+bool	duplicated_server_name(std::string current_server_name, ServerConfig current_server)
+{
+	for (std::vector<std::string>::iterator serv_name_iter = current_server.server_name.begin(); serv_name_iter != current_server.server_name.end(); serv_name_iter++)
+	{
+		if ( current_server_name == *serv_name_iter)
+			return true;
+	}
+	return false ;
+
+}
+
+bool	configStructInit(std::string line, ServerConfig& currentServer, std::vector<ServerConfig>& servers)
+{
+	(void)servers;
 	bool	valid_directive = true;
-	if (line.find("server") == 0)
+	if (line.find("server") == 0 && line.find("server_name") == std::string::npos)
 	{
 		std::cerr << "CONFIG FILE ERROR : UNDIFINED KEYWORD IN THE SERVER BLOCK " << std::endl;
 		return false;
@@ -55,17 +93,29 @@ bool	configStructInit(std::string line, ServerConfig& currentServer)
 	std::size_t  pos = 0, end;
 	while ((end = line.find(";", pos)) != std::string::npos)
 	{
+		std::string	server_name;
 		std::string directive = cleanLine( line.substr(pos, end - pos));
 		pos = end + 1;
 		if ( directive.empty())
 			continue;
-		// std::cout << "==============" << directive[7] << std::endl;
-		// std::cout << "==============" << directive << std::endl;
-		// std::cout << "==============length" << directive.length() << std::endl;
-
-		if (directive.find("root") == 0 && directive.length() > 4 &&  isitspace (directive[4])) {
+		if (directive.find("server_name") == 0 && directive.length() > 11 && isitspace(directive[11]))
+		{
+			std::string i_server_name = cleanLine(directive.substr(11 + 1));
+			std::istringstream iss(i_server_name);
+			iss >> server_name;
+			if ( !duplicated_server_name(server_name, currentServer))
+				currentServer.server_name.push_back(server_name);
+			std::string extra_parameter;
+			iss >> extra_parameter;
+			if (!extra_parameter.empty())
+			{
+				std::cerr << "CONFIG FILE ERROR : server_name should be one word " << std::endl;
+				return false ;
+			}
+		}
+		else if (directive.find("root") == 0 && directive.length() > 4 &&  isitspace (directive[4])) {
 			// std::cout << "=============IS SPACE A SAHBI \n";
-            currentServer.root = cleanLine(directive.substr(directive.find(" ") + 1));
+            currentServer.root = cleanLine(directive.substr(4));
         }
         else if (directive.find("listen") == 0 && directive.length() > 6 && isitspace( directive[6])) {
 			std::string value = cleanLine( directive.substr(6));
@@ -86,7 +136,10 @@ bool	configStructInit(std::string line, ServerConfig& currentServer)
 					std::cerr << "CONFIG FILE ERROR : port is not a valid port number" << std::endl;
 					return false ;
 				}
-				currentServer.host_port[ip_str].push_back(port_str);
+				if ( !duplicated(ip_str, port_str, currentServer.host_port)/*  && !duplicatedInOtherServ(servers, ip_str, port_str) */)
+				{
+					currentServer.host_port[ip_str].push_back(port_str);
+				}
 			}
 			else 
 				currentServer.host_port[value].push_back("80");
@@ -222,10 +275,10 @@ bool	parseLocationBlock(std::string line, LocationConfig& current_loc)
 		if ( directive.empty())
 			continue;
 		if (directive.find("root") == 0 && directive.length() > 4 &&  isitspace (directive[4]))
-			current_loc.root = cleanLine(directive.substr(directive.find(" ") + 1));
+			current_loc.root = cleanLine(directive.substr(4));
 		else if (directive.find ("index") == 0 && directive.length() > 5 &&  isitspace (directive[5]))
 		{
-			std::string	index_paths = cleanLine(directive.substr(directive.find(" ") + 1));
+			std::string	index_paths = cleanLine(directive.substr(5));
 			std::string index_path;
 			std::istringstream	iss(index_paths);
 			while (iss >> index_path)
@@ -247,12 +300,12 @@ bool	parseLocationBlock(std::string line, LocationConfig& current_loc)
 			} 
 		}
 		else if ( directive.find("upload_store") == 0 && directive.length() > 12 &&  isitspace (directive[12]))
-			current_loc.upload_store = cleanLine(directive.substr(directive.find(" ") + 1));
+			current_loc.upload_store = cleanLine(directive.substr(12));
 		// else if ( directive.find("cgi_pass") == 0)
 		// 	current_loc.cgi_pass = cleanLine(directive.substr(directive.find(" ") + 1)); 			//TO REMOVE
 		else if ( directive.find("allowed_methods") == 0 && directive.length() > 15 &&  isitspace (directive[15]))
 		{
-			std::string		methods = cleanLine(directive.substr(directive.find(" ") + 1));
+			std::string		methods = cleanLine(directive.substr(15));
 			std::istringstream iss(methods);
 			std::string 	method;
 			current_loc.allowed_methods.clear();
@@ -304,7 +357,6 @@ bool	parseLocationBlock(std::string line, LocationConfig& current_loc)
 		return false ;
 	}
 	return true;
-
 }
 
 searchServerStatus	searchForServer(bool &in_server_block,  std::string& line, ServerConfig& currentserver, GlobaConfig& globalConfig, bool& waiting_for_brace)
@@ -328,7 +380,7 @@ searchServerStatus	searchForServer(bool &in_server_block,  std::string& line, Se
 				currentserver = ServerConfig();
 			}
 			else 
-				configStructInit(remaining, currentserver);
+				configStructInit(remaining, currentserver, globalConfig.servers);
 		}
 		return CONTINUE_SRV ;
 	}
@@ -355,7 +407,7 @@ searchServerStatus	searchForServer(bool &in_server_block,  std::string& line, Se
 				globalConfig.servers.push_back(currentserver);
 			}
 			else 
-				configStructInit(remaining , currentserver);
+				configStructInit(remaining , currentserver, globalConfig.servers);
 		}
 		return CONTINUE_SRV ;
 	}
@@ -496,7 +548,7 @@ bool parseConfig(const std::string& configFilePath, GlobaConfig& globalConfig)
 					current_loc.root = currentserver.root;
 				currentserver.locations.push_back(current_loc);
 			}
-			else if (!configStructInit(line, currentserver))
+			else if (!configStructInit(line, currentserver, globalConfig.servers))
 				return false;
 
 			// std::cout << "is_serv_brace_closed :" <<  is_serv_brace_closed << std::endl;
