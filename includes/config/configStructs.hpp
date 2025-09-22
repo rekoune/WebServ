@@ -39,7 +39,7 @@ struct ServerConfig
     // std::vector<std::string>			host;
     // std::vector<int>        	        port;
 
-	std::string											server_name;
+	std::vector<std::string>							server_name;
 	std::map<std::string, std::vector<std::string> >	host_port;
     std::string					        				root;
 	size_t												duplicated_host_index;
@@ -48,7 +48,7 @@ struct ServerConfig
 	std::vector<LocationConfig>	        				locations;
     std::map<std::string, std::string>  				cgi_extension;
     ServerConfig() 
-        :  server_name(""), root("/"),  client_max_body_size(1024 * 1024)  
+        :  server_name(1, ""), root("/"),  client_max_body_size(1024 * 1024)  
 		{}
 	
 };
