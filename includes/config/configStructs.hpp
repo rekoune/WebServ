@@ -39,7 +39,7 @@ struct ServerConfig
     // std::vector<std::string>			host;
     // std::vector<int>        	        port;
 
-
+    std::string                                         server_name;
 	std::map<std::string, std::vector<std::string> >	host_port;
     std::string					        		root;
     size_t						        		client_max_body_size;

@@ -1,17 +1,19 @@
 #include "includes/main.hpp"
 
 
+
 int main(int c, char **v)
 {
-	if(c < 4)
+	if(c != 2)
 		return 1;
-	server serv;
 
-	std::string ip(v[1]);
-	std::string port(v[2]);
-	std::string path(v[3]);
-	if(serv.listen_socket(ip, port) == -1)
-		return 1;
-	
-	serv.polling(path);
+
+	std::string path(v[1]);
+
+	GlobaConfig config;
+	if (parseConfig(path, config) == false)
+		exit(1);
+	server serv(config.servers);
+	// 	return 1;
+	serv.polling();
 }

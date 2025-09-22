@@ -1,5 +1,5 @@
 HTTP_SRC = srcs/http/request/Request.cpp  srcs/http/response/Response.cpp srcs/http/request/RequestHandler.cpp srcs/http/HttpHandler.cpp srcs/utils/Utils.cpp 
-SERVER_SRC = srcs/server/server.cpp 
+SERVER_SRC = srcs/server/server.cpp  srcs/server/client.cpp 
 CONFIG_SRC = srcs/config/configParser.cpp srcs/config/configValidate.cpp
 SRC= ${HTTP_SRC} ${SERVER_SRC} ${CONFIG_SRC} main.cpp
 OBJ = $(SRC:.cpp=.o)
