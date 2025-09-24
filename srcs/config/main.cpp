@@ -28,9 +28,12 @@ int main(int ac, char **av)
 		{
         	std::cout << "PRINGTING THE STRUCT : " << server_num++ << std::endl; 
 			std::cout << "server_name: " << std::endl;
-			for (std::vector<std::string>::iterator server_num_iter = iter->server_name.begin(); server_num_iter != iter->server_name.end(); server_num_iter++)
+			int  i = 0;
+			for (std::vector<std::string>::iterator server_num_iter = iter->server_name.begin() ; server_num_iter != iter->server_name.end(); server_num_iter++)
 			{
-			 	std::cout << *server_num_iter <<  std::endl;
+
+			 	std::cout << i <<  *server_num_iter <<  std::endl;
+				i++;
 
 			}
 
