@@ -75,7 +75,7 @@ bool	duplicated_server_name(std::string current_server_name, ServerConfig curren
 
 }
 
-bool	configStructInit(std::string line, ServerConfig& currentServer, std::vector<ServerConfig>& servers)
+bool	parseServerDirective(std::string line, ServerConfig& currentServer, std::vector<ServerConfig>& servers)
 {
 	(void)servers;
 	bool	valid_directive = true;
@@ -93,13 +93,13 @@ bool	configStructInit(std::string line, ServerConfig& currentServer, std::vector
 	std::size_t  pos = 0, end;
 	while ((end = line.find(";", pos)) != std::string::npos)
 	{
-		std::string	server_name;
 		std::string directive = cleanLine( line.substr(pos, end - pos));
 		pos = end + 1;
 		if ( directive.empty())
 			continue;
 		if (directive.find("server_name") == 0 && directive.length() > 11 && isitspace(directive[11]))
 		{
+			std::string	server_name;
 			std::string i_server_name = cleanLine(directive.substr(11 + 1));
 			std::istringstream iss(i_server_name);
 			iss >> server_name;
@@ -257,7 +257,7 @@ bool	is_valid_status(int given_status)
 	return true;
 }
 
-bool	parseLocationBlock(std::string line, LocationConfig& current_loc)
+bool	parseLocationDirective(std::string line, LocationConfig& current_loc)
 {
 	bool	is_valid_directive = true;
 
@@ -380,7 +380,7 @@ searchServerStatus	searchForServer(bool &in_server_block,  std::string& line, Se
 				currentserver = ServerConfig();
 			}
 			else 
-				configStructInit(remaining, currentserver, globalConfig.servers);
+				parseServerDirective(remaining, currentserver, globalConfig.servers);
 		}
 		return CONTINUE_SRV ;
 	}
@@ -407,7 +407,7 @@ searchServerStatus	searchForServer(bool &in_server_block,  std::string& line, Se
 				globalConfig.servers.push_back(currentserver);
 			}
 			else 
-				configStructInit(remaining , currentserver, globalConfig.servers);
+				parseServerDirective(remaining , currentserver, globalConfig.servers);
 		}
 		return CONTINUE_SRV ;
 	}
@@ -434,21 +434,93 @@ void	fillDefaults(GlobaConfig& globalConfig)
 	}
 }
 
-bool parseConfig(const std::string& configFilePath, GlobaConfig& globalConfig)
+bool	parseLocationBlock(ServerConfig&	currentserver, std::ifstream& file, std::string& line/* , bool& is_loc_brace_closed */)
 {
 	bool			is_loc_brace_closed = false;
-	bool			is_serv_brace_closed = false;
+
+
+	LocationConfig current_loc;
+	size_t	loc_start = line.find("location") + 8;
+	size_t	brace_pos = line.find("{", loc_start);
+	// if ( loc_start == std::string::npos )
+	// {
+	// 	std::cerr << "ig its wrong error message here : ==CONFIG FILE ERROR: Malformed location block better use opening brace in the first line \n";
+	// 	continue ;  
+	// }
+	// current_loc.path = cleanLine(brace_pos != std::string::npos ? line.substr(loc_start, brace_pos - loc_start)
+	// 	: cleanLine(line.substr(loc_start)));
+	if ( brace_pos != std::string::npos)
+	{
+		std::string after_brace = cleanLine(line.substr(brace_pos + 1));				//throwig error if anything after {
+		if  (!after_brace.empty())
+		{
+			std::cerr << "CONFIG FILE ERROR: Syntax : location <path/> {" << std::endl;
+			return false;
+		}
+		current_loc.path = cleanLine (line.substr(loc_start, brace_pos - loc_start));
+	}
+	else 
+	{
+		 current_loc.path = cleanLine(line.substr(loc_start));
+	}
+	if ( current_loc.path.empty() )
+	{
+		// here i can add Skipping empty lines to find path but no need
+		std::cerr << "CONFIG FILE ERROR: no path for location - syntax :<location> </Path/> <{> \n";
+		return false;
+	}
+	if (brace_pos == std::string::npos)
+	{
+		while (std::getline(file, line))
+		{
+			line = cleanLine(line);
+			if ( line.empty())
+				continue;
+			else if ( line == "{")
+				break ;
+			else
+			{
+				std::cerr << "CONFIG FILE ERROR: no <{> after location and path" << std::endl;
+				return false;
+			}
+		}
+	}
+	// needs to check is anything after "{"
+	while ( std::getline(file, line))
+	{
+		line = cleanLine(line);
+		if ( line.empty())
+			continue;
+		if ( line == "}")
+		{
+			is_loc_brace_closed = true;
+			break;				
+		}
+		if (!parseLocationDirective(line, current_loc))
+			return false;
+	}
+	// std::cout << "is_LOC_BRACE_CLOSED :" << is_loc_brace_closed << std::endl; // debug
+	if ( file.eof() && is_loc_brace_closed == false)
+	{
+		std::cerr << "CONFIG FILE ERROR: location braces not close" << std::endl;
+		return false;
+	}
+	if (current_loc.root.empty())
+		current_loc.root = currentserver.root;
+	currentserver.locations.push_back(current_loc);
+	return true;
+}
+
+bool parseServerBlock(GlobaConfig& globalConfig, std::ifstream& file, bool& waiting_for_brace, bool& is_serv_brace_closed)
+{
     std::string 	line;
-    std::ifstream 	file(configFilePath.c_str());
-    if (!file.is_open())
-    {
-        std::cerr << "CONFIG FILE ERROR: error opening config file: " << configFilePath << std::endl;
-        return false;
-    }
+
 	bool	in_server_block = false;
-	bool	waiting_for_brace = false;
+
+	
 	ServerConfig currentserver;
-    while (std::getline(file, line))
+    
+	while (std::getline(file, line))
     {
 		// std::cout << "we reading agin and eof: " << file.eof() << std::endl;
 		line = cleanLine(line);     //	triming and removing comments 
@@ -461,7 +533,7 @@ bool parseConfig(const std::string& configFilePath, GlobaConfig& globalConfig)
 			if ( status == CONTINUE_SRV)
 				continue;
 			else if (status == FALSE_RETURN)
-				return false ;
+				return false ;                                                    
 		}
 		else 
 		{
@@ -477,78 +549,10 @@ bool parseConfig(const std::string& configFilePath, GlobaConfig& globalConfig)
 			}
 			else if (line.find("location") == 0)
 			{
-				LocationConfig current_loc;
-
-				size_t	loc_start = line.find("location") + 8;
-				size_t	brace_pos = line.find("{", loc_start);
-				// if ( loc_start == std::string::npos )
-				// {
-				// 	std::cerr << "ig its wrong error message here : ==CONFIG FILE ERROR: Malformed location block better use opening brace in the first line \n";
-				// 	continue ;  
-				// }
-				// current_loc.path = cleanLine(brace_pos != std::string::npos ? line.substr(loc_start, brace_pos - loc_start)
-				// 	: cleanLine(line.substr(loc_start)));
-				if ( brace_pos != std::string::npos)
-				{
-					std::string after_brace = cleanLine(line.substr(brace_pos + 1));				//throwig error if anything after {
-					if  (!after_brace.empty())
-					{
-						std::cerr << "CONFIG FILE ERROR: Syntax : location <path/> {" << std::endl;
-						return false;
-					}
-					current_loc.path = cleanLine (line.substr(loc_start, brace_pos - loc_start));
-				}
-				else 
-				{
-					 current_loc.path = cleanLine(line.substr(loc_start));
-				}
-				if ( current_loc.path.empty() )
-				{
-					// here i can add Skipping empty lines to find path but no need
-					std::cerr << "CONFIG FILE ERROR: no path for location - syntax :<location> </Path/> <{> \n";
+				if (!parseLocationBlock(currentserver, file, line))
 					return false;
-				}
-				if (brace_pos == std::string::npos)
-				{
-					while (std::getline(file, line))
-					{
-						line = cleanLine(line);
-						if ( line.empty())
-							continue;
-						else if ( line == "{")
-							break ;
-						else
-						{
-							std::cerr << "CONFIG FILE ERROR: no <{> after location and path" << std::endl;
-							return false;
-						}
-					}
-				}
-				// needs to check is anything after "{"
-				while ( std::getline(file, line))
-				{
-					line = cleanLine(line);
-					if ( line.empty())
-						continue;
-					if ( line == "}")
-					{
-						is_loc_brace_closed = true;
-						break;				
-					}
-					if (!parseLocationBlock(line, current_loc))
-						return false;
-				}
-				// std::cout << "is_LOC_BRACE_CLOSED :" << is_loc_brace_closed << std::endl; // debug
-				if ( file.eof() && is_loc_brace_closed == false)
-				{
-					std::cerr << "CONFIG FILE ERROR: location braces not close" << std::endl;
-					return false;
-				}
-				if (current_loc.root.empty())
-					current_loc.root = currentserver.root;
-				currentserver.locations.push_back(current_loc);
 			}
-			else if (!configStructInit(line, currentserver, globalConfig.servers))
+			else if (!parseServerDirective(line, currentserver, globalConfig.servers))
 				return false;
 
 			// std::cout << "is_serv_brace_closed :" <<  is_serv_brace_closed << std::endl;
@@ -561,7 +565,23 @@ bool parseConfig(const std::string& configFilePath, GlobaConfig& globalConfig)
 			// }
 		}
     }
-	
+	return true;
+}
+
+bool parseConfig(const std::string& configFilePath, GlobaConfig& globalConfig)
+{
+	bool			is_serv_brace_closed = false;
+    std::ifstream 	file(configFilePath.c_str());
+
+	bool	waiting_for_brace = false;
+
+    if (!file.is_open())
+    {
+        std::cerr << "CONFIG FILE ERROR: error opening config file: " << configFilePath << std::endl;
+        return false;
+    }
+	if ( !parseServerBlock(globalConfig, file, waiting_for_brace, is_serv_brace_closed))
+		return false;
 	if (waiting_for_brace)
 		std::cerr << "CONFIG FILE ERROR: NO SERVER BLOCK\n";
 	if (!is_serv_brace_closed /* || in_server_block */)
