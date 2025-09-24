@@ -23,8 +23,8 @@ struct LocationConfig
     bool						autoindex;
     
 	std::string					upload_store;
+
     std::vector<std::string>	allowed_methods;
-    // std::string					cgi_pass; //remove 
 
     std::string                 redirection_url;
     int                         redirection_status;
@@ -36,9 +36,6 @@ struct LocationConfig
 
 struct ServerConfig
 {
-    // std::vector<std::string>			host;
-    // std::vector<int>        	        port;
-
 	std::vector<std::string>							server_name;
 	std::map<std::string, std::vector<std::string> >	host_port;
     std::string					        				root;
@@ -48,9 +45,8 @@ struct ServerConfig
 	std::vector<LocationConfig>	        				locations;
     std::map<std::string, std::string>  				cgi_extension;
     ServerConfig() 
-        :  server_name(1, ""), root("/"),  client_max_body_size(1024 * 1024)  
-		{}
-	
+        :  root("/"),  client_max_body_size(1024 * 1024)  
+		{}	
 };
 
 
