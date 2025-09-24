@@ -1,9 +1,12 @@
 #include "../../includes/main_server.hpp"
 
 
-server::server(){}
+server::server() : listenersNbr(0){}
 
-server::server(std::vector<ServerConfig>&	servers){
+
+server::server(std::vector<ServerConfig>&	servers): listenersNbr(0) {
+
+	printingserver(servers[0]);
 
 	std::map<std::string, int> iportToSocket;
 	std::map<std::string, int>::iterator socketIt;
@@ -19,12 +22,17 @@ server::server(std::vector<ServerConfig>&	servers){
 				std::cout<< "socket ip:port : |"<< socket << "|" << std::endl;
 				socketIt = iportToSocket.find(socket);
 				if(socketIt != iportToSocket.end())
+				{
 					listenToHosts[socketIt->second].push_back(servers[i]);
+					
+				}
 				else
 				{
 					int socketfd;
 					if((socketfd = listen_socket(it->first, it->second[i])) != -1){
 						listenToHosts[socketfd].push_back(servers[i]);
+						std::cout << "pushing the server--" << std::endl;
+						printingserver(listenToHosts[socketfd].at(0));
 						iportToSocket[socket] = socketfd;
 					}
 				}
@@ -145,8 +153,8 @@ void server::acceptClient(int listenFd)
 		int flags = fcntl(clientFd, F_GETFL, 0);
 		fcntl(clientFd, F_SETFL, flags | O_NONBLOCK);
 		//ERROR ?
-
-		clients.push_back(client(listenToHosts[listenFd]));
+		
+		clients.push_back(client(listenToHosts[listenFd], clientFd));
 		socketFds.push_back(create_pollfd(clientFd, POLLIN));
 
 		inet_ntop(AF_INET, &(client_addr.sin_addr), client_ip, INET_ADDRSTRLEN);
@@ -166,16 +174,24 @@ int server::ft_recv(struct pollfd& pollfd, int i)
 	int read;
 
 	read = recv(pollfd.fd, buf, sizeof(buf), 0);
+	// buf[read] = 0;
+	if(pollfd.fd != clients[i].getFd())
+		  std::cout << "\033[31mthis is not the correct client \ni : " << i << "\033[0m" << std::endl;
+	else
+		std::cout << "\033[32mthis is the correct client \n i: " << i << "\033[0m" << std::endl;
+
+	std::cout<< "buf: " << buf<< std::endl;
 	if(!clients[i].isHostSeted())
 	{
-		clients[i].appendFirstRequest(buf, read);
+		std::cout << "seting host...." << std::endl;
+		if(clients[i].appendFirstRequest(buf, read))
+			pollfd.events = POLLOUT;
 		return read;
 	}
 	if(read){
 		clients[i].appendData(buf, read);
-		if(clients[i].isComplete()){
+		if(clients[i].isComplete())
 			pollfd.events = POLLOUT;
-		}
 	}
 	// std::cout << "the receved bufer : " << buf << std::endl;
 	return 1;
@@ -183,10 +199,10 @@ int server::ft_recv(struct pollfd& pollfd, int i)
 
 int server::ft_send(struct pollfd& pollfd, int i)
 {
-	
+
 	std::vector<char> response = clients[i].getResponse();
-	// std::cout << "==================== response ==========================" <<std::endl;
-	// std::cout.write(response.data(), response.size())<< std::endl;
+	std::cout << "==================== response ==========================" <<std::endl;
+	std::cout.write(response.data(), response.size())<< std::endl;
 	int n  = send(pollfd.fd, &response[0], response.size(), 0);
 	
 	if(n > 0)

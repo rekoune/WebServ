@@ -7,19 +7,20 @@ class client{
 private:
 	client();
 		HttpHandler socketHttp;
-
 		std::vector<ServerConfig>& myServers;
-		std::string requestData;
-		std::string hostName;
-		bool hostSeted;
+
+		std::vector<char> requestData;
+		bool hostSeted ;	
+		int fd;
+
 	public:
 
-		client(std::vector<ServerConfig>& myServers);
-		// client(const client& other);
+		client(std::vector<ServerConfig>& myServers, int fd);
+		client(const client& other);
 		// client& operator=(const client& other);
 		// ~client();
-
-		void appendFirstRequest(const char* buf, int read);
+		int getFd();
+		bool appendFirstRequest(const char* buf, int read);
 		bool isHostSeted();
 		void setHost(std::string &host);
 
@@ -27,7 +28,7 @@ private:
 		bool isComplete();
 		std::vector<char> getResponse();
 };
-
+void printingserver(const ServerConfig& servers);
 
 #endif 
 
