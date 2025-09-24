@@ -8,17 +8,10 @@
 
 #define BUFFER 4096
 
-// struct hosts{
-// 	std::string ipPort;
-// 	std::string socket;
-// 	std::vector<std::string> hosts;
-// };
 
 class server {
 private:
 	std::vector<struct pollfd> socketFds;
-
-	// std::vector<int> listenFds;
 
 	std::vector<client> clients;
 
@@ -45,6 +38,7 @@ public:
 	int ft_recv(struct pollfd& pollfd, int i);
 
 };
+
 
 #endif
 
