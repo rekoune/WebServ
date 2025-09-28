@@ -9,6 +9,8 @@ int	main()
 	"GET /test.py?name=esmo&age=20 HTTP/1.1\r\n"
 	"Host: localhost:8080\r\n"
 	"User-Agent: curl/7.68.0\r\n"
+	"content-type: text/html\r\n"
+	"content-length: 68137\r\n"
 	"Accept: */*\r\n"
 	"\r\n";
 
@@ -24,6 +26,8 @@ int	main()
 
 	CgiExecutor cgi_executor(req, "www/cgi-bin/test.py", "webserv/1.1");
 	cgi_executor.run(result, status);
+
+
 
 	// std::cout  <<  "REQUEST_METHOD" << ": " << req.getRequestLine().target << " " << req.getRequestLine().method <<" " << req.getRequestLine().httpVersion << std::endl;
 	// // std::cout << "QUERY_STRING";
