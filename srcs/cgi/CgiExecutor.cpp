@@ -35,9 +35,9 @@ void	CgiExecutor::parseTarget(std::string& script_name, std::string& query )
 std::vector<std::string>	CgiExecutor::buildEnv()
 {
 	std::string target = request.getRequestLine().target;
-	std::vector<std::string>	env;
 	std::string					query;
 	std::string					script_name;
+	std::vector<std::string>	env;
 	
 	parseTarget(script_name, query);
 	std::cout << script_name << std::endl;
@@ -48,18 +48,14 @@ std::vector<std::string>	CgiExecutor::buildEnv()
 	env.push_back("SERVER_PROTOCOL=" + request.getRequestLine().httpVersion);
 	env.push_back("SERVER_SOFTWARE=" + server_software);
 	env.push_back("GATEWAY_INTERFACE=CGI/1.1");
-	env.push_back("CONTENT_TYPE=" + request.getHeaders()["content-type"]);
-	env.push_back("CONTENT_LENGTH=" + request.getHeaders()["content-length"]);
-	
 
-
+	if (request.getHeaders().count("content-type"))
+		env.push_back("CONTENT_TYPE=" + request.getHeaders()["content-type"]);
+	if ( request.getHeaders().count("content-length"))
+		env.push_back("CONTENT_LENGTH=" + request.getHeaders()["content-length"]);
 
 	return env;
 }
-
-
-
-
 
 
 
@@ -70,6 +66,11 @@ bool	CgiExecutor::run(std::vector<char>& result, int&	cgi_status )
 {
 	std::vector<std::string>	env = buildEnv();
 	(void)result, (void)cgi_status;
+	for ( std::vector< std::string>::iterator iter = env.begin(); iter != env.end(); iter++)
+	{
+		std::cout << *iter << std::endl;
+	}
+
 	return true;
 }
 
