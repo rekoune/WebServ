@@ -9,6 +9,7 @@
 # include <ctime>
 # include <cstdlib>
 # include <unistd.h>
+# include <fstream>
 
 class Utils{
     public:
@@ -29,6 +30,7 @@ class Utils{
         static std::string  randomName(std::string& prefix);
         static void         trimSpaces(std::string& str);
         static size_t       strToNumber(std::string& str);
+        static size_t       getFileSize(const std::string& filePath);
 };
 
 # endif

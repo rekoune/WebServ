@@ -2,7 +2,7 @@
 # ifndef RESPONSE_HPP
 # define RESPONSE_HPP
 
-# include "RequestHandler.hpp"
+# include "ResourceResolver.hpp"
 # include <vector>
 # include <map>
 # include <string>
@@ -19,7 +19,7 @@ struct ResElements{
 
 class Response{
     private:
-        HttpResponseInfo                    resInfo;
+        HttpResourceInfo                    resInfo;
         ResElements                         resElements;
         std::vector<char>                   response;
         std::map<std::string, std::string>  fileTypes;
@@ -50,10 +50,10 @@ class Response{
     public:
         Response();
         Response(const Response& other);
-        Response(const HttpResponseInfo resInfo);
+        Response(const HttpResourceInfo resInfo);
         ~Response();
         Response&           operator=(const Response& other);
-        void                setResInfo(const HttpResponseInfo& info);
+        void                setResInfo(const HttpResourceInfo& info);
         std::vector<char>   getResponse() const;
         void                handle();
         void                clear();

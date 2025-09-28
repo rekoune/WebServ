@@ -1,16 +1,16 @@
 # ifndef HTTPHANDLER_HPP
 # define HTTPHANDLER_HPP
 
-# include "Request.hpp"
-# include "RequestHandler.hpp"
+# include "RequestParser.hpp"
+// # include "ResourceResolver.hpp"
 # include "Response.hpp"
 
 class HttpHandler{
     private:
-        Request req;
+        RequestParser reqParser;
         ServerConfig server;
-        RequestHandler reqHandler;
-        HttpResponseInfo resInfo;
+        ResourceResolver reqHandler;
+        HttpResourceInfo resInfo;
         Response response;
         bool        sameReq;
 
@@ -23,7 +23,7 @@ class HttpHandler{
         HttpHandler& operator=(const HttpHandler& other);
         // void setRequest(const Request& req);
         void setServer(const ServerConfig& server);
-        // void setRequestHandler(const RequestHandler& reqHandler);
+        // void setResourceResolver(const ResourceResolver& reqHandler);
         // void handle();
         void appendData(const char* data, size_t size);
         bool isComplete();

@@ -182,9 +182,22 @@ size_t       Utils::strToNumber(std::string& str){
     return (nb);
 }
 
+size_t       Utils::getFileSize(const std::string& filePath){
+    size_t size = 0;
+    // std::cout << "file path = " << filePath << std::endl;
+    std::ifstream file(filePath.c_str(), std::ios::binary | std::ios::ate); 
+    if (!file)
+    {
+        std::cout << "file fail to open" << std::endl;
+    }
+    size = file.tellg();
+    file.close();
+    return (size);
+}
+
 // int main (){
-//     std::string a("12234458888888889999");
-//     size_t b = Utils::strToNumber(a);
-//     std::cout << "a = " << b << std::endl;
+//     std::ofstream file("test");
+//     file << "abdellah";
+//     std::cout << "size  = " << Utils::getFileSize("test") << std::endl;
 // }
 
