@@ -6,33 +6,31 @@ server::server() : listenersNbr(0){}
 
 server::server(std::vector<ServerConfig>&	servers): listenersNbr(0) {
 
-	printingserver(servers[0]);
 
-	std::map<std::string, int> iportToSocket;
-	std::map<std::string, int>::iterator socketIt;
+	std::map<std::string, int> iportToSocket; //ip:port -> socket;
+	std::map<std::string, int>::iterator socketIt; // |^| there iterotor
 
 	for(size_t i = 0; i < servers.size(); i++)
 	{
-		std::map<std::string, std::vector<std::string> >& host_port = servers[i].host_port;
-		std::map<std::string, std::vector<std::string> >::iterator it = host_port.begin();
+		std::map<std::string, std::vector<std::string> >& host_port = servers[i].host_port; //host(ip) -> port
+		std::map<std::string, std::vector<std::string> >::iterator it = host_port.begin(); // |^| there iterotor
 
 		while(it != host_port.end()){
-			for(size_t i = 0; i < it->second.size(); i++){
-				std::string socket = it->first + ":" + it->second[i];
+			for(size_t j = 0; j < it->second.size(); j++){
+				std::string socket = it->first + ":" + it->second[j];
 				std::cout<< "socket ip:port : |"<< socket << "|" << std::endl;
 				socketIt = iportToSocket.find(socket);
-				if(socketIt != iportToSocket.end())
-				{
-					listenToHosts[socketIt->second].push_back(servers[i]);
-					
+				if(socketIt != iportToSocket.end()){
+					listenToHosts[socketIt->second].push_back(servers[i]); //listenToHost => socketfd -> serversconfig
+					//it's a socket to it's possible servers;
+					std::cout << "pushing the server-- nbr : " << i << std::endl;
 				}
 				else
 				{
 					int socketfd;
-					if((socketfd = listen_socket(it->first, it->second[i])) != -1){
+					if((socketfd = listen_socket(it->first, it->second[j])) != -1){
 						listenToHosts[socketfd].push_back(servers[i]);
-						std::cout << "pushing the server--" << std::endl;
-						printingserver(listenToHosts[socketfd].at(0));
+						std::cout << "pushing the server-- nbr : " << i << std::endl;
 						iportToSocket[socket] = socketfd;
 					}
 				}
@@ -130,10 +128,6 @@ bool server::is_listener(int fd)
 	}
 	return false;
 	
-	// for(size_t i = 0; i < listenFds.size(); i++){
-	// 	if(fd == listenFds[i])
-	// 		return true;
-	// }
 }
 
 
@@ -143,7 +137,7 @@ void server::acceptClient(int listenFd)
     socklen_t client_len = sizeof(client_addr);
     char client_ip[INET_ADDRSTRLEN]; //shoue be rmoved /`
 	
-	int clientFd ;
+	int clientFd;
 	
 	while((clientFd = accept(listenFd,(struct sockaddr*)&client_addr, &client_len)))
 	{
@@ -153,8 +147,8 @@ void server::acceptClient(int listenFd)
 		int flags = fcntl(clientFd, F_GETFL, 0);
 		fcntl(clientFd, F_SETFL, flags | O_NONBLOCK);
 		//ERROR ?
-		
 		clients.push_back(client(listenToHosts[listenFd], clientFd));
+
 		socketFds.push_back(create_pollfd(clientFd, POLLIN));
 
 		inet_ntop(AF_INET, &(client_addr.sin_addr), client_ip, INET_ADDRSTRLEN);
@@ -166,54 +160,6 @@ void server::acceptClient(int listenFd)
 	}
 }
 
-
-
-int server::ft_recv(struct pollfd& pollfd, int i)
-{
-	char buf[BUFFER];
-	int read;
-
-	read = recv(pollfd.fd, buf, sizeof(buf), 0);
-	// buf[read] = 0;
-	if(pollfd.fd != clients[i].getFd())
-		  std::cout << "\033[31mthis is not the correct client \ni : " << i << "\033[0m" << std::endl;
-	else
-		std::cout << "\033[32mthis is the correct client \n i: " << i << "\033[0m" << std::endl;
-
-	std::cout<< "buf: " << buf<< std::endl;
-	if(!clients[i].isHostSeted())
-	{
-		std::cout << "seting host...." << std::endl;
-		if(clients[i].appendFirstRequest(buf, read))
-			pollfd.events = POLLOUT;
-		return read;
-	}
-	if(read){
-		clients[i].appendData(buf, read);
-		if(clients[i].isComplete())
-			pollfd.events = POLLOUT;
-	}
-	// std::cout << "the receved bufer : " << buf << std::endl;
-	return 1;
-}
-
-int server::ft_send(struct pollfd& pollfd, int i)
-{
-
-	std::vector<char> response = clients[i].getResponse();
-	std::cout << "==================== response ==========================" <<std::endl;
-	std::cout.write(response.data(), response.size())<< std::endl;
-	int n  = send(pollfd.fd, &response[0], response.size(), 0);
-	
-	if(n > 0)
-	{
-		std::cout << "succufly send!!!!!" << std::endl;
-		pollfd.events = POLLIN;
-	}
-	else
-		std::cout << "send failed" << std::endl;
-	return 1;
-}
 
 int Working_flage = 1;
 
@@ -242,19 +188,22 @@ int server::polling()
 				std::cout << "closing the sockefd : " << socketFds[i].fd << std::endl;
 				close(socketFds[i].fd);
 				socketFds.erase(socketFds.begin() + i);
+				clients.erase(clients.begin() + (i - listenersNbr));
 				i--;
+				NbrOfActiveSockets--;
 			}
 			else if((socketFds[i].revents & POLLIN)  && Working_flage){
 				
 				if(is_listener(socketFds[i].fd))
-					acceptClient(socketFds[i].fd);
+						acceptClient(socketFds[i].fd);
 				else
 				{
-					if(!ft_recv(socketFds[i], i - listenersNbr))
+					if(!clients[i - listenersNbr].ft_recv(socketFds[i].events))
 					{
 						std::cout << "closing the sockefd : " << socketFds[i].fd << std::endl;
 						close(socketFds[i].fd);
 						socketFds.erase(socketFds.begin() + i);
+						clients.erase(clients.begin() + (i - listenersNbr));
 						i--;
 					}
 				}
@@ -262,7 +211,13 @@ int server::polling()
 			}
 			else if((socketFds[i].revents & POLLOUT)  && Working_flage)
 			{
-				ft_send(socketFds[i], i - listenersNbr);
+				if(!clients[i - listenersNbr].ft_send(socketFds[i].events)){
+						std::cout << "closing the sockefd : " << socketFds[i].fd << std::endl;
+						close(socketFds[i].fd);
+						socketFds.erase(socketFds.begin() + i);
+						clients.erase(clients.begin() + (i - listenersNbr));
+						i--;
+				}
 				NbrOfActiveSockets--;
 			}
 
