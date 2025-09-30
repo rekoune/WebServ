@@ -3,31 +3,42 @@
 
 #include"Headers.hpp"
 
+#define BUFFER 4096
+
 class client{
 private:
 	client();
-		HttpHandler socketHttp;
 
-		std::vector<ServerConfig>& myServers;
-		std::string requestData;
-		std::string hostName;
-		bool hostSeted;
-	public:
+	HttpHandler clientHandler;
+	std::vector<ServerConfig> myServers;
 
-		client(std::vector<ServerConfig>& myServers);
-		// client(const client& other);
-		// client& operator=(const client& other);
-		// ~client();
+	std::vector<char> requestData;
+	std::vector<char> response;
 
-		void appendFirstRequest(const char* buf, int read);
-		bool isHostSeted();
-		void setHost(std::string &host);
+	bool hostSeted;	
+	bool responseComplete; 
+	size_t  totalsend ;
+	int fd;
 
-		void appendData(const char* data, size_t size);
-		bool isComplete();
-		std::vector<char> getResponse();
-};
+public:
 
+	client(std::vector<ServerConfig>& myServers, int fd);
+	client(const client& other);
+	client& operator=(const client& other);
+	~client();
+
+	int getFd();
+
+	bool appendFirstRequest(const char* buf, ssize_t read);
+	bool isHostSeted();
+	void setHost(std::string &host);
+
+	ssize_t ft_recv(short& event);
+	ssize_t ft_send(short& event);
+	ssize_t sending(short& event);
+}; 
+
+// void printingserver(const ServerConfig& servers);
 
 #endif 
 
