@@ -1,10 +1,10 @@
-SRC= main.cpp request/Request.cpp  response/Response.cpp request/RequestHandler.cpp HttpHandler.cpp ../utils/Utils.cpp ../config/configParser.cpp
+SRC= main.cpp request/RequestParser.cpp request/ResourceResolver.cpp request/UploadHandler.cpp ../config/configParser.cpp ../config/configValidate.cpp ../utils/Utils.cpp response/Response.cpp HttpHandler.cpp  
 OBJ = $(SRC:.cpp=.o)
 NAME = Request
 
 CC = c++
 FLAGS = -Wall -Wextra -Werror
-# STD = -std=c++98
+STD = -std=c++98 -fsanitize=address -g
 
 all: $(NAME)
 

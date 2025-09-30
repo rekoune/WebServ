@@ -12,10 +12,10 @@ Response& Response::operator=(const Response& other){
     this->fileTypes = other.fileTypes;
     return (*this);
 }
-Response::Response(const HttpResponseInfo info){
+Response::Response(const HttpResourceInfo info){
     this->resInfo = info;
 }
-void Response::setResInfo(const HttpResponseInfo& info){
+void Response::setResInfo(const HttpResourceInfo& info){
     this->resInfo = info;
 }
 std::vector<char> Response::getResponse () const {
@@ -71,6 +71,8 @@ std::string         Response::getStatusMessage(HttpStatusCode status){
             return ("CONTINUE");
         case OK:
             return ("OK");
+        case PARTIAL_CONTENT:
+            return ("PARTIAL_CONTENT");
         case CREATED:
             return ("CREATED");
         case NO_CONTENT:
@@ -115,8 +117,7 @@ std::vector<char>  Response::generateErrorBody(){
     return (body);
 }
 
-std::map<std::string, std::string>  Response::generateHeaders(){
-    std::map<std::string, std::string> headers;
+std::map<std::string, std::string>  Response::generateHeaders(std::map<std::string, std::string>& headers){
 
     headers.insert(std::pair<std::string, std::string> ("Server", "WebServer"));
     headers.insert(std::pair<std::string, std::string> ("Date", Utils::getDate()));
@@ -124,20 +125,45 @@ std::map<std::string, std::string>  Response::generateHeaders(){
         headers.insert(std::pair<std::string, std::string> ("Content-Type", Utils::getFileType(fileTypes, Utils::getFileName(resInfo.path))));
     headers.insert(std::pair<std::string, std::string> ("Content-Length", Utils::toString(resElements.body.size())));
     headers.insert(std::pair<std::string, std::string> ("Connection", "keep-alive"));
+    headers.insert(std::pair<std::string, std::string> ("Accept-Ranges", "bytes"));
 
     return (headers);
 }
 
 std::vector<char>   Response::getBodyFromFile(std::string& path){
     std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
+    std::map<std::string, std::string> headers = resInfo.headers;
+    std::map<std::string, std::string>::iterator it = headers.find("range");
+
 
     std::streamsize size;
+    size_t startPos = 0;
+    std::string range;
 
-    file.seekg(0, std::ios::end);
+    file.seekg(startPos, std::ios::end);
     size = file.tellg();
-    file.seekg(0, std::ios::beg);
+    if (it != headers.end()){
+        range = std::string (it->second.begin() + 6, it->second.end());
+        }
+        startPos = Utils::strToNumber(range);
+        if (startPos >= (size_t)size)
+            startPos = 0;
+        size = 90 * 1024; //to kb
+        resInfo.status = PARTIAL_CONTENT;
+        std::cout << "start pos = " << startPos << " , size = " << size << " , size + range = " << size + startPos << " , total size = " << file.tellg() << std::endl;
+        std::string contentRange("bytes ");
+        contentRange.append(Utils::toString(startPos));
+        contentRange.append("-");
+        contentRange.append(Utils::toString(startPos + size));
+        contentRange.append("/");
+        contentRange.append(Utils::toString(file.tellg()));
+        resElements.headers.insert(std::pair<std::string, std::string> ("Content-Range", contentRange));
+    // }
+
+    file.seekg(startPos, std::ios::beg);
     std::vector<char> body(size);
     file.read(&body[0], size);
+    std::cout << "body size = " << body.size() << std::endl;
     file.close();
     return (body);
 }
@@ -203,7 +229,7 @@ void    Response::generateListingBody(DIR* dir){
     std::string target;
     std::string elementName;
     
-    target = resInfo.req.getRequestLine().target;
+    target = resInfo.reqLine.target;
     if (target.at(target.length() -1) != '/')
         target.append("/");
     resInfo.path = "list.html";
@@ -306,215 +332,217 @@ HttpStatusCode    Response::getPathType(std::string path, PathTypes& type){
     return status;
 }
 
-HttpStatusCode     Response::getUploadPath(){
-    std::string uploadPath;
-    HttpStatusCode status;
+// HttpStatusCode     Response::getUploadPath(){
+//     std::string uploadPath;
+//     HttpStatusCode status;
 
-    uploadPath.append(resInfo.location.root);
-    uploadPath.append(resInfo.location.path);
-    uploadPath.append(resInfo.location.upload_store);
-    if (access(uploadPath.c_str(), F_OK) != 0)
-        return INTERNAL_SERVER_ERROR;
-    uploadPath.append(resInfo.path.begin() + resInfo.location.root.length() + resInfo.location.path.length(), resInfo.path.end());
-    status = getPathType(uploadPath, resInfo.type);
-    if (status == OK)
-        resInfo.path = uploadPath;
-    return (status);
-}
+//     uploadPath.append(resInfo.location.root);
+//     uploadPath.append(resInfo.location.path);
+//     uploadPath.append(resInfo.location.upload_store);
+//     if (access(uploadPath.c_str(), F_OK) != 0)
+//         return INTERNAL_SERVER_ERROR;
+//     uploadPath.append(resInfo.path.begin() + resInfo.location.root.length() + resInfo.location.path.length(), resInfo.path.end());
+//     status = getPathType(uploadPath, resInfo.type);
+//     if (status == OK)
+//         resInfo.path = uploadPath;
+//     return (status);
+// }
 
 
-void    Response::setFullPathByType(std::string& path, PathTypes& pathType, std::string contentType){
-    if (pathType == F){
-        if (contentType.empty() || contentType == Utils::getFileType(fileTypes, Utils::getFileName(path))){
-            return;
-        }
-        else
-            path.append(Utils::findExtensionByMime(fileTypes, contentType));
-    }
-    else if (pathType == DIR_LS){
-        std::string prefix("File");
-        path.append("/").append(Utils::randomName(prefix)).append(Utils::findExtensionByMime(fileTypes, contentType));
-    }
-}
+// void    Response::setFullPathByType(std::string& path, PathTypes& pathType, std::string contentType){
+//     if (pathType == F){
+//         if (contentType.empty() || contentType == Utils::getFileType(fileTypes, Utils::getFileName(path))){
+//             return;
+//         }
+//         else
+//             path.append(Utils::findExtensionByMime(fileTypes, contentType));
+//     }
+//     else if (pathType == DIR_LS){
+//         std::string prefix("File");
+//         path.append("/").append(Utils::randomName(prefix)).append(Utils::findExtensionByMime(fileTypes, contentType));
+//     }
+// }
 
-HttpStatusCode  Response::extractHeaders(std::string bodyHeaders, std::map<std::string, std::string>& headers){
-    std::stringstream   ss(bodyHeaders);
-    std::string         line;
-    std::string         key, value;
+// HttpStatusCode  Response::extractHeaders(std::string bodyHeaders, std::map<std::string, std::string>& headers){
+//     std::stringstream   ss(bodyHeaders);
+//     std::string         line;
+//     std::string         key, value;
 
-    std::getline(ss, line, '\n');
-    while(!ss.eof() && line != "\r"){
-        std::stringstream headerStream(line);
-        std::getline(headerStream, key, ':');
-        std::getline(headerStream, value);
+//     std::getline(ss, line, '\n');
+//     while(!ss.eof() && line != "\r"){
+//         std::stringstream headerStream(line);
+//         std::getline(headerStream, key, ':');
+//         std::getline(headerStream, value);
         
-        if ((!Utils::isBlank(key) && key.find(' ') != std::string::npos) || value.at(value.length() - 1) != '\r'){
-            std::cout << "joma joma joma" << std::endl;
-            return (BAD_REQUEST);
-        }
-        value.erase(value.length() - 1, 1);
-        if (!Utils::isBlank(key) && !Utils::isBlank(value)){
-            Utils::strToLower(key);
-            Utils::trimSpaces(value);
-            headers.insert(std::pair<std::string, std::string> (key, value));
-        }
-        std::getline(ss, line, '\n');
-    }
-    std::map<std::string, std::string>::iterator it;
-    it = headers.find("content-disposition");
-    if (it == headers.end() || it->second.find("form-data") == std::string::npos){
-        std::cout << "9al 9al 9al" << std::endl;
-        return BAD_REQUEST;
-    }
-    // std::cout << "*********************************** Multi Part Headers *********************************************" << std::endl;
-    // std::string str = Utils::mapToString(headers);
-    // std::cout.write(str.c_str(), str.length()) << std::endl;;
-    // std::cout << "****************************************************************************************************" << std::endl;
-    return OK;
-}
+//         if ((!Utils::isBlank(key) && key.find(' ') != std::string::npos) || value.at(value.length() - 1) != '\r'){
+//             std::cout << "joma joma joma" << std::endl;
+//             return (BAD_REQUEST);
+//         }
+//         value.erase(value.length() - 1, 1);
+//         if (!Utils::isBlank(key) && !Utils::isBlank(value)){
+//             Utils::strToLower(key);
+//             Utils::trimSpaces(value);
+//             headers.insert(std::pair<std::string, std::string> (key, value));
+//         }
+//         std::getline(ss, line, '\n');
+//     }
+//     std::map<std::string, std::string>::iterator it;
+//     it = headers.find("content-disposition");
+//     if (it == headers.end() || it->second.find("form-data") == std::string::npos){
+//         std::cout << "9al 9al 9al" << std::endl;
+//         return BAD_REQUEST;
+//     }
+//     // std::cout << "*********************************** Multi Part Headers *********************************************" << std::endl;
+//     // std::string str = Utils::mapToString(headers);
+//     // std::cout.write(str.c_str(), str.length()) << std::endl;;
+//     // std::cout << "****************************************************************************************************" << std::endl;
+//     return OK;
+// }
 
-HttpStatusCode  Response::handleSinglePart(std::vector<char> singlePart, size_t size){
-    long    headersPos;
-    std::map<std::string, std::string> headers;
-    HttpStatusCode  status;
-    std::vector<char> body;
-    std::string path(resInfo.path);
-    // std::cout << " single size = " << size << std::endl;
-    // std::cout << " single size = " << singlePart.size() << std::endl;
+// // HttpStatusCode  Response::handleSinglePart(std::vector<char> singlePart, size_t size){
+//     long    headersPos;
+//     std::map<std::string, std::string> headers;
+//     HttpStatusCode  status;
+//     std::vector<char> body;
+//     std::string path(resInfo.path);
+//     // std::cout << " single size = " << size << std::endl;
+//     // std::cout << " single size = " << singlePart.size() << std::endl;
 
-    // // std::cout << " >>>>>>>>>>> path before : " << path << std::endl;
-    // std::cout << "==================Single part =======================" << std::endl;
-    // std::cout.write(singlePart.data(), size);
-    // std::cout << "===========================================" << std::endl;
-    headersPos = Utils::isContainStr(&singlePart[0], size, "\r\n\r\n", 4);
-    if (headersPos == -1){
-        std::cout << "jo9 jo9 jo9" << std::endl;
-        status = BAD_REQUEST;
-    }
-    else{
-        std::string hed(singlePart.begin(), singlePart.begin() + headersPos + 2);
-        status = extractHeaders(hed, headers);
-        // std::cout << "==> size = " << size << " , header pos = " << headersPos << std::endl;
-        if(headersPos + 4 == (long)size)
-            return OK;
-        if (status == OK){
-            body = std::vector<char>(singlePart.begin() + headersPos + 4, singlePart.begin() + headersPos + 4 + (size - headersPos - 4));
-            std::map<std::string, std::string>::iterator contentType = headers.find("content-type");
-            std::map<std::string, std::string>::iterator diposition = headers.find("content-disposition");
-            std::string fileName;
-            size_t      fileNamePos;
-            if (diposition == headers.end() || diposition->second.find("form-data") == std::string::npos){
-                std::cout << "sa7 sa7 sa7" << std::endl;
-                return BAD_REQUEST;
-            }
-            else if ((fileNamePos = diposition->second.find("filename=")) != std::string::npos){
-                path.append("/");
-                path.append(diposition->second.begin() + fileNamePos +10, diposition->second.end() - 1);
-            }
-            else{
-                std::string prefix("File");
-                path.append("/");
-                path.append(Utils::randomName(prefix));
-            }
-            if (contentType != headers.end()){
-                if (contentType->second != Utils::getFileType(fileTypes, Utils::getFileName(path)))
-                    path.append(Utils::findExtensionByMime(fileTypes, contentType->second));
-            }
-            else
-                path.append(".bin");
-            // std::cout << ">>>>>>>> path = " << path<< std::endl;
-            status = writeBodyInFile(path, body);
-        }
-        else
-            std::cout << "kaf kaf kaf status = " << status << std::endl;
-    }
-    return status;
-}
+//     // // std::cout << " >>>>>>>>>>> path before : " << path << std::endl;
+//     // std::cout << "==================Single part =======================" << std::endl;
+//     // std::cout.write(singlePart.data(), size);
+//     // std::cout << "===========================================" << std::endl;
+//     headersPos = Utils::isContainStr(&singlePart[0], size, "\r\n\r\n", 4);
+//     if (headersPos == -1){
+//         std::cout << "jo9 jo9 jo9" << std::endl;
+//         status = BAD_REQUEST;
+//     }
+//     else{
+//         std::string hed(singlePart.begin(), singlePart.begin() + headersPos + 2);
+//         status = extractHeaders(hed, headers);
+//         // std::cout << "==> size = " << size << " , header pos = " << headersPos << std::endl;
+//         if(headersPos + 4 == (long)size)
+//             return OK;
+//         if (status == OK){
+//             body = std::vector<char>(singlePart.begin() + headersPos + 4, singlePart.begin() + headersPos + 4 + (size - headersPos - 4));
+//             std::map<std::string, std::string>::iterator contentType = headers.find("content-type");
+//             std::map<std::string, std::string>::iterator diposition = headers.find("content-disposition");
+//             std::string fileName;
+//             size_t      fileNamePos;
+//             if (diposition == headers.end() || diposition->second.find("form-data") == std::string::npos){
+//                 std::cout << "sa7 sa7 sa7" << std::endl;
+//                 return BAD_REQUEST;
+//             }
+//             else if ((fileNamePos = diposition->second.find("filename=")) != std::string::npos){
+//                 path.append("/");
+//                 path.append(diposition->second.begin() + fileNamePos +10, diposition->second.end() - 1);
+//             }
+//             else{
+//                 std::string prefix("File");
+//                 path.append("/");
+//                 path.append(Utils::randomName(prefix));
+//             }
+//             if (contentType != headers.end()){
+//                 if (contentType->second != Utils::getFileType(fileTypes, Utils::getFileName(path)))
+//                     path.append(Utils::findExtensionByMime(fileTypes, contentType->second));
+//             }
+//             else
+//                 path.append(".bin");
+//             // std::cout << ">>>>>>>> path = " << path<< std::endl;
+//             status = writeBodyInFile(path, body);
+//         }
+//         else
+//             std::cout << "kaf kaf kaf status = " << status << std::endl;
+//     }
+//     return status;
+// }
 
-HttpStatusCode  Response::handleMultiParts(const std::vector<char>& body, std::string boundary){
-    if (boundary.empty()){
-        std::cout << "kaa kaa kaa boundary is empty" << std::endl;
-        return BAD_REQUEST;
-    }
-    std::string start, end;
-    long currentPos, endPos, nextPos = 0;
-    HttpStatusCode status;
+// HttpStatusCode  Response::handleMultiParts(const std::vector<char>& body, std::string boundary){
+//     if (boundary.empty()){
+//         std::cout << "kaa kaa kaa boundary is empty" << std::endl;
+//         return BAD_REQUEST;
+//     }
+//     std::string start, end;
+//     long currentPos, endPos, nextPos = 0;
+//     HttpStatusCode status;
 
-    start.append("--").append(boundary);
-    end.append(start).append("--").append("\r\n");
-    currentPos = Utils::isContainStr(&body[0], body.size(), start.c_str(), start.length());
-    endPos     = Utils::isContainStr(&body[0], body.size(), end.c_str(), end.length());
-    if (currentPos != 0 || endPos == -1 || endPos + end.length() != body.size()){
-        std::cout << "mo9 mo9 mo9" << std::endl;
-        return BAD_REQUEST;
-    }
-    currentPos = start.length() + 2;
-    while(currentPos < endPos){
-        nextPos = Utils::isContainStr(&body[currentPos], body.size() - currentPos, start.c_str(), start.length());
-        // std::cout << "next pos = " << nextPos << " , endpos = "  << endPos << ", current = " << currentPos << std::endl;
-        status = handleSinglePart(std::vector<char>(body.begin() + currentPos, body.begin() + nextPos + currentPos), nextPos  - 2);
-        if (status != OK && status != CREATED){
-            std::cout << "za3 za3 za3" << std::endl;
-            return status;
-        }
-        currentPos += nextPos + 2 + start.length();
-    }
-    return status;
-}
+//     start.append("--").append(boundary);
+//     end.append(start).append("--").append("\r\n");
+//     currentPos = Utils::isContainStr(&body[0], body.size(), start.c_str(), start.length());
+//     endPos     = Utils::isContainStr(&body[0], body.size(), end.c_str(), end.length());
+//     if (currentPos != 0 || endPos == -1 || endPos + end.length() != body.size()){
+//         std::cout << "mo9 mo9 mo9" << std::endl;
+//         return BAD_REQUEST;
+//     }
+//     currentPos = start.length() + 2;
+//     while(currentPos < endPos){
+//         nextPos = Utils::isContainStr(&body[currentPos], body.size() - currentPos, start.c_str(), start.length());
+//         // std::cout << "next pos = " << nextPos << " , endpos = "  << endPos << ", current = " << currentPos << std::endl;
+//         status = handleSinglePart(std::vector<char>(body.begin() + currentPos, body.begin() + nextPos + currentPos), nextPos  - 2);
+//         if (status != OK && status != CREATED){
+//             std::cout << "za3 za3 za3" << std::endl;
+//             return status;
+//         }
+//         currentPos += nextPos + 2 + start.length();
+//     }
+//     return status;
+// }
 
-HttpStatusCode Response::handleContentType(){
-    std::map<std::string, std::string>::iterator it;
-    std::vector<char>   body;
-    HttpStatusCode      status = resInfo.status;
-    std::map<std::string, std::string> headers = resInfo.req.getHeaders();
+// HttpStatusCode Response::handleContentType(){
+//     std::map<std::string, std::string>::iterator it;
+//     std::vector<char>   body;
+//     HttpStatusCode      status = resInfo.status;
+//     std::map<std::string, std::string> headers = resInfo.req.getHeaders();
 
-    body = resInfo.req.getBody();
-    it = headers.find("content-type");
-    if (it == headers.end() || it->second == "application/x-www-form-urlencoded"){
-        setFullPathByType(resInfo.path, resInfo.type, "");
-        status = writeBodyInFile(resInfo.path, body);
-    }
-    else if (it->second.find("multipart/form-data") != std::string::npos){
-        size_t  BoundPos;
-        if ((BoundPos = it->second.find("boundary=")) != std::string::npos && resInfo.type == DIR_LS){
-            status = handleMultiParts(resInfo.req.getBody(), &it->second[BoundPos + 9]);
-        }
-        else
-            status = BAD_REQUEST;
-    }
-    else{
-        setFullPathByType(resInfo.path, resInfo.type, it->second);
-        status = writeBodyInFile(resInfo.path, body);
-    }
-    return (status);
-}
+//     body = resInfo.req.getBody();
+//     it = headers.find("content-type");
+//     if (it == headers.end() || it->second == "application/x-www-form-urlencoded"){
+//         setFullPathByType(resInfo.path, resInfo.type, "");
+//         status = writeBodyInFile(resInfo.path, body);
+//     }
+//     else if (it->second.find("multipart/form-data") != std::string::npos){
+//         size_t  BoundPos;
+//         if ((BoundPos = it->second.find("boundary=")) != std::string::npos && resInfo.type == DIR_LS){
+//             status = handleMultiParts(resInfo.req.getBody(), &it->second[BoundPos + 9]);
+//         }
+//         else
+//             status = BAD_REQUEST;
+//     }
+//     else{
+//         setFullPathByType(resInfo.path, resInfo.type, it->second);
+//         status = writeBodyInFile(resInfo.path, body);
+//     }
+//     return (status);
+// }
 
-void    Response::handlePOST(){
-    std::vector<char> body;
+// void    Response::handlePOST(){
+//     std::vector<char> body;
 
-    body = resInfo.req.getBody();
-    if (body.size() > resInfo.server.client_max_body_size){
-        resInfo.status = CONTENT_TOO_LARGE;
-        errorHandling();
-        return;
-    }
-    // else if ()
-    resInfo.status = getUploadPath();
-    if (resInfo.status != OK){
-        errorHandling();
-        return;
-    }
-    resInfo.status = handleContentType();
-    if (resInfo.status != OK && resInfo.status != CREATED)
-        errorHandling();
-}
+//     body = resInfo.req.getBody();
+//     if (body.size() > resInfo.server.client_max_body_size){
+//         resInfo.status = CONTENT_TOO_LARGE;
+//         errorHandling();
+//         return;
+//     }
+//     // else if ()
+//     resInfo.status = getUploadPath();
+//     if (resInfo.status != OK){
+//         errorHandling();
+//         return;
+//     }
+//     resInfo.status = handleContentType();
+//     if (resInfo.status != OK && resInfo.status != CREATED)
+//         errorHandling();
+// }
 
 void    Response::successHandling(){
     if (resInfo.method == "GET"){
         handleGET();
     }
     else if (resInfo.method == "POST"){
-        handlePOST();
+        std::cout << "ana fi response Post" << std::endl;
+        // handlePOST();
+        return;
     }
     else if (resInfo.method == "DELETE")
     {
@@ -530,7 +558,7 @@ void Response::handle(){
     else
         successHandling();
     resElements.statusLine = getStatusLine();
-    resElements.headers = generateHeaders();
+    generateHeaders(resElements.headers);
     buildResponse();
     // std::cout << "status = " << resInfo.status << std::endl;
 }
