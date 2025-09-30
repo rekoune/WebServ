@@ -1,32 +1,104 @@
 #include "../../includes/client.hpp"
 
-void printingserver(const ServerConfig& servers){
-		std::cout << "rooot : " << servers.root << std::endl;
-	std::cout << "location : " << servers.locations.size() << std::endl;
-	std::cout << "server_name : " << servers.server_name[0] << std::endl;
+// void printingserver(const ServerConfig& servers){
+// 	std::cout << "\033[34mroot: \033[0m" << servers.root << std::endl; // Blue text
+// 	std::cout << "\033[32mlocation: \033[0m" << servers.locations.size() << std::endl; // Green text
+// 	std::cout << "\033[35mserver_name: \033[0m" << servers.server_name[0] << std::endl; // Magenta text
+// 	std::cout << "\033[36mbody max size: \033[0m" << servers.client_max_body_size << std::endl; // Cyan text
+// }
+
+client::~client() {}
+
+client& client::operator=(const client& other){
+	if(this != &other){
+
+		clientHandler = other.clientHandler;
+		myServers = other.myServers;
+		requestData = other.requestData;
+		response = other.response;
+		hostSeted = other.hostSeted;
+		responseComplete = other.responseComplete;
+		totalsend = other.totalsend;
+		fd = other.fd;
+	}
+	return *this;
 }
 
 
 
-client::client(std::vector<ServerConfig>& myServers, int fd) :myServers(myServers) ,hostSeted(false), fd(fd){
-	if(myServers.size() == 1){
-		// std::cout << "host seted cause it's only one " << std::endl;
-		// std::cout << "server:: " << std::endl;
-		// std::cout << myServers[0].root << std::endl;
-		// std::cout << myServers[0].locations[0].path << std::endl;
-		std::cout << "this is clinet with fd : " << fd << std::endl;
-		socketHttp.setServer(myServers[0]);
-		socketHttp.server.server_name[0] = "server_name";
-		std::cout << "fromt he's side"<< std::endl;
-		printingserver(socketHttp.server);
 
-		std::cout << "the server that the clinet get : " << std::endl;
-		printingserver(myServers[0]);
+client::client(std::vector<ServerConfig>& myservers, int fd) :myServers(myservers) ,hostSeted(false),responseComplete(true) ,totalsend(0) ,fd(fd){
+	if(myServers.size() == 1){
+		clientHandler.setServer(myservers[0]);
 		hostSeted = true;
 	}
 }
-client::client(const client& other): myServers(other.myServers), hostSeted(other.hostSeted), fd(other.fd) {}
+client::client(const client& other): 
+									clientHandler(other.clientHandler),myServers(other.myServers) ,requestData(other.requestData),
+									response(other.response) ,hostSeted(other.hostSeted),responseComplete(other.responseComplete) ,
+									totalsend(other.totalsend) , fd(other.fd) {}
 
+
+ssize_t client::ft_recv(short& event){
+	char buf[BUFFER];
+	ssize_t read = recv(fd, buf, sizeof(buf), 0);
+
+	if(read == -1)
+		 std::cerr << "Error receiving data: " << strerror(errno) << std::endl; 
+	else if(!isHostSeted()){
+		std::cout << "seting host...." << std::endl;
+		if(appendFirstRequest(buf, read))
+			event = POLLOUT;
+	}
+	else if(read){
+		clientHandler.appendData(buf, read);
+		if(clientHandler.isComplete())
+			event = POLLOUT;
+	}
+
+	return read;
+}
+
+ssize_t client::sending(short& event){
+	ssize_t nsend;
+	size_t total ;
+
+	while (totalsend < response.size()){
+		nsend = send(fd, &response[0] + totalsend, response.size() - totalsend, 0);
+		if(nsend == -1){
+			if (errno == EAGAIN || errno == EWOULDBLOCK)
+                break;
+			return -1;
+ 		
+		}
+		else if(nsend == 0)
+			return 0;
+		totalsend += nsend;
+	}
+	total = totalsend;
+	if(totalsend == response.size()){
+		responseComplete = true;
+		event = POLLIN;
+		totalsend = 0;
+	}
+	return total;
+}
+
+
+ssize_t client::ft_send(short& event){
+	ssize_t  nsend ;
+
+	if(responseComplete){
+		response = clientHandler.getResponse();
+		responseComplete = false;
+	}
+	nsend = sending(event);
+	if(nsend == -1)
+		std::cout << "send failed" << std::endl;
+	else 
+		std::cout << "succufly send!!!!!" << std::endl;
+	return nsend;
+}
 
 bool client::isHostSeted(){
 	return hostSeted;
@@ -35,12 +107,13 @@ bool client::isHostSeted(){
 int client::getFd(){
 	return fd;
 }
+
 void client::setHost(std::string &host){
 
 	for(size_t i = 0; i < myServers.size() ; i++){
 		for(size_t j = 0; j < myServers[i].server_name.size();j++){
 			if(host == myServers[i].server_name[j]){
-				socketHttp.setServer(myServers[i]);
+				clientHandler.setServer(myServers[i]);
 				hostSeted = true;
 				return ;
 			}
@@ -48,7 +121,7 @@ void client::setHost(std::string &host){
 		std::map<std::string, std::vector<std::string> >::iterator it = myServers[i].host_port.begin();
 		while (it != myServers[i].host_port.end()){
 			if(host == it->first){
-				socketHttp.setServer(myServers[i]);
+				clientHandler.setServer(myServers[i]);
 				hostSeted = true;
 				return ;
 			}
@@ -56,9 +129,12 @@ void client::setHost(std::string &host){
 		}
 			
 	}
+	if(!hostSeted)
+		clientHandler.setServer(myServers[0]);
+	hostSeted = true;
 }
 
-bool client::appendFirstRequest(const char* buf, int read)
+bool client::appendFirstRequest(const char* buf, ssize_t read)
 {
 	requestData.insert(requestData.end(), buf, buf + read);
 	std::string requestLine(requestData.begin(), requestData.end());
@@ -77,29 +153,15 @@ bool client::appendFirstRequest(const char* buf, int read)
             }
 			setHost(hostName);
 			std::cout << "found host name: " << hostName << std::endl;
-			socketHttp.appendData(&requestData[0], requestData.size());
-			return true;
+			clientHandler.appendData(&requestData[0], requestData.size());
+			// requestData.clear(); //ask is he copying ?
+			if(clientHandler.isComplete())
+				return true;
 		}
 	}
 	return false;
 }
 
-void client::appendData(const char *data, size_t size){
 
-	std::cout << "this is clinet with fd : " << fd << std::endl;	
-	std::cout << "printfing the server before  ===== append" << std::endl;
-	printingserver(socketHttp.server);
-	socketHttp.appendData(data, size);
-	std::cout << "printfing the server after  ===== append" << std::endl;
-	printingserver(socketHttp.server);
-}
-
-bool client::isComplete(){
-	return socketHttp.isComplete();
-}
-
-std::vector<char> client::getResponse(){
-	return socketHttp.getResponse();
-}
 
 
