@@ -138,15 +138,17 @@ std::vector<char>   Response::getBodyFromFile(std::string& path){
 
     std::streamsize size;
     size_t startPos = 0;
+    std::string range;
 
     file.seekg(startPos, std::ios::end);
     size = file.tellg();
     if (it != headers.end()){
-        std::string range(it->second.begin() + 6, it->second.end());
+        range = std::string (it->second.begin() + 6, it->second.end());
+        }
         startPos = Utils::strToNumber(range);
         if (startPos >= (size_t)size)
             startPos = 0;
-        size = 110 * 1024; //to kb
+        size = 90 * 1024; //to kb
         resInfo.status = PARTIAL_CONTENT;
         std::cout << "start pos = " << startPos << " , size = " << size << " , size + range = " << size + startPos << " , total size = " << file.tellg() << std::endl;
         std::string contentRange("bytes ");
@@ -156,7 +158,7 @@ std::vector<char>   Response::getBodyFromFile(std::string& path){
         contentRange.append("/");
         contentRange.append(Utils::toString(file.tellg()));
         resElements.headers.insert(std::pair<std::string, std::string> ("Content-Range", contentRange));
-    }
+    // }
 
     file.seekg(startPos, std::ios::beg);
     std::vector<char> body(size);
