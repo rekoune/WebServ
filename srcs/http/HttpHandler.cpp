@@ -10,14 +10,15 @@ HttpHandler::~HttpHandler(){};
 // }
 HttpHandler::HttpHandler (const ServerConfig& server): sameReq(true){
     this->server = server;
-    this->req.setClientMaxBody(server.client_max_body_size);
+    this->reqParser = RequestParser(server);
+    this->reqParser.setClientMaxBody(server.client_max_body_size);
 }
 HttpHandler::HttpHandler(const HttpHandler& other){
     *this = other;
 }
 
 HttpHandler& HttpHandler::operator=(const HttpHandler& other){
-    this->req = other.req;
+    this->reqParser = other.reqParser;
     this->server = other.server;
     this->reqHandler = other.reqHandler;
     this->resInfo = other.resInfo;
@@ -32,16 +33,17 @@ HttpHandler& HttpHandler::operator=(const HttpHandler& other){
 // }
 void HttpHandler::setServer(const ServerConfig& server){
     this->server = server;
-    this->req.setClientMaxBody(server.client_max_body_size);
+    this->reqParser.setClientMaxBody(server.client_max_body_size);
+    this->reqParser = RequestParser(server);
 }
-// void HttpHandler::setRequestHandler(const RequestHandler& reqHandler){
+// void HttpHandler::setResourceResolver(const ResourceResolver& reqHandler){
 //     this->reqHandler = reqHandler;
 // }
 
 // void HttpHandler::handle(){
-//     HttpResponseInfo resInfo;
+//     HttpResourceInfo resInfo;
 //     if ((resInfo.status  = this->req.parseRequest()) == OK){
-//         this->reqHandler = RequestHandler(this->req, this->server);
+//         this->reqHandler = ResourceResolver(this->req, this->server);
 //         resInfo = this->reqHandler.handle();
 //     }
 //     this->resInfo = resInfo;
@@ -49,27 +51,21 @@ void HttpHandler::setServer(const ServerConfig& server){
 
 void HttpHandler::appendData(const char* data, size_t size){
     if (sameReq ==  false){
-        this->req = Request();
-        this->req.setClientMaxBody(server.client_max_body_size);
+        this->reqParser = RequestParser(server);
+        this->reqParser.setClientMaxBody(server.client_max_body_size);
         this->response.clear();
         sameReq = true;
     }
-    this->resInfo.status = this->req.appendData(data, size);
+    this->resInfo.status = this->reqParser.appendData(data, size);
 }
 
 bool HttpHandler::isComplete(){
-    return (this->req.isComplete());
+    return (this->reqParser.isComplete());
 }
 
 std::vector<char> HttpHandler::getResponse(){
-
-    if (this->resInfo.status == OK){
-        this->reqHandler.setRequest(this->req);
-        this->reqHandler.setServer(this->server);
-        this->resInfo = this->reqHandler.handle();
-    }
     
-    this->response.setResInfo(this->resInfo);
+    this->response.setResInfo(reqParser.getResourceInfo());
     response.handle();
     sameReq = false;
     // std::cout << "status = " << resInfo.status << std::endl;
