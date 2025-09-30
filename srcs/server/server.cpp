@@ -45,6 +45,7 @@ server::~server()
 	std::cout << "Destroctor: closing socketFds" << std::endl;
 	for(size_t i = 0; i < socketFds.size(); i++){
 		std::cout << "closing fd : " <<  socketFds[i].fd << std::endl;
+		std::cout << "closing fd : " <<  socketFds[i].fd << std::endl;
 		close(socketFds[i].fd);
 	}
 }
@@ -155,6 +156,7 @@ void server::acceptClient(int listenFd)
 		unsigned short client_port = ntohs(client_addr.sin_port);
 
 		std::cout << "New connection from: " << client_ip << ":" << client_port << std::endl;
+		std::cout << "client nbr: " << socketFds.size() << " FD : " << clientFd << std::endl;
 		std::cout << "client nbr: " << socketFds.size() << " FD : " << clientFd << std::endl;
 		std::memset(&client_addr, 0, client_len);
 	}

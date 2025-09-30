@@ -1,38 +1,40 @@
-# include "../../../includes/RequestHandler.hpp"
+# include "../../../includes/ResourceResolver.hpp"
 
-RequestHandler::RequestHandler(){};
-RequestHandler::~RequestHandler(){};
+ResourceResolver::ResourceResolver(){};
+ResourceResolver::~ResourceResolver(){};
 
-RequestHandler::RequestHandler(const Request& req, const ServerConfig& server){
-    this->req = req;
-    this->server = server;
+ResourceResolver::ResourceResolver(const RequestLine& reqLine, const std::vector<LocationConfig>& locations){
+    this->reqLine = reqLine;
+    this->locations = locations;
 }
-RequestHandler::RequestHandler(const RequestHandler& other){
+ResourceResolver::ResourceResolver(const ResourceResolver& other){
     *this = other;
 }
 
-RequestHandler& RequestHandler::operator=(const RequestHandler& other){
-    this->req = other.req;
-    this->server = other.server;
+ResourceResolver& ResourceResolver::operator=(const ResourceResolver& other){
+    this->reqLine = other.reqLine;
+    this->locations = other.locations;
     this->resInfo = other.resInfo;
     return (*this);
 }
 
-void RequestHandler::setRequest(const Request& req){
-    this->req = req;
+void ResourceResolver::setRequestLine(const RequestLine& req){
+    this->reqLine = req;
 }
-void RequestHandler::setServer(const ServerConfig& server){
-    this->server = server;
+void ResourceResolver::setLocations(const std::vector<LocationConfig>& locations){
+    this->locations = locations;
+}
+void ResourceResolver::setServer(const ServerConfig&    server){
+    this->resInfo.server = server;
 }
 
-HttpResponseInfo RequestHandler::getResponseInfo() const {
+HttpResourceInfo ResourceResolver::getResponseInfo() const {
     return (this->resInfo);
 }
 
-HttpStatusCode RequestHandler::findLocation(std::vector<LocationConfig> locations, std::string reqTarget, LocationConfig& resultLocation){
+HttpStatusCode ResourceResolver::findLocation(std::vector<LocationConfig> locations, std::string reqTarget, LocationConfig& resultLocation){
     int matchedLenght = -1;
     int matchedIndex = -1;
-
     for(size_t i = 0; i < locations.size(); i++){
         if(Utils::isStartWith(reqTarget, locations.at(i).path)){
             if (matchedLenght < (int)locations.at(i).path.length()){
@@ -42,13 +44,13 @@ HttpStatusCode RequestHandler::findLocation(std::vector<LocationConfig> location
         }
     }
     if (matchedIndex == -1){
-        return (NOT_FOUND);
+        return NOT_FOUND;
     }
     resultLocation = locations.at(matchedIndex);
     return (OK);
 }
 
-HttpStatusCode  RequestHandler::isMethodAllowed(std::vector<std::string> allowedMethods, std::string reqMethod){
+HttpStatusCode  ResourceResolver::isMethodAllowed(std::vector<std::string> allowedMethods, std::string reqMethod){
     if (allowedMethods.empty() && reqMethod == "GET")
         return (OK);
     for(size_t i = 0; i < allowedMethods.size(); i++){
@@ -58,7 +60,7 @@ HttpStatusCode  RequestHandler::isMethodAllowed(std::vector<std::string> allowed
     return (METHOD_NOT_ALLOWED);
 }
 
-HttpStatusCode RequestHandler::dirHandling(std::string& path, PathTypes& pathType, LocationConfig& location){
+HttpStatusCode ResourceResolver::dirHandling(std::string& path, PathTypes& pathType, LocationConfig& location){
     std::string temp(path);
     const char* c_path;
     struct stat type;
@@ -83,13 +85,13 @@ HttpStatusCode RequestHandler::dirHandling(std::string& path, PathTypes& pathTyp
    return (OK);
 }
 
-bool RequestHandler::isScript(std::string& path, LocationConfig& location){
+bool ResourceResolver::isScript(std::string& path, LocationConfig& location){
     (void)path;
     (void)location;
     return false;
 }
 
-HttpStatusCode RequestHandler::fileHandling(std::string& path, PathTypes& pathType, LocationConfig& location){
+HttpStatusCode ResourceResolver::fileHandling(std::string& path, PathTypes& pathType, LocationConfig& location){
     if (isScript(path, location)){
         pathType = SCRIPT;
         return (OK);
@@ -98,14 +100,14 @@ HttpStatusCode RequestHandler::fileHandling(std::string& path, PathTypes& pathTy
     return (OK);
 }
 
-HttpStatusCode RequestHandler::resolveResourceType(std::string& path, PathTypes& pathType, LocationConfig& location){
+HttpStatusCode ResourceResolver::resolveResourceType(std::string& path, PathTypes& pathType, LocationConfig& location){
     const char * c_path;
     struct stat type;
     HttpStatusCode status;
 
     c_path = path.c_str();
     if (stat(c_path, &type) == -1){
-        if (this->req.getRequestLine().method == "POST"){
+        if (this->reqLine.method == "POST"){
             pathType = F;
             return (OK);
         }
@@ -122,24 +124,23 @@ HttpStatusCode RequestHandler::resolveResourceType(std::string& path, PathTypes&
     return (status);
 }
 
-HttpResponseInfo RequestHandler::handle(){
+HttpResourceInfo ResourceResolver::handle(){
     LocationConfig location;
     HttpStatusCode status;
     PathTypes   pathType;
     std::string path;
 
-    status = findLocation(server.locations, req.getRequestLine().target, location);
-    this->resInfo.method = req.getRequestLine().method;
-    this->resInfo.req = req;
-    this->resInfo.server = server;
+    status = findLocation(locations, reqLine.target, location);
+    this->resInfo.method = reqLine.method;
+    this->resInfo.reqLine = reqLine;
     if (status == OK)
-        status = isMethodAllowed(location.allowed_methods, req.getRequestLine().method);
+        status = isMethodAllowed(location.allowed_methods, reqLine.method);
     if (status == OK){
         path = location.root;
 
         if (path.at(path.length() -1) == '/')
             path.erase(path.end() -1);
-        path.append(req.getRequestLine().target);
+        path.append(reqLine.target);
         status = resolveResourceType(path, pathType, location);
     }
     this->resInfo.status = status;
