@@ -1,6 +1,6 @@
 SRC= main.cpp request/RequestParser.cpp request/ResourceResolver.cpp request/UploadHandler.cpp ../config/configParser.cpp ../config/configValidate.cpp ../utils/Utils.cpp response/Response.cpp HttpHandler.cpp  
 OBJ = $(SRC:.cpp=.o)
-NAME = Request
+NAME = webserver
 
 CC = c++
 FLAGS = -Wall -Wextra -Werror
