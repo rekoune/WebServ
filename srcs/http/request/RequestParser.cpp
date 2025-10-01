@@ -240,7 +240,7 @@ HttpStatusCode      RequestParser::appendData(const char* _data, size_t size){
             resourceResolver.setServer(server);
             resourceResolver.setRequestLine(requestLine);
             if ((resInfo = resourceResolver.handle()).status != OK){
-                std::cout << "hora hora hora status = " << resInfo.status << std::endl;
+                // std::cout << "hora hora hora status = " << resInfo.status << std::endl;
                 parseState = PARSE_ERROR;
                 return resInfo.status;
             }

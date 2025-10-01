@@ -1,44 +1,43 @@
-#include "../../includes/Request.hpp"
+#include "../../includes/RequestParser.hpp"
 #include "../../includes/Response.hpp"
 #include "../../includes/cgi/CgiExecutor.hpp"
 
-
-int	main()
+int main()
 {
-	std::string raw_req = 
-	"GET /test.py?name=esmo&age=20 HTTP/1.1\r\n"
-	"Host: localhost:8080\r\n"
-	"User-Agent: curl/7.68.0\r\n"
-	"content-type: text/html\r\n"
-	"content-length: 68137\r\n"
-	"Accept: */*\r\n"
-	"\r\n";
-
-	Request req;
-	req.appendData(raw_req.c_str(), raw_req.size());
-
-
+	std::string raw_req =
+		"GET /test.py?name=esmo&age=20 HTTP/1.1\r\n"
+		"Host: localhost:8080\r\n"
+		"User-Agent: curl/7.68.0\r\n"
+		"content-type: text/html\r\n"
+		"content-length: 68137\r\n"
+		"Accept: */*\r\n"
+		"\r\n";
+	RequestLine req_line;
+	req_line.httpVersion = "HTTP/1.1";
+	req_line.method = "GET"; 
+	RequestContext req_context;
+	req_context.req_line = req_line;
+	req_context.script_path = "www/cgi-bin/test.py";
+	req_context.headers = {
+		{"content-type", "text/html"},
+		{"content-length", "68137"},
+		{"Accept", "*/*"}
+	};
+	req_context.query = "name=esmo&age=20";
+	req_context.script_name = "test.py";
 
 
 	int status;
-	std::vector<char> result ;
-
+	std::vector<char> result;
 
 	CgiExecutor cgi_executor(req, "www/cgi-bin/test.py", "webserv/1.1");
 	cgi_executor.run(result, status);
-
-
 
 	// std::cout  <<  "REQUEST_METHOD" << ": " << req.getRequestLine().target << " " << req.getRequestLine().method <<" " << req.getRequestLine().httpVersion << std::endl;
 	// // std::cout << "QUERY_STRING";
 	// // std::cout << "SCRIPT_NAME";
 	// // std::cout << "SERVER_PROTOCOL";
-
-
 }
-
-
-
 
 // REQUEST_METHOD → GET
 // QUERY_STRING → user=test
