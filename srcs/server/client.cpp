@@ -42,6 +42,7 @@ client::client(const client& other):
 ssize_t client::ft_recv(short& event){
 	char buf[BUFFER];
 	ssize_t read = recv(fd, buf, sizeof(buf), 0);
+	static size_t total = 0;
 
 	if(read == -1)
 		 std::cerr << "Error receiving data: " << strerror(errno) << std::endl; 
@@ -55,6 +56,8 @@ ssize_t client::ft_recv(short& event){
 		if(clientHandler.isComplete())
 			event = POLLOUT;
 	}
+	total += read;
+	std::cout << "total data from Post = " << total << std::endl;
 
 	return read;
 }
