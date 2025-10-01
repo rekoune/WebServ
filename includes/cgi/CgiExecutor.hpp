@@ -4,11 +4,7 @@
 class CgiExecutor
 {
 	private :
-		Request						request		;
-		std::string 				script_path	;
-		std::string					server_software;
-
-
+		RequestContext				req_context;
 
 		std::vector<std::string>	buildEnv();
 		void						parseTarget(std::string& script_name, std::string& query );
@@ -16,7 +12,8 @@ class CgiExecutor
 	public :
 		CgiExecutor();
 		~CgiExecutor();
-		CgiExecutor(Request& req, std::string script_path, std::string	server_software);
+		CgiExecutor(RequestContext& req_context);
+		void	setContext(RequestContext&	req_context);
 
 	
 		bool	run(std::vector<char>& result, int&	cgi_status );

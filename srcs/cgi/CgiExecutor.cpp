@@ -1,5 +1,4 @@
-#include "../../includes/Request.hpp"
-#include "../../includes/Response.hpp"
+#include "../../includes/RequestParser.hpp"
 #include "../../includes/cgi/CgiExecutor.hpp"
 
 
@@ -9,56 +8,67 @@ CgiExecutor::CgiExecutor()
 CgiExecutor::~CgiExecutor()
 {}
 
-CgiExecutor::CgiExecutor(Request& req, std::string script_path, std::string	server_software) 
-	: request(req), script_path(script_path), server_software(server_software) //server_software  is which program/software this webserver is (nginx/apache...). ours be like "webserv/1.1" or some thing like that. I NEED IT IN THE ENVP FOR SCRIPT
+CgiExecutor::CgiExecutor(RequestContext& req_context)
+	: req_context(req_context)     						 //server_software  is which program/software this webserver is (nginx/apache...). ours be like "webserv/1.1" or some thing like that. I NEED IT IN THE ENVP FOR SCRIPT
 {}
 
-
-void	CgiExecutor::parseTarget(std::string& script_name, std::string& query )
+void	CgiExecutor::setContext(RequestContext&	req_context)
 {
-	std::string	target = request.getRequestLine().target;
-	size_t qpos = target.find('?');
-	std::cout << qpos << std::endl;
-	if (qpos != std::string::npos)
-	{
-		script_name = target.substr(0, qpos);
-		query  = target.substr(qpos + 1) ;
-	}
-	else 
-	{
-		script_name = target;
-		query = "";
-	}
-
+	this->req_context = req_context;
 }
+
+
 
 std::vector<std::string>	CgiExecutor::buildEnv()
 {
-	std::string target = request.getRequestLine().target;
-	std::string					query;
-	std::string					script_name;
-	std::vector<std::string>	env;
+	std::map<std::string, std::string> 		headers = req_context.headers;
+	std::vector<std::string>				env;
 	
-	parseTarget(script_name, query);
-	std::cout << script_name << std::endl;
-	std::cout << query << std::endl;
-	env.push_back("REQUEST_METHOD=" + request.getRequestLine().method);
-	env.push_back("QUERY_STRING=" + query);
-	env.push_back("SCRIPT_NAME=" + script_name);
-	env.push_back("SERVER_PROTOCOL=" + request.getRequestLine().httpVersion);
-	env.push_back("SERVER_SOFTWARE=" + server_software);
-	env.push_back("GATEWAY_INTERFACE=CGI/1.1");
+	std::cout << "script_name: " << req_context.script_name << std::endl;
+	std::cout << "query: " << req_context.query << std::endl;
 
-	if (request.getHeaders().count("content-type"))
-		env.push_back("CONTENT_TYPE=" + request.getHeaders()["content-type"]);
-	if ( request.getHeaders().count("content-length"))
-		env.push_back("CONTENT_LENGTH=" + request.getHeaders()["content-length"]);
+
+	env.push_back("REQUEST_METHOD=" + req_context.req_line.method);
+	env.push_back("QUERY_STRING=" + req_context.query);
+	env.push_back("SCRIPT_NAME=" + req_context.script_name);
+	env.push_back("SERVER_PROTOCOL=" + req_context.req_line.httpVersion);
+	env.push_back("SERVER_SOFTWARE=webserv/1.1");
+	env.push_back("GATEWAY_INTERFACE=CGI/1.1");
+	// env.push_back("SERVER_NAME=" + /* getServerName() */);
+
+	for (std::map<std::string, std::string>::iterator iter = headers.begin(); iter != headers.end(); iter++)
+	{
+		std::string	name = iter->first;
+		std::string	value = iter->second;
+
+
+		if ( name == "content-type")
+			env.push_back("CONTENT_TYPE=" + headers["content-type"]);
+		else if (name == "content-length")
+			env.push_back("CONTENT_LENGTH=" + headers["content-length"]);
+		else 
+		{
+			std::string env_name;
+			char 		c;
+			for (size_t i = 0; i < name.size(); i++)
+			{
+				c = name[i];
+				if ( c > 'a' && c < 'z')
+					env_name += (c - 32);
+				else if (c == '-')
+					env_name += '_';
+				else
+					env_name += (c - 32);
+			}
+			env_name += "=";
+			env_name += value;
+			env.push_back(env_name);
+		}
+
+	}
 
 	return env;
 }
-
-
-
 
 
 
@@ -74,11 +84,23 @@ bool	CgiExecutor::run(std::vector<char>& result, int&	cgi_status )
 	return true;
 }
 
-// √ SERVER_SOFTWARE	webserv/1.1 (your server string)	class member √
-// GATEWAY_INTERFACE	CGI/1.1	hardcoded
-// REMOTE_ADDR	client IP address	from socket (if you have it)
-// SERVER_NAME	Host header (or config)	request.getHeaders()["Host"]
-// SERVER_PORT	Port server is listening on	from config/socket
-// CONTENT_TYPE	For POST/PUT: Content-Type header	request.getHeaders()["Content-Type"]
-// CONTENT_LENGTH	For POST/PUT: Content-Length header	request.getHeaders()["Content-Length"]
-// HTTP_*	All HTTP headers as env vars	All headers, uppercase, '-'→'_'
+
+// REQUEST_METHOD 		√
+// SCRIPT_NAME			√
+// QUERY_STRING			√
+// SERVER_PROTOCOL		√
+// GATEWAY_INTERFACE	√
+// SERVER_SOFTWARE		√
+// SERVER_NAME	\
+// SERVER_PORT  - >	from config file
+// REMOTE_ADDR	/
+// CONTENT_TYPE (for POST/PUT)		√
+// CONTENT_LENGTH (for POST/PUT)	√
+// All HTTP headers as HTTP_*		
+
+
+
+
+
+
+
