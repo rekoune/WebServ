@@ -1,8 +1,20 @@
 #include "../../includes/main_server.hpp"
 
 
-server::server() : listenersNbr(0){}
 
+server::server(const server& other) :
+									socketFds(other.socketFds), clients(other.clients),
+									listenToHosts(other.listenToHosts), listenersNbr(other.listenersNbr) {}
+
+server& server::operator=(const server& other){
+	if(this != &other){
+		socketFds = other.socketFds;
+		clients = other.clients;
+		listenToHosts = other.listenToHosts;
+		listenersNbr = other.listenersNbr;
+	}
+	return *this;
+}
 
 server::server(std::vector<ServerConfig>&	servers): listenersNbr(0) {
 
@@ -22,7 +34,7 @@ server::server(std::vector<ServerConfig>&	servers): listenersNbr(0) {
 				socketIt = iportToSocket.find(socket);
 				if(socketIt != iportToSocket.end()){
 					listenToHosts[socketIt->second].push_back(servers[i]); //listenToHost => socketfd -> serversconfig
-					//it's a socket to it's possible servers;
+					//it's a listening socket to it's possible servers;
 					std::cout << "pushing the server-- nbr : " << i << std::endl;
 				}
 				else
@@ -44,8 +56,7 @@ server::~server()
 {
 	std::cout << "Destroctor: closing socketFds" << std::endl;
 	for(size_t i = 0; i < socketFds.size(); i++){
-		std::cout << "closing fd : " <<  socketFds[i].fd << std::endl;
-		std::cout << "closing fd : " <<  socketFds[i].fd << std::endl;
+		std::cout << "closing fd : " <<  socketFds[i].fd << std::endl;;
 		close(socketFds[i].fd);
 	}
 }
