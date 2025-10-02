@@ -6,6 +6,10 @@ int main(int c, char **v)
 {
 	if(c != 2)
 		return 1;
+	if(c == 1){
+		std::cout << "the default config ??????" << std::endl;
+		return 1;
+	}
 
 	std::string path(v[1]);
 

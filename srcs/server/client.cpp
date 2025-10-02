@@ -7,11 +7,13 @@
 // 	std::cout << "\033[36mbody max size: \033[0m" << servers.client_max_body_size << std::endl; // Cyan text
 // }
 
+
+
+
 client::~client() {}
 
 client& client::operator=(const client& other){
 	if(this != &other){
-
 		clientHandler = other.clientHandler;
 		myServers = other.myServers;
 		requestData = other.requestData;
@@ -25,18 +27,19 @@ client& client::operator=(const client& other){
 }
 
 
-
-
-client::client(std::vector<ServerConfig>& myservers, int fd) :myServers(myservers) ,hostSeted(false),responseComplete(true) ,totalsend(0) ,fd(fd){
+client::client(std::vector<ServerConfig>& myservers, int fd) : myServers(myservers) ,hostSeted(false),
+		responseComplete(true) ,totalsend(0) ,fd(fd) 
+{
 	if(myServers.size() == 1){
 		clientHandler.setServer(myservers[0]);
 		hostSeted = true;
 	}
 }
+
 client::client(const client& other): 
-									clientHandler(other.clientHandler),myServers(other.myServers) ,requestData(other.requestData),
-									response(other.response) ,hostSeted(other.hostSeted),responseComplete(other.responseComplete) ,
-									totalsend(other.totalsend) , fd(other.fd) {}
+		clientHandler(other.clientHandler),myServers(other.myServers) ,requestData(other.requestData),
+		response(other.response) ,hostSeted(other.hostSeted),responseComplete(other.responseComplete) ,
+		totalsend(other.totalsend) , fd(other.fd) {}
 
 
 ssize_t client::ft_recv(short& event){
@@ -52,8 +55,10 @@ ssize_t client::ft_recv(short& event){
 	}
 	else if(read){
 		clientHandler.appendData(buf, read);
-		if(clientHandler.isComplete())
-			event = POLLOUT;
+		if(clientHandler.isComplete()){
+			std::cout << "all has been receved" << std::endl;
+ 			event = POLLOUT;
+		}
 	}
 
 	return read;
@@ -80,6 +85,7 @@ ssize_t client::sending(short& event){
 		responseComplete = true;
 		event = POLLIN;
 		totalsend = 0;
+		std::cout << "succufly send everyting !!!" << std::endl;
 	}
 	return total;
 }
@@ -118,6 +124,7 @@ void client::setHost(std::string &host){
 				return ;
 			}
 		}
+		
 		std::map<std::string, std::vector<std::string> >::iterator it = myServers[i].host_port.begin();
 		while (it != myServers[i].host_port.end()){
 			if(host == it->first){
@@ -154,7 +161,7 @@ bool client::appendFirstRequest(const char* buf, ssize_t read)
 			setHost(hostName);
 			std::cout << "found host name: " << hostName << std::endl;
 			clientHandler.appendData(&requestData[0], requestData.size());
-			// requestData.clear(); //ask is he copying ?
+			requestData.clear(); 
 			if(clientHandler.isComplete())
 				return true;
 		}

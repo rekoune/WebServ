@@ -11,6 +11,8 @@
 
 class server {
 private:
+	server();
+	
 	std::vector<struct pollfd> socketFds;
 	std::vector<client> clients;
 
@@ -21,10 +23,9 @@ private:
 
 	
 public:
-	server();
 	server(std::vector<ServerConfig>&	servers);
-	// server(const server& other);
-	// server& operator=(const server& other);
+	server(const server& other);
+	server& operator=(const server& other);
 	~server();
 
 	int listen_socket(const std::string& ip, const std::string& port);
