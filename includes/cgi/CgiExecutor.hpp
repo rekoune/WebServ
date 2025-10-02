@@ -1,13 +1,15 @@
 #ifndef CGI_HPP 
 #define CGI_HPP
 
+
+
 class CgiExecutor
 {
 	private :
 		RequestContext				req_context;
 
 		std::vector<std::string>	buildEnv();
-		void						executeScript(std::vector<char>& result, int&	cgi_status );
+		void						executeScript(std::vector<char>& result, int& cgi_status,  char** envp, char **argv);
 
 
 		// void						parseTarget(std::string& script_name, std::string& query );

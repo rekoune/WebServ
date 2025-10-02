@@ -49,7 +49,7 @@ std::vector<std::string>	CgiExecutor::buildEnv()
 	std::string								host;
 	if ( headers.count("Host"))
 		host = headers["Host"];
-	std::cout << "host: " << host << std::endl;
+	// std::cout << "host: " << host << std::endl;
 	
 	// std::cout << "script_name: " << req_context.script_name << std::endl;
 	// std::cout << "query: " << req_context.query << std::endl;
@@ -97,15 +97,6 @@ std::vector<std::string>	CgiExecutor::buildEnv()
 	return env;
 }
 
-
-
-
-// void	CgiExecutor::executeScript(std::vector<char>& result, int&	cgi_status)
-// {
-
-
-// }
-
 char ** 	vectorToEnvp(std::vector<std::string>& env_vec, std::vector <char*>& env_char_ptr_vec)
 {
 
@@ -119,14 +110,43 @@ char ** 	vectorToEnvp(std::vector<std::string>& env_vec, std::vector <char*>& en
 
 }
 
+void	CgiExecutor::executeScript(std::vector<char>& result, int&	cgi_status, char** envp, char **argv)
+{
+	(void)cgi_status;
+	(void)result;
+	int 	fd[2];
+	pid_t	pid;
+
+	pipe(fd);
+
+	pid = fork();
+	if (pid == 0)
+	{
+		//	child
+		//	dup
+		dup2(fd[1], 1);
+		close(fd[1]);
+		close (fd[0]);
+		// 	execve
+		execve(const_cast<const char *>(req_context.script_path.c_str()), argv, envp);
+	}
+	else 
+	{
+		//	parent
+		
+	}
+}
+
+
+
 bool	CgiExecutor::run(std::vector<char>& result, int&	cgi_status )
 {
 	std::vector<std::string>	env_vec = buildEnv();
 	(void)result, (void)cgi_status;
-	for ( std::vector< std::string>::iterator iter = env_vec.begin(); iter != env_vec.end(); iter++)
-	{
-		std::cout << *iter << std::endl;
-	}
+	// for ( std::vector< std::string>::iterator iter = env_vec.begin(); iter != env_vec.end(); iter++)
+	// {
+	// 	std::cout << *iter << std::endl;
+	// }
 
 	std::vector <char*> env_char_ptr_vec;
 	char **envp = vectorToEnvp(env_vec,  env_char_ptr_vec);
@@ -137,7 +157,7 @@ bool	CgiExecutor::run(std::vector<char>& result, int&	cgi_status )
 	args_vector.push_back(NULL);
 	char **argv = &args_vector[0];
 
-
+	executeScript(result, cgi_status, envp, argv);
 
 	
 	(void)envp;
@@ -154,7 +174,7 @@ bool	CgiExecutor::run(std::vector<char>& result, int&	cgi_status )
 // SERVER_PROTOCOL		√
 // GATEWAY_INTERFACE	√
 // SERVER_SOFTWARE		√
-// SERVER_NAME	\
+// SERVER_NAME	/* \ */
 // SERVER_PORT  - >	from config file
 // REMOTE_ADDR	/
 // CONTENT_TYPE (for POST/PUT)		√
