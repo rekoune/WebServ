@@ -1,24 +1,34 @@
 # include "../../../includes/UploadHandler.hpp"
 
 UploadHandler::UploadHandler(): uploadSize(-1){
+    currentState = SEARCHING_BOUNDARY;
     setFileTypes();
 };
 UploadHandler::~UploadHandler(){};
 
 UploadHandler::UploadHandler(const UploadHandler& other): uploadSize(-1){
     setFileTypes();
+    currentState = SEARCHING_BOUNDARY;
     *this = other;
 };
 
 UploadHandler& UploadHandler::operator=(const UploadHandler& other){
     this->resInfo = other.resInfo;
     this->bodySaver = other.bodySaver;
+    this->currentState = other.currentState;
+    this->uploadPath = other.uploadPath;
+    this->parseState = other.parseState;
+    this->contentType = other.contentType;
+    this->boundary = other.boundary;
+    this->fileTypes = other.fileTypes;
+    this->uploadSize = other.uploadSize;
     return (*this);
 }
 
 UploadHandler::UploadHandler(HttpResourceInfo& resInfo) : uploadSize(-1){
     setFileTypes();
     this->resInfo = resInfo;
+    currentState = SEARCHING_BOUNDARY;
 }
 void UploadHandler::setResInfo(const HttpResourceInfo& resInfo){
     this->resInfo = resInfo;
@@ -63,6 +73,12 @@ void    UploadHandler::setFileTypes(){
     fileTypes.insert(std::pair<std::string, std::string> ("zip", "application/zip"));
     fileTypes.insert(std::pair<std::string, std::string> ("bin", "application/octet-stream"));
 
+}
+
+void    UploadHandler::clearFiles(std::vector<std::string>& files){
+    for(size_t i = 0; i < files.size(); i++){
+        std::remove(files.at(i).c_str());
+    }
 }
 
 HttpStatusCode    UploadHandler::getPathType(std::string path, PathTypes& type){
@@ -121,8 +137,10 @@ HttpStatusCode     UploadHandler::getUploadPath(std::string& uploadPath){
     uploadPath.append(resInfo.location.root);
     uploadPath.append(resInfo.location.path);
     uploadPath.append(resInfo.location.upload_store);
-    if (access(uploadPath.c_str(), F_OK) != 0)
-        return INTERNAL_SERVER_ERROR;
+    if (access(uploadPath.c_str(), F_OK) != 0){
+        std::cout << "kdk kdk kdk " << std::endl;
+        return NOT_FOUND;
+    }
     uploadPath.append(resInfo.path.begin() + resInfo.location.root.length() + resInfo.location.path.length(), resInfo.path.end());
     status = getPathType(uploadPath, resInfo.type);
     if (status == OK)
@@ -160,6 +178,7 @@ HttpStatusCode      UploadHandler::checkHeaders(std::map<std::string, std::strin
         parseState = PARSE_ERROR;
         return (INTERNAL_SERVER_ERROR);
     }
+    openedFiles.push_back(uploadPath);
     return (OK);
 }
 
@@ -169,13 +188,15 @@ HttpStatusCode  UploadHandler::extractHeaders(std::string bodyHeaders){
     std::string         line;
     std::string         key, value;
     
-
     std::getline(ss, line, '\n');
     while(!ss.eof() && line != "\r"){
+        if (line.find(":") == std::string::npos){
+            parseState = PARSE_ERROR;
+            return BAD_REQUEST;
+        }
         std::stringstream headerStream(line);
         std::getline(headerStream, key, ':');
         std::getline(headerStream, value);
-        
         if ((!Utils::isBlank(key) && key.find(' ') != std::string::npos) || value.at(value.length() - 1) != '\r'){
             std::cout << "joma joma joma" << std::endl;
             return (BAD_REQUEST);
@@ -187,72 +208,119 @@ HttpStatusCode  UploadHandler::extractHeaders(std::string bodyHeaders){
             headers.insert(std::pair<std::string, std::string> (key, value));
         }
         std::getline(ss, line, '\n');
-    }
-    
+    }    
     return (checkHeaders(headers));
 }
 
-HttpStatusCode      UploadHandler::multipartHandling(const char* data, size_t size){
-    const std::string    start("--" + boundary + "\r\n");
-    const std::string    end("--" + boundary + "--\r\n");
-    static bool                 searchForBody = false;
-    static bool                 boundaryFound = false;
-    long                        boundPos;
-    long                        headersPos;
-    HttpStatusCode              status = OK;
 
-    Utils::pushInVector(bodySaver, data, size);
-    // std::cout << "--------------------body saver --------------" << std::endl;
-    //     std::cout.write(bodySaver.data(), bodySaver.size()) << std::endl;
-    // std::cout << "--------------------------------------------" << std::endl;
+HttpStatusCode      UploadHandler::searchForBoundary(){
+    long    boundPos;
+    std::string start("--" + boundary + "\r\n");
+    std::string end("--" + boundary + "--" + "\r\n");
+
     boundPos = Utils::isContainStr(&bodySaver[0], bodySaver.size(), start.c_str(), start.length());
-    if (boundPos != -1){
-        if (Utils::isContainStr(&bodySaver[0], bodySaver.size(), end.c_str(), end.length()) == 0){
-            std::cout << "end of multiparts reached !!" << std::endl;
-            return (OK);
+    if (boundPos == -1){
+        if (bodySaver.size() > 8000){
+            parseState = PARSE_ERROR;
+            return BAD_REQUEST;
         }
-        // std::cout << "ana hona test test" <<std::endl;
-        boundaryFound = true;
-        bodySaver.erase(bodySaver.begin(), bodySaver.begin() + boundPos + start.length());
+        return OK;
     }
-    if (!searchForBody){
-        if (boundaryFound){
-            headersPos = Utils::isContainStr(&bodySaver[0], bodySaver.size(), "\r\n\r\n", 4);
-            if (headersPos != -1){
-                status = extractHeaders(std::string(bodySaver.begin(), bodySaver.begin() + headersPos + 4));
-                if (status != OK){
-                    std::cout << "jf jf jf jf " << std::endl;
-                    parseState = PARSE_ERROR;
-                    return (BAD_REQUEST);
-                }
-                bodySaver.erase(bodySaver.begin(), bodySaver.begin() + headersPos + 4);
-                searchForBody = true;
-                boundaryFound = false;
-            }
-        }
-    }
-    if (searchForBody) {
-       if (bodySaver.size() > end.length()){
-        boundPos = Utils::isContainStr(&bodySaver[0], bodySaver.size(), start.c_str(), start.length());
-        if (boundPos != -1){
-            std::cout << "hona" << std::endl;
+    currentState = SEARCHING_HEADERS;
+    if (boundPos > 0){
+        if (bodyFile.is_open() && boundPos >= 2) {
             bodyFile.write(&bodySaver[0], boundPos - 2);
-            bodySaver.erase(bodySaver.begin(), bodySaver.begin() + boundPos);
-            boundaryFound = true;
-            searchForBody = false;
+            bodyFile.close();
         }
-        else {
-            bodyFile.write(&bodySaver[0], bodySaver.size() - end.length());
-            bodySaver.erase(bodySaver.begin(), bodySaver.begin() + (bodySaver.size() - end.length()));
-        }
-        if (!bodySaver.empty()){
-            status = multipartHandling("", 0);
-        }
-       }
     }
-    // std::cout << "hona status -= " << status  << std::endl;
+    bodySaver.erase(bodySaver.begin(), bodySaver.begin() + boundPos + start.length());
+    if (!bodySaver.empty())
+        return searchForHeaders();
+    return OK;
+}
+
+HttpStatusCode      UploadHandler::searchForHeaders(){
+    long            headerPos;
+    HttpStatusCode  status = OK;
+
+    headerPos = Utils::isContainStr(&bodySaver[0], bodySaver.size(), "\r\n\r\n", 4);
+    if (headerPos == -1){
+        return OK;
+    }
+    headerPos += 4;
+    std::string headers(bodySaver.begin(), bodySaver.begin() + headerPos);
+    status = extractHeaders(headers);
+    if (status != OK && status != CREATED){
+        parseState = PARSE_ERROR;
+        return status;
+    }
+    bodySaver.erase(bodySaver.begin(), bodySaver.begin() + headerPos);
+    currentState = SEARCHING_BODY;
+    if (!bodySaver.empty())
+        return (searchForBody());
     return status;
 }
+
+HttpStatusCode      UploadHandler::searchForBody(){
+    const std::string   start("--" + boundary + "\r\n");
+    const std::string   end("--" + boundary + "--" + "\r\n");
+    long                boundaryPos;
+    long                endPos;
+
+
+    if (!bodyFile.is_open()) {
+        parseState = PARSE_ERROR;
+        std::cout << "wll wll wll " << std::endl;
+        return INTERNAL_SERVER_ERROR;
+    }
+    boundaryPos = Utils::isContainStr(&bodySaver[0], bodySaver.size(), start.c_str(), start.length());
+    if (boundaryPos != -1){
+        if (boundaryPos >= 2){
+            bodyFile.write(&bodySaver[0], boundaryPos - 2);
+        }
+        bodyFile.close();
+        currentState = SEARCHING_BOUNDARY;
+        bodySaver.erase(bodySaver.begin(), bodySaver.begin() + boundaryPos);
+        if (!bodySaver.empty()){
+            return (searchForBoundary());
+        }
+        return OK;
+    }
+    endPos = Utils::isContainStr(&bodySaver[0], bodySaver.size(), end.c_str(), end.length());
+    if (endPos != -1){
+        if (endPos >= 2){
+            bodyFile.write(&bodySaver[0], bodySaver.size() - end.length() - 2);
+        }
+        bodyFile.close();
+        currentState = END;
+        parseState = PARSE_COMPLETE;
+        bodySaver.clear();
+        return OK;
+    }
+    size_t keepSize = end.length() + 4;
+    if (bodySaver.size() > keepSize){
+        bodyFile.write(&bodySaver[0], bodySaver.size() - keepSize);
+        bodySaver.erase(bodySaver.begin(), bodySaver.end() - keepSize);
+    }
+    return OK;
+}
+
+HttpStatusCode      UploadHandler::multipartHandling(const char* data, size_t size){
+    HttpStatusCode status = OK;
+
+    Utils::pushInVector(bodySaver, data, size);
+    if (currentState == SEARCHING_BOUNDARY){
+        status = searchForBoundary();
+    }
+    if (currentState == SEARCHING_HEADERS && (status == OK)){
+        status = searchForHeaders();
+    }
+    if (currentState == SEARCHING_BODY && (status == OK)){
+        status = searchForBody();
+    }
+    return status;
+}
+
 
 HttpStatusCode      UploadHandler::handleByContentType(const char* data, size_t size){
     HttpStatusCode status = OK;
@@ -285,18 +353,33 @@ HttpStatusCode UploadHandler::contentLengthHandling(const char* data, size_t siz
     HttpStatusCode status = OK;
 
     totalSize += size;
-    // if (totalSize > (size_t)uploadSize){
-    //     std::cout << "sa9a sa9a sa9a" << std::endl;
-    //     parseState = PARSE_ERROR;
-    //     std::cout << "total size = " << totalSize << " , max size = " << uploadSize<< std::endl;
-    //     exit(1);
-    //     return CONTENT_TOO_LARGE;
-    // }
-    status = handleByContentType(data, size);
-    if (totalSize == (size_t)uploadSize){
-        parseState = PARSE_COMPLETE;
+    if (totalSize > (size_t)uploadSize){
+        std::cout << "sa9a sa9a sa9a" << std::endl;
+        parseState = PARSE_ERROR;
+        std::cout << "total size = " << totalSize << " , max size = " << uploadSize<< std::endl;
+        totalSize = 0;
+        currentState = SEARCHING_BOUNDARY;
+        return CONTENT_TOO_LARGE;
     }
-    // if (totalSize == (size_t)uploadSize)
+    status = handleByContentType(data, size);
+    if (totalSize != (size_t) uploadSize && currentState == END){
+        totalSize = 0;
+        currentState = SEARCHING_BOUNDARY;
+        parseState = PARSE_ERROR;
+        return BAD_REQUEST;
+    }
+    if (totalSize == (size_t)uploadSize){
+        totalSize = 0;
+        if (contentType.find("multipart/form-data") != std::string::npos && currentState != END){
+            currentState = SEARCHING_BOUNDARY;
+            parseState = PARSE_ERROR;
+            return BAD_REQUEST;
+        }
+            
+        currentState = SEARCHING_BOUNDARY;
+        parseState = PARSE_COMPLETE;
+        bodyFile.close();
+    }
     return (status);
 }
 
@@ -363,10 +446,10 @@ HttpStatusCode UploadHandler::chunkedBodyHandling(const char* data, size_t size)
 
 ParseState  UploadHandler::upload(const char* data, size_t size){
     HttpStatusCode& status = resInfo.status;
-
     if (uploadPath.empty()){
         status = getUploadPath(uploadPath);
         if (status != OK){
+            std::cout <<  "ekl ekl ekl" << std::endl;
             return PARSE_ERROR;
         }
         std::map<std::string, std::string>::iterator it = resInfo.headers.find("content-type");
@@ -396,12 +479,16 @@ ParseState  UploadHandler::upload(const char* data, size_t size){
         bodyFile.close();
         if (Utils::getFileSize(resInfo.path) == 0)
             std::remove(resInfo.path.c_str());
-
+        openedFiles.clear();
+        status = CREATED;
     }
     else if (parseState == PARSE_ERROR){
         bodyFile.close();
         std::remove(resInfo.path.c_str());
+        clearFiles(openedFiles);
+        openedFiles.clear();
         std::cout << "there is an error so the file was deleted !!!" << std::endl;
     }
     return parseState;
 }
+
