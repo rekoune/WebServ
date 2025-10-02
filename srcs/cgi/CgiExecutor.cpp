@@ -18,14 +18,41 @@ void	CgiExecutor::setContext(RequestContext&	req_context)
 }
 
 
+std::string	getServerName(std::string	host)
+{
+	size_t			ddot_pos = host.find(":");
+	std::string 	server_name;
+	if (ddot_pos != std::string::npos)
+		server_name = host.substr(0, ddot_pos);
+	else 
+		return (host);
+	return (server_name);
+}
+
+std::string	CgiExecutor::getServerPort(std::string	host)
+{
+	size_t			ddot_pos = host.find(":");
+	std::string 	port;
+	if (ddot_pos != std::string::npos)
+		port = host.substr(ddot_pos + 1);
+	else if (req_context.req_line.httpVersion == "HTTP/1.1")
+		return ("80");
+	else 
+		return ("443");
+	return (port);
+}
 
 std::vector<std::string>	CgiExecutor::buildEnv()
 {
 	std::map<std::string, std::string> 		headers = req_context.headers;
 	std::vector<std::string>				env;
+	std::string								host;
+	if ( headers.count("Host"))
+		host = headers["Host"];
+	std::cout << "host: " << host << std::endl;
 	
-	std::cout << "script_name: " << req_context.script_name << std::endl;
-	std::cout << "query: " << req_context.query << std::endl;
+	// std::cout << "script_name: " << req_context.script_name << std::endl;
+	// std::cout << "query: " << req_context.query << std::endl;
 
 
 	env.push_back("REQUEST_METHOD=" + req_context.req_line.method);
@@ -34,7 +61,8 @@ std::vector<std::string>	CgiExecutor::buildEnv()
 	env.push_back("SERVER_PROTOCOL=" + req_context.req_line.httpVersion);
 	env.push_back("SERVER_SOFTWARE=webserv/1.1");
 	env.push_back("GATEWAY_INTERFACE=CGI/1.1");
-	// env.push_back("SERVER_NAME=" + /* getServerName() */);
+	env.push_back("SERVER_NAME=" + getServerName(host));
+	env.push_back("SERVER_PORT=" + getServerPort(host));
 
 	for (std::map<std::string, std::string>::iterator iter = headers.begin(); iter != headers.end(); iter++)
 	{
@@ -53,12 +81,12 @@ std::vector<std::string>	CgiExecutor::buildEnv()
 			for (size_t i = 0; i < name.size(); i++)
 			{
 				c = name[i];
-				if ( c > 'a' && c < 'z')
+				if ( c >= 'a' && c <= 'z')
 					env_name += (c - 32);
 				else if (c == '-')
 					env_name += '_';
 				else
-					env_name += (c - 32);
+					env_name += (c);
 			}
 			env_name += "=";
 			env_name += value;
@@ -66,21 +94,56 @@ std::vector<std::string>	CgiExecutor::buildEnv()
 		}
 
 	}
-
 	return env;
 }
 
 
 
+
+// void	CgiExecutor::executeScript(std::vector<char>& result, int&	cgi_status)
+// {
+
+
+// }
+
+char ** 	vectorToEnvp(std::vector<std::string>& env_vec, std::vector <char*>& env_char_ptr_vec)
+{
+
+	for (std::vector<std::string>::iterator i = env_vec.begin(); i != env_vec.end(); i++)
+	{
+		env_char_ptr_vec.push_back(const_cast<char*>(i->c_str()));
+	}
+	env_char_ptr_vec.push_back(NULL);
+	
+	return &env_char_ptr_vec[0];
+
+}
+
 bool	CgiExecutor::run(std::vector<char>& result, int&	cgi_status )
 {
-	std::vector<std::string>	env = buildEnv();
+	std::vector<std::string>	env_vec = buildEnv();
 	(void)result, (void)cgi_status;
-	for ( std::vector< std::string>::iterator iter = env.begin(); iter != env.end(); iter++)
+	for ( std::vector< std::string>::iterator iter = env_vec.begin(); iter != env_vec.end(); iter++)
 	{
 		std::cout << *iter << std::endl;
 	}
 
+	std::vector <char*> env_char_ptr_vec;
+	char **envp = vectorToEnvp(env_vec,  env_char_ptr_vec);
+
+	// * preparing argv
+	std::vector<char *> args_vector;
+	args_vector.push_back(const_cast<char*>(req_context.script_path.c_str()));
+	args_vector.push_back(NULL);
+	char **argv = &args_vector[0];
+
+
+
+	
+	(void)envp;
+
+
+	// execve();
 	return true;
 }
 
