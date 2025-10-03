@@ -6,19 +6,35 @@ int main()
 {
 	RequestLine req_line;
 	req_line.httpVersion = "HTTP/1.1";
-	req_line.method = "GET"; 
+	req_line.method = "POST"; 
 	RequestContext req_context;
 	req_context.req_line = req_line;
-	req_context.script_path = "www/cgi-bin/test.py";
+	req_context.script_path = "../../www/cgi-bin/test.py";
 
 	/// #HEADERS
 	req_context.headers.insert(std::make_pair("content-type", "text/html"));
-	req_context.headers.insert(std::make_pair("content-length", "68137"));
+	req_context.headers.insert(std::make_pair("content-length", "27"));
 	req_context.headers.insert(std::make_pair("Accept", "*/*"));
 	req_context.headers.insert(std::make_pair("Host", "10.10.10.1"));
 
 	req_context.query = "name=esmo&age=20";
 	req_context.script_name = "test.py";
+	req_context.body.push_back('T');
+	req_context.body.push_back('H');
+	req_context.body.push_back('I');
+	req_context.body.push_back('S');
+	req_context.body.push_back(' ');
+	req_context.body.push_back('I');
+	req_context.body.push_back('S');
+	req_context.body.push_back(' ');
+	req_context.body.push_back('B');
+	req_context.body.push_back('O');
+	req_context.body.push_back('D');
+	req_context.body.push_back('Y');
+	// for (std::vector<char>::iterator i = req_context.body.begin(); i != req_context.body.end(); i++)
+	// {
+	// 	std::cout << *i << std::endl;
+	// }
 
 
 	int status;
