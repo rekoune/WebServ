@@ -126,14 +126,41 @@ void	CgiExecutor::executeScript(std::vector<char>& result, int&	cgi_status, char
 		//	dup
 		dup2(fd[1], 1);
 		close(fd[1]);
+		dup2(fd[0], 0);
 		close (fd[0]);
 		// 	execve
+
+		std::cout << const_cast<const char *>(req_context.script_path.c_str()) << std::endl;
 		execve(const_cast<const char *>(req_context.script_path.c_str()), argv, envp);
+		perror("execve failed");
+		exit(1);
 	}
 	else 
 	{
 		//	parent
+		// get the body ready into a char*
+		// write the body in the pipe 
+		char *body_buffer = &req_context.body[0];;
+
 		
+		write (fd[1], body_buffer, req_context.body.size());
+		close(fd[1]);
+		waitpid(pid, &cgi_status, 0);
+
+		// read from the pipe()
+		char	buffer;
+
+		while (read(fd[0], &buffer, 1) > 0)
+		{
+			result.push_back(buffer);
+		}
+		for (std::vector<char>::iterator i = result.begin(); i != result.end(); i++)
+		{
+			std::cout << *i;
+		}
+		std::cout << std::endl;
+		close (fd[0]);
+
 	}
 }
 
