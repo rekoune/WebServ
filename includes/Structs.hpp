@@ -24,4 +24,18 @@ struct HttpResourceInfo{
 };
 
 
+struct RequestContext{
+	RequestLine 						req_line;
+	std::vector<char>                   body;
+
+
+	std::string 						script_path;
+    std::map<std::string, std::string>  headers;
+	std::string							query;
+	std::string							script_name;
+	std::string							server_name;
+
+};
+
+
 # endif
