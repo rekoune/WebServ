@@ -45,8 +45,6 @@ client::client(const client& other):
 ssize_t client::ft_recv(short& event){
 	char buf[BUFFER];
 	ssize_t read = recv(fd, buf, sizeof(buf), 0);
-	static size_t total = 0;
-
 	if(read == -1)
 		 std::cerr << "Error receiving data: " << strerror(errno) << std::endl; 
 	else if(!isHostSeted()){
@@ -55,14 +53,14 @@ ssize_t client::ft_recv(short& event){
 			event = POLLOUT;
 	}
 	else if(read){
+		std::cout << "receving...." << std::endl;
 		clientHandler.appendData(buf, read);
 		if(clientHandler.isComplete()){
 			std::cout << "all has been receved" << std::endl;
  			event = POLLOUT;
 		}
 	}
-	total += read;
-	std::cout << "total data from Post = " << total << std::endl;
+	// std::cout << "\033[33mbuf :\n \033[0m" << buf << std::endl; // Yellow text
 
 	return read;
 }
@@ -84,6 +82,7 @@ ssize_t client::sending(short& event){
 		totalsend += nsend;
 	}
 	total = totalsend;
+	std::cout << "total data from Post = " << total << std::endl;
 	if(totalsend == response.size()){
 		responseComplete = true;
 		event = POLLIN;
