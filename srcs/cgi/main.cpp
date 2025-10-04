@@ -13,7 +13,7 @@ int main()
 
 	/// #HEADERS
 	req_context.headers.insert(std::make_pair("content-type", "text/html"));
-	req_context.headers.insert(std::make_pair("content-length", "27"));
+	req_context.headers.insert(std::make_pair("content-length", "12"));
 	req_context.headers.insert(std::make_pair("Accept", "*/*"));
 	req_context.headers.insert(std::make_pair("Host", "10.10.10.1"));
 
@@ -31,6 +31,7 @@ int main()
 	req_context.body.push_back('O');
 	req_context.body.push_back('D');
 	req_context.body.push_back('Y');
+
 	// for (std::vector<char>::iterator i = req_context.body.begin(); i != req_context.body.end(); i++)
 	// {
 	// 	std::cout << *i << std::endl;
@@ -43,6 +44,12 @@ int main()
 	CgiExecutor cgi_executor(req_context);
 	cgi_executor.run(result, status);
 
+
+	for (std::vector<char>::iterator i = result.begin(); i != result.end(); i++)
+	{
+		std::cout << *i;
+	}
+	std::cout << "status" << status << std::endl;
 	// std::cout  <<  "REQUEST_METHOD" << ": " << req.getRequestLine().target << " " << req.getRequestLine().method <<" " << req.getRequestLine().httpVersion << std::endl;
 	// // std::cout << "QUERY_STRING";
 	// // std::cout << "SCRIPT_NAME";

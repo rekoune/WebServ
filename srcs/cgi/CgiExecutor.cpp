@@ -110,29 +110,54 @@ char ** 	vectorToEnvp(std::vector<std::string>& env_vec, std::vector <char*>& en
 
 }
 
-void	CgiExecutor::executeScript(std::vector<char>& result, int&	cgi_status, char** envp, char **argv)
+bool	CgiExecutor::executeScript(std::vector<char>& result, int&	cgi_status, char** envp, char **argv)
 {
 	(void)cgi_status;
 	(void)result;
-	int 	fd[2];
 	pid_t	pid;
+	int 	body_fd[2];
+	int		reslt_fd[2];
 
-	pipe(fd);
+	if (pipe(body_fd) == -1)
+	{
+		std::cerr << "pipe failed" << std::endl;
+		return false ;
+	}
+
+	if ( pipe(reslt_fd) == -1 )
+	{
+		std::cerr << "pipe failed" << std::endl;
+		return false ;
+	}
 
 	pid = fork();
+	if (pid == -1)
+	{
+		std::cerr << "fork failed" << std::endl;
+		return false ;
+	}
 	if (pid == 0)
 	{
 		//	child
-		//	dup
-		dup2(fd[1], 1);
-		close(fd[1]);
-		dup2(fd[0], 0);
-		close (fd[0]);
-		// 	execve
+		if (dup2(reslt_fd[1], 1) == -1)
+		{
+			std::cerr << "dup2 failed" << std::endl;
+			return false ;
+		}
+		close(reslt_fd[1]);
+		close(reslt_fd[0]);
 
-		std::cout << const_cast<const char *>(req_context.script_path.c_str()) << std::endl;
+		if ( dup2(body_fd[0], 0) == -1 )
+		{
+			std::cerr << "dup2 failed" << std::endl;
+			return false ;
+		}
+
+		close (body_fd[0]);
+		close (body_fd[1]);
+		// 	execve
 		execve(const_cast<const char *>(req_context.script_path.c_str()), argv, envp);
-		perror("execve failed");
+		std::cerr << "execve failed" << std::endl;
 		exit(1);
 	}
 	else 
@@ -140,28 +165,35 @@ void	CgiExecutor::executeScript(std::vector<char>& result, int&	cgi_status, char
 		//	parent
 		// get the body ready into a char*
 		// write the body in the pipe 
-		char *body_buffer = &req_context.body[0];;
+		char *body_buffer = &req_context.body[0];
 
-		
-		write (fd[1], body_buffer, req_context.body.size());
-		close(fd[1]);
-		waitpid(pid, &cgi_status, 0);
+		size_t	len = std::atoi(const_cast<const char *>(req_context.headers["content-length"].c_str()));
+		if ( len > req_context.body.size())
+			len = req_context.body.size();
 
-		// read from the pipe()
+		write (body_fd[1], body_buffer,  len);
+		close(body_fd[1]);
+		close(body_fd[0]);
+
+		// read from the restl_pipe()
 		char	buffer;
 
-		while (read(fd[0], &buffer, 1) > 0)
+		close (reslt_fd[1]);
+		while (read(reslt_fd[0], &buffer, 1) > 0)
 		{
 			result.push_back(buffer);
 		}
-		for (std::vector<char>::iterator i = result.begin(); i != result.end(); i++)
-		{
-			std::cout << *i;
-		}
 		std::cout << std::endl;
-		close (fd[0]);
 
+		close (reslt_fd[0]);
+		if ( waitpid(pid, &cgi_status, 0) == -1)
+		{
+			std::cout << "error in child process : " << std::endl;
+		}
+		WEXITSTATUS(cgi_status);
 	}
+	return true;
+
 }
 
 
@@ -184,7 +216,8 @@ bool	CgiExecutor::run(std::vector<char>& result, int&	cgi_status )
 	args_vector.push_back(NULL);
 	char **argv = &args_vector[0];
 
-	executeScript(result, cgi_status, envp, argv);
+	if ( !executeScript(result, cgi_status, envp, argv))
+		return false;
 
 	
 	(void)envp;
