@@ -206,7 +206,7 @@ int server::polling()
 				NbrOfActiveSockets--;
 			}
 			else if((socketFds[i].revents & POLLIN)  && Working_flage){
-				
+				std::cout << "POLLIN" << std::endl;
 				if(is_listener(socketFds[i].fd))
 						acceptClient(socketFds[i].fd);
 				else
@@ -224,6 +224,7 @@ int server::polling()
 			}
 			else if((socketFds[i].revents & POLLOUT)  && Working_flage)
 			{
+				std::cout << "POLLOUT" << std::endl;
 				if(!clients[i - listenersNbr].ft_send(socketFds[i].events)){
 						std::cout << "closing the sockefd : " << socketFds[i].fd << std::endl;
 						close(socketFds[i].fd);
