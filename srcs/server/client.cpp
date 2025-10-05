@@ -48,16 +48,20 @@ ssize_t client::ft_recv(short& event){
 		 std::cerr << "Error receiving data: " << strerror(errno) << std::endl; 
 	else if(!isHostSeted()){
 		std::cout << "seting host...." << std::endl;
-		if(appendFirstRequest(buf, read))
+		if(appendFirstRequest(buf, read)){
+			total = 0;
 			event = POLLOUT;
+		}
 	}
 	else if(read){
 		clientHandler.appendData(buf, read);
-		if(clientHandler.isComplete())
+		if(clientHandler.isComplete()){
+			total = 0;
 			event = POLLOUT;
+		}
 	}
 	total += read;
-	std::cout << "total data from Post = " << total << std::endl;
+	std::cout << "total data from Post = " << total / 1024 / 1024  << "MB" << std::endl;
 
 	return read;
 }
