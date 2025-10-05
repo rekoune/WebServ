@@ -122,7 +122,7 @@ void    UploadHandler::setFullPathByType(std::string& path, PathTypes& pathType,
             return;
         }
         else
-            path.append(Utils::findExtensionByMime(fileTypes, contentType));
+        path.append(Utils::findExtensionByMime(fileTypes, contentType));
     }
     else if (pathType == DIR_LS){
         std::string prefix("File");
@@ -161,10 +161,15 @@ HttpStatusCode      UploadHandler::checkHeaders(std::map<std::string, std::strin
         return BAD_REQUEST;
     }
     uploadPath = std::string(resInfo.path);
+    
     if ((namePos = it->second.find("filename=\"")) != std::string::npos){
         uploadPath.append("/");
-        uploadPath.append(it->second.begin() + namePos + 10, it->second.end() - 1);
-        pathType = F;
+        if (it->second.begin() + namePos + 10 == it->second.end() - 1)
+            pathType = DIR_LS;
+        else{
+            uploadPath.append(it->second.begin() + namePos + 10, it->second.end() - 1);
+            pathType = F;
+        }
     }
     it = headers.find("content-type");
     if (it != headers.end())
@@ -294,6 +299,8 @@ HttpStatusCode      UploadHandler::searchForBody(){
         bodyFile.close();
         currentState = END;
         parseState = PARSE_COMPLETE;
+        if (Utils::getFileSize(uploadPath) == 0)
+            std::remove(uploadPath.c_str());
         bodySaver.clear();
         return OK;
     }
@@ -308,6 +315,11 @@ HttpStatusCode      UploadHandler::searchForBody(){
 HttpStatusCode      UploadHandler::multipartHandling(const char* data, size_t size){
     HttpStatusCode status = OK;
 
+    if (resInfo.type != DIR_LS){
+        std::cout << "idd idd idd" << std::endl;
+        parseState = PARSE_ERROR;
+        return (NOT_FOUND);
+    }
     Utils::pushInVector(bodySaver, data, size);
     if (currentState == SEARCHING_BOUNDARY){
         status = searchForBoundary();
@@ -362,23 +374,27 @@ HttpStatusCode UploadHandler::contentLengthHandling(const char* data, size_t siz
         return CONTENT_TOO_LARGE;
     }
     status = handleByContentType(data, size);
-    if (totalSize != (size_t) uploadSize && currentState == END){
+    if (parseState == PARSE_ERROR)
         totalSize = 0;
-        currentState = SEARCHING_BOUNDARY;
-        parseState = PARSE_ERROR;
-        return BAD_REQUEST;
-    }
-    if (totalSize == (size_t)uploadSize){
-        totalSize = 0;
-        if (contentType.find("multipart/form-data") != std::string::npos && currentState != END){
+    else {
+        if (totalSize != (size_t) uploadSize && currentState == END){
+            totalSize = 0;
             currentState = SEARCHING_BOUNDARY;
             parseState = PARSE_ERROR;
             return BAD_REQUEST;
         }
-            
-        currentState = SEARCHING_BOUNDARY;
-        parseState = PARSE_COMPLETE;
-        bodyFile.close();
+        if (totalSize == (size_t)uploadSize){
+            totalSize = 0;
+            if (contentType.find("multipart/form-data") != std::string::npos && currentState != END){
+                currentState = SEARCHING_BOUNDARY;
+                parseState = PARSE_ERROR;
+                return BAD_REQUEST;
+            }
+                
+            currentState = SEARCHING_BOUNDARY;
+            parseState = PARSE_COMPLETE;
+            bodyFile.close();
+        }
     }
     return (status);
 }

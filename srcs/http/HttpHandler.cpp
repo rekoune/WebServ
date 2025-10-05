@@ -53,10 +53,10 @@ void HttpHandler::appendData(const char* data, size_t size){
     if (sameReq ==  false){
         std::vector<char> test;
         Utils::pushInVector(test, data, size);
-        std::cout << "=================== new request +++++++++++++++++++++++++++++" << std::endl;
-        std::cout.write(&test[0], test.size())<< std::endl;
-        std::cout << "size = " <<test.size() << std::endl;
-        std::cout << "==============================================================" << std::endl;
+        // std::cout << "=================== new request +++++++++++++++++++++++++++++" << std::endl;
+        // std::cout.write(&test[0], test.size())<< std::endl;
+        // std::cout << "size = " <<test.size() << std::endl;
+        // std::cout << "==============================================================" << std::endl;
         this->reqParser = RequestParser(server);
         this->reqParser.setClientMaxBody(server.client_max_body_size);
         this->response.clear();
