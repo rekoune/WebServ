@@ -172,7 +172,6 @@ HttpStatusCode      UploadHandler::checkHeaders(std::map<std::string, std::strin
     setFullPathByType(uploadPath, pathType, contentType);
     bodyFile.close();
     bodyFile.open(uploadPath.c_str(), std::ios::out | std::ios::binary);
-    // std::cout << "c path = " << uploadPath << std::endl;
     if (!bodyFile){
         std::cout << "lsf lsf lsf" << std::endl;
         parseState = PARSE_ERROR;
@@ -234,8 +233,9 @@ HttpStatusCode      UploadHandler::searchForBoundary(){
         }
     }
     bodySaver.erase(bodySaver.begin(), bodySaver.begin() + boundPos + start.length());
-    if (!bodySaver.empty())
+    if (!bodySaver.empty()){
         return searchForHeaders();
+    }
     return OK;
 }
 
@@ -312,10 +312,10 @@ HttpStatusCode      UploadHandler::multipartHandling(const char* data, size_t si
     if (currentState == SEARCHING_BOUNDARY){
         status = searchForBoundary();
     }
-    if (currentState == SEARCHING_HEADERS && (status == OK)){
-        status = searchForHeaders();
+    if (currentState == SEARCHING_HEADERS && status == OK){
+        status = searchForHeaders();;
     }
-    if (currentState == SEARCHING_BODY && (status == OK)){
+    if (currentState == SEARCHING_BODY && status == OK){
         status = searchForBody();
     }
     return status;
