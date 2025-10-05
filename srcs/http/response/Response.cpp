@@ -211,8 +211,8 @@ void    Response::errorHandling(){
         // errorPath.append("/");
         errorPath.append(errorPage->second);
         resInfo.path = errorPath;
+        std::cout << "error path = " << errorPath << std::endl;
         if (access(errorPath.c_str(), F_OK) == -1 || access(errorPath.c_str(), R_OK) == -1){
-            std::cout << "error path = " << errorPath << std::endl;
             std::cout << "qwr qwr qwr" << std::endl;
             resInfo.status = NOT_FOUND;
             resElements.body = generateErrorBody();
@@ -345,6 +345,7 @@ void    Response::successHandling(){
 void Response::handle(){
     setFileTypes();
     if (resInfo.status != OK && resInfo.status != CREATED){
+        std::cout << "in response handle status = " << resInfo.status << std::endl;
         errorHandling();
     }
     else
