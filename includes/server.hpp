@@ -32,9 +32,13 @@ public:
 	struct pollfd create_pollfd(int fd, short events);
 	int polling();
 
+	client& getClient(size_t& i);
 	void acceptClient(int listenFd);
+	void rmClient(size_t &i);
 
 };
+
+
 
 
 #endif

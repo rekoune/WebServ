@@ -16,7 +16,7 @@ int main(int c, char **v)
 	GlobaConfig config;
 	if (parseConfig(path, config) == false)
 		exit(1);
-	std::cout << "\033[1;36mThe server starts\033[0m" << std::endl; // Bright cyan
+	std::cout << "\033[1;35mThe server starts\033[0m" << std::endl; // Bright magenta (mauve)
 	server serv(config.servers);
 	// 	return 1;
 	serv.polling();
