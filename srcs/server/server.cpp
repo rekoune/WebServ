@@ -1,8 +1,20 @@
 #include "../../includes/main_server.hpp"
 
 
-server::server() : listenersNbr(0){}
 
+server::server(const server& other) :
+									socketFds(other.socketFds), clients(other.clients),
+									listenToHosts(other.listenToHosts), listenersNbr(other.listenersNbr) {}
+
+server& server::operator=(const server& other){
+	if(this != &other){
+		socketFds = other.socketFds;
+		clients = other.clients;
+		listenToHosts = other.listenToHosts;
+		listenersNbr = other.listenersNbr;
+	}
+	return *this;
+}
 
 server::server(std::vector<ServerConfig>&	servers): listenersNbr(0) {
 
@@ -22,7 +34,7 @@ server::server(std::vector<ServerConfig>&	servers): listenersNbr(0) {
 				socketIt = iportToSocket.find(socket);
 				if(socketIt != iportToSocket.end()){
 					listenToHosts[socketIt->second].push_back(servers[i]); //listenToHost => socketfd -> serversconfig
-					//it's a socket to it's possible servers;
+					//it's a listening socket to it's possible servers;
 					std::cout << "pushing the server-- nbr : " << i << std::endl;
 				}
 				else
@@ -42,10 +54,9 @@ server::server(std::vector<ServerConfig>&	servers): listenersNbr(0) {
 
 server::~server()
 {
-	std::cout << "Destroctor: closing socketFds" << std::endl;
+	std::cout << "\033[31mDestroctor: closing socketFds\033[0m" << std::endl;
 	for(size_t i = 0; i < socketFds.size(); i++){
-		std::cout << "closing fd : " <<  socketFds[i].fd << std::endl;
-		std::cout << "closing fd : " <<  socketFds[i].fd << std::endl;
+		std::cout << "closing fd : " <<  socketFds[i].fd << std::endl;;
 		close(socketFds[i].fd);
 	}
 }
@@ -155,11 +166,24 @@ void server::acceptClient(int listenFd)
 		inet_ntop(AF_INET, &(client_addr.sin_addr), client_ip, INET_ADDRSTRLEN);
 		unsigned short client_port = ntohs(client_addr.sin_port);
 
-		std::cout << "New connection from: " << client_ip << ":" << client_port << std::endl;
-		std::cout << "client nbr: " << socketFds.size() << " FD : " << clientFd << std::endl;
-		std::cout << "client nbr: " << socketFds.size() << " FD : " << clientFd << std::endl;
+		std::cout << "\033[32mNew connection from: " << client_ip << ":" << client_port << "\033[0m" << std::endl;
+		std::cout << "client nbr: " << socketFds.size() - listenersNbr << " FD : " << clientFd << std::endl;
 		std::memset(&client_addr, 0, client_len);
 	}
+}
+
+void server::rmClient(size_t &i){
+	std::cout << "\033[31mclosing the sockefd : " << socketFds[i].fd 
+			  << " client nbr: " << i - listenersNbr + 1 <<"\033[0m" << std::endl;
+
+	close(socketFds[i].fd);
+	socketFds.erase(socketFds.begin() + i);
+	clients.erase(clients.begin() + (i - listenersNbr));
+	i--;
+}
+
+client& server::getClient(size_t& i){
+	return clients[i - listenersNbr];
 }
 
 
@@ -187,39 +211,25 @@ int server::polling()
 			std::cout << "nbr of client left to handle : " << NbrOfActiveSockets << std::endl;
 			if(socketFds[i].revents & (POLLHUP | POLLERR | POLLNVAL))
 			{
-				std::cout << "closing the sockefd : " << socketFds[i].fd << std::endl;
-				close(socketFds[i].fd);
-				socketFds.erase(socketFds.begin() + i);
-				clients.erase(clients.begin() + (i - listenersNbr));
-				i--;
+				rmClient(i);
 				NbrOfActiveSockets--;
 			}
 			else if((socketFds[i].revents & POLLIN)  && Working_flage){
-				
+				std::cout << "POLLIN" << std::endl;
 				if(is_listener(socketFds[i].fd))
 						acceptClient(socketFds[i].fd);
 				else
 				{
-					if(!clients[i - listenersNbr].ft_recv(socketFds[i].events))
-					{
-						std::cout << "closing the sockefd : " << socketFds[i].fd << std::endl;
-						close(socketFds[i].fd);
-						socketFds.erase(socketFds.begin() + i);
-						clients.erase(clients.begin() + (i - listenersNbr));
-						i--;
-					}
+					if(!getClient(i).ft_recv(socketFds[i].events))
+						rmClient(i);
 				}
 				NbrOfActiveSockets--;
 			}
 			else if((socketFds[i].revents & POLLOUT)  && Working_flage)
 			{
-				if(!clients[i - listenersNbr].ft_send(socketFds[i].events)){
-						std::cout << "closing the sockefd : " << socketFds[i].fd << std::endl;
-						close(socketFds[i].fd);
-						socketFds.erase(socketFds.begin() + i);
-						clients.erase(clients.begin() + (i - listenersNbr));
-						i--;
-				}
+				std::cout << "POLLOUT" << std::endl;
+				if(!getClient(i).ft_send(socketFds[i].events))
+						rmClient(i);
 				NbrOfActiveSockets--;
 			}
 
