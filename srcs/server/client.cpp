@@ -16,11 +16,12 @@ client& client::operator=(const client& other){
 	if(this != &other){
 		clientHandler = other.clientHandler;
 		myServers = other.myServers;
-		requestData = other.requestData;
+		requestData = other.requestData;					
 		response = other.response;
 		hostSeted = other.hostSeted;
 		responseComplete = other.responseComplete;
 		totalsend = other.totalsend;
+		totalrecv = other.totalrecv;
 		fd = other.fd;
 	}
 	return *this;
@@ -28,7 +29,7 @@ client& client::operator=(const client& other){
 
 
 client::client(std::vector<ServerConfig>& myservers, int fd) : myServers(myservers) ,hostSeted(false),
-		responseComplete(true) ,totalsend(0) ,fd(fd) 
+		responseComplete(true) ,totalsend(0),totalrecv(0) ,fd(fd) 
 {
 	if(myServers.size() == 1){
 		clientHandler.setServer(myservers[0]);
@@ -39,73 +40,74 @@ client::client(std::vector<ServerConfig>& myservers, int fd) : myServers(myserve
 client::client(const client& other): 
 		clientHandler(other.clientHandler),myServers(other.myServers) ,requestData(other.requestData),
 		response(other.response) ,hostSeted(other.hostSeted),responseComplete(other.responseComplete) ,
-		totalsend(other.totalsend) , fd(other.fd) {}
+		totalsend(other.totalsend),totalrecv(other.totalrecv) , fd(other.fd) {}
 
 
 ssize_t client::ft_recv(short& event){
 	char buf[BUFFER];
 	ssize_t read = recv(fd, buf, sizeof(buf), 0);
-	if(read == -1)
-		 std::cerr << "Error receiving data: " << strerror(errno) << std::endl; 
+	if(read == -1){
+		std::cerr << "Error receiving data: " << strerror(errno) << std::endl; 
+		if(errno == EAGAIN || errno == EWOULDBLOCK)
+			return 1;
+		return 0;
+	}
 	else if(!isHostSeted()){
 		std::cout << "seting host...." << std::endl;
-		if(appendFirstRequest(buf, read))
+		if(appendFirstRequest(buf, read)){
+			totalrecv = 0;
 			event = POLLOUT;
+		}
 	}
 	else if(read){
 		std::cout << "receving...." << std::endl;
 		clientHandler.appendData(buf, read);
 		if(clientHandler.isComplete()){
 			std::cout << "all has been receved" << std::endl;
+			totalrecv = 0;
  			event = POLLOUT;
 		}
 	}
-	// std::cout << "\033[33mbuf :\n \033[0m" << buf << std::endl; // Yellow text
+	totalrecv += read;
+	std::cout << "total recv is " << totalrecv << std::endl;
 
 	return read;
 }
 
 ssize_t client::sending(short& event){
 	ssize_t nsend;
-	size_t total ;
 
 	while (totalsend < response.size()){
 		nsend = send(fd, &response[0] + totalsend, response.size() - totalsend, 0);
 		if(nsend == -1){
+			std::cerr << "send error: " << strerror(errno) << std::endl;
 			if (errno == EAGAIN || errno == EWOULDBLOCK)
-                break;
-			return -1;
- 		
-		}
-		else if(nsend == 0)
+                return 1;
 			return 0;
+		}
 		totalsend += nsend;
 	}
-	total = totalsend;
-	std::cout << "total data from Post = " << total << std::endl;
+
+	std::cout << "total data from Post = " << totalsend << std::endl;
 	if(totalsend == response.size()){
 		responseComplete = true;
 		event = POLLIN;
 		totalsend = 0;
 		std::cout << "succufly send everyting !!!" << std::endl;
 	}
-	return total;
+	return nsend;
 }
 
 
 ssize_t client::ft_send(short& event){
-	ssize_t  nsend ;
+	// ssize_t  nsend ;
 
 	if(responseComplete){
 		response = clientHandler.getResponse();
 		responseComplete = false;
 	}
-	nsend = sending(event);
-	if(nsend == -1)
-		std::cout << "send failed" << std::endl;
-	else 
-		std::cout << "succufly send!!!!!" << std::endl;
-	return nsend;
+	std::cout << "sneding... " << std::endl;
+	return sending(event);
 }
 
 bool client::isHostSeted(){

@@ -16,10 +16,11 @@ private:
 	std::vector<char> response;
 
 	bool hostSeted;	
-	bool responseComplete; 
-	size_t  totalsend ;
+	bool responseComplete;
+	size_t  totalsend;
+	size_t  totalrecv;
 	int fd;
-
+	
 public:
 
 	client(std::vector<ServerConfig>& myServers, int fd);
