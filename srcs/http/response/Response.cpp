@@ -124,9 +124,9 @@ std::map<std::string, std::string>  Response::generateHeaders(std::map<std::stri
     if (resInfo.status != NO_CONTENT)
         headers.insert(std::pair<std::string, std::string> ("Content-Type", Utils::getFileType(fileTypes, Utils::getFileName(resInfo.path))));
     headers.insert(std::pair<std::string, std::string> ("Content-Length", Utils::toString(resElements.body.size())));
-    if (resInfo.status != OK && resInfo.status != CREATED)
-        headers.insert(std::pair<std::string, std::string> ("Connection", "close"));
-    else
+    // if (resInfo.status != OK && resInfo.status != CREATED)
+    //     headers.insert(std::pair<std::string, std::string> ("Connection", "close"));
+    // else
         headers.insert(std::pair<std::string, std::string> ("Connection", "keep-alive"));
     if (resInfo.method == "GET")
         headers.insert(std::pair<std::string, std::string> ("Accept-Ranges", "bytes"));
