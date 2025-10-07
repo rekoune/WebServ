@@ -199,6 +199,7 @@ int server::polling()
 {
 
 	signal(SIGINT, handleSigint); 
+	signal(SIGPIPE, SIG_IGN);
 
 	while (Working_flage)
 	{
