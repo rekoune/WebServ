@@ -23,7 +23,7 @@ class RequestParser{
         HttpResourceInfo                    resInfo;
         UploadHandler                       uploadHandler;
 
-        long                                bodyMaxSize;
+        long long                           bodyMaxSize;
         size_t                              clientMaxBodySize;
 
         HttpStatusCode parseRequestLine(std::string& reqLine);
