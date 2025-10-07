@@ -123,13 +123,20 @@ std::map<std::string, std::string>  Response::generateHeaders(std::map<std::stri
     headers.insert(std::pair<std::string, std::string> ("Date", Utils::getDate()));
     if (resInfo.status != NO_CONTENT)
         headers.insert(std::pair<std::string, std::string> ("Content-Type", Utils::getFileType(fileTypes, Utils::getFileName(resInfo.path))));
-    headers.insert(std::pair<std::string, std::string> ("Content-Length", Utils::toString(resElements.body.size())));
+    
     // if (resInfo.status != OK && resInfo.status != CREATED)
     //     headers.insert(std::pair<std::string, std::string> ("Connection", "close"));
     // else
         headers.insert(std::pair<std::string, std::string> ("Connection", "keep-alive"));
     if (resInfo.method == "GET")
         headers.insert(std::pair<std::string, std::string> ("Accept-Ranges", "bytes"));
+    std::map<std::string, std::string>::iterator it = resInfo.headers.find("range");
+    if (it != resInfo.headers.end() || access(resInfo.path.c_str(), F_OK))
+        headers.insert(std::pair<std::string, std::string> ("Content-Length", Utils::toString(resElements.body.size())));
+    else{
+        headers.insert(std::pair<std::string, std::string> ("Content-Length", Utils::toString(Utils::getFileSize(resInfo.path))));
+        std::cout << "PATH == " << resInfo.path << std::endl;
+    }
 
     return (headers);
 }
