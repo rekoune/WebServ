@@ -147,7 +147,7 @@ ParseState  RequestParser::checkPostHeaders(HttpStatusCode& status){
             status = BAD_REQUEST;
             return (PARSE_ERROR);
         }
-        else if (bodyMaxSize > (long)clientMaxBodySize){
+        else if (bodyMaxSize > (long long)clientMaxBodySize){
             status = CONTENT_TOO_LARGE;
             std:: cout << "hona boyd max size = " << bodyMaxSize << " , client size = " << clientMaxBodySize << std::endl;
             return (PARSE_ERROR);
@@ -240,7 +240,7 @@ HttpStatusCode      RequestParser::appendData(const char* _data, size_t size){
             resourceResolver.setServer(server);
             resourceResolver.setRequestLine(requestLine);
             if ((resInfo = resourceResolver.handle()).status != OK){
-                std::cout << "hora hora hora status = " << resInfo.status << std::endl;
+                // std::cout << "hora hora hora status = " << resInfo.status << std::endl;
                 parseState = PARSE_ERROR;
                 return resInfo.status;
             }
@@ -260,5 +260,8 @@ HttpStatusCode      RequestParser::appendData(const char* _data, size_t size){
         parseState = uploadHandler.upload(_data, size);
         this -> resInfo = uploadHandler.getResourseInfo() ;
     }
+    // std::cout << "STATUS = " << resInfo.status  << std::endl;
+    // if (resInfo.status != OK || resInfo.status != CREATED)
+    //     exit(1);
     return resInfo.status;
 }

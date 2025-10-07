@@ -10,12 +10,8 @@
 # include <sstream>
 # include <fstream>
 # include <dirent.h>
+# include "struct.h"
 
-struct ResElements{
-    std::string statusLine;
-    std::map<std::string, std::string> headers;
-    std::vector<char> body;
-};
 
 class Response{
     private:

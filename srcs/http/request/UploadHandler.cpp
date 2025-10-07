@@ -153,7 +153,6 @@ HttpStatusCode      UploadHandler::checkHeaders(std::map<std::string, std::strin
     PathTypes           pathType = DIR_LS;
     std::string         contentType;
     size_t              namePos;
-
     it = headers.find("content-disposition");
     if (it == headers.end() || it->second.find("form-data") == std::string::npos){
         std::cout << "9al 9al 9al" << std::endl;
@@ -179,6 +178,7 @@ HttpStatusCode      UploadHandler::checkHeaders(std::map<std::string, std::strin
     bodyFile.open(uploadPath.c_str(), std::ios::out | std::ios::binary);
     if (!bodyFile){
         std::cout << "lsf lsf lsf" << std::endl;
+        // exit(1);
         parseState = PARSE_ERROR;
         return (INTERNAL_SERVER_ERROR);
     }
