@@ -45,11 +45,12 @@ client::client(const client& other):
 
 ssize_t client::ft_recv(short& event){
 	char buf[BUFFER];
+	size_t total = 0;
+
+
 	ssize_t read = recv(fd, buf, sizeof(buf), 0);
 	if(read == -1){
 		std::cerr << "Error receiving data: " << strerror(errno) << std::endl; 
-		if(errno == EAGAIN || errno == EWOULDBLOCK)
-			return 1;
 		return 0;
 	}
 	else if(!isHostSeted()){
@@ -62,36 +63,30 @@ ssize_t client::ft_recv(short& event){
 	else if(read){
 		std::cout << "receving...." << std::endl;
 		clientHandler.appendData(buf, read);
+		totalrecv += read;
+		total = totalrecv;
 		if(clientHandler.isComplete()){
 			std::cout << "all has been receved" << std::endl;
 			totalrecv = 0;
  			event = POLLOUT;
 		}
 	}
-	totalrecv += read;
-	std::cout << "total recv is " << totalrecv << " CLIENT FD = " << fd <<  std::endl;
-	// std::cout << "============================= REQUEST====================" << std::endl;
-	// std::cout << buf << std::endl;
-	// std::cout << "=========================================================" << std::endl;
-	// sleep(2);
+	std::cout << "total recv is on fd: ("<< fd  << ") is : " << total << "B" <<  std::endl;
+
 	return read;
 }
 
 ssize_t client::sending(short& event){
 	ssize_t nsend;
 
-	while (totalsend < response.size()){
-		nsend = send(fd, &response[0] + totalsend, response.size() - totalsend, 0);
-		if(nsend == -1){
-			std::cerr << "send error: " << strerror(errno) << std::endl;
-			if (errno == EAGAIN || errno == EWOULDBLOCK)
-                return 1;
-			return 0;
-		}
-		totalsend += nsend;
+	nsend = send(fd, &response[0] + totalsend, response.size() - totalsend, 0);
+	if(nsend == -1){
+		std::cerr << "send error: " << strerror(errno) << std::endl;
+		return 0;
 	}
+	totalsend += nsend;
 
-	std::cout << "total data from Post = " << totalsend  << std::endl;
+	std::cout << "total data from Post of fd:  ("<< fd << ") is :" << totalsend << "B" << std::endl;
 	if(totalsend == response.size()){
 		responseComplete = true;
 		event = POLLIN;
@@ -109,7 +104,7 @@ ssize_t client::ft_send(short& event){
 		response = clientHandler.getResponse();
 		responseComplete = false;
 	}
-	std::cout << "sneding... " << std::endl;
+	std::cout << "sending... " << std::endl;
 	return sending(event);
 }
 
