@@ -19,6 +19,7 @@ class Response{
         ResElements                         resElements;
         std::vector<char>                   response;
         std::map<std::string, std::string>  fileTypes;
+        bool                                keepAlive;
         
         void                                errorHandling();
         void                                successHandling();
@@ -48,6 +49,7 @@ class Response{
         Response(const Response& other);
         Response(const HttpResourceInfo resInfo);
         ~Response();
+        bool                isKeepAlive();
         Response&           operator=(const Response& other);
         void                setResInfo(const HttpResourceInfo& info);
         std::vector<char>   getResponse() const;

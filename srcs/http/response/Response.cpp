@@ -10,16 +10,23 @@ Response& Response::operator=(const Response& other){
     this->resElements = other.resElements;
     this->response = other.response;
     this->fileTypes = other.fileTypes;
+    this->keepAlive = other.keepAlive;
     return (*this);
 }
 Response::Response(const HttpResourceInfo info){
     this->resInfo = info;
+    keepAlive = true;
 }
 void Response::setResInfo(const HttpResourceInfo& info){
     this->resInfo = info;
+    keepAlive = true;
 }
 std::vector<char> Response::getResponse () const {
     return (this->response);
+}
+
+bool Response::isKeepAlive(){
+    return (this->keepAlive);
 }
 
 void    Response::setFileTypes(){
@@ -124,10 +131,14 @@ std::map<std::string, std::string>  Response::generateHeaders(std::map<std::stri
     if (resInfo.status != NO_CONTENT)
         headers.insert(std::pair<std::string, std::string> ("Content-Type", Utils::getFileType(fileTypes, Utils::getFileName(resInfo.path))));
     
-    // if (resInfo.status != OK && resInfo.status != CREATED)
-    //     headers.insert(std::pair<std::string, std::string> ("Connection", "close"));
-    // else
+    if (resInfo.status != OK && resInfo.status != CREATED){
+        headers.insert(std::pair<std::string, std::string> ("Connection", "close"));
+        keepAlive = false;
+    }
+    else{
         headers.insert(std::pair<std::string, std::string> ("Connection", "keep-alive"));
+        keepAlive = true;
+    }
     if (resInfo.method == "GET")
         headers.insert(std::pair<std::string, std::string> ("Accept-Ranges", "bytes"));
     std::map<std::string, std::string>::iterator it = resInfo.headers.find("range");

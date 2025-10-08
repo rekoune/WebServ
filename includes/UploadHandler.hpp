@@ -30,6 +30,7 @@ class UploadHandler{
         std::vector<std::string> openedFiles;
         std::map<std::string, std::string>  fileTypes;
         long long           uploadSize;
+        size_t              currentTotalSize;
 
         void                setFileTypes();
         void                setFullPathByType(std::string& path, PathTypes& pathType, std::string contentType);
