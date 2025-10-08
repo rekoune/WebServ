@@ -14,7 +14,7 @@ private:
 	server();
 	
 	std::vector<struct pollfd> socketFds;
-	std::vector<client> clients;
+	std::map<int, client> clients;
 
 	std::map<int, std::vector<ServerConfig> > listenToHosts; 
 
@@ -32,7 +32,7 @@ public:
 	struct pollfd create_pollfd(int fd, short events);
 	int polling();
 
-	client& getClient(size_t& i);
+	client& getClient(int& fd);
 	void acceptClient(int listenFd);
 	void rmClient(size_t &i);
 
