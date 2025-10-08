@@ -151,16 +151,13 @@ void server::acceptClient(int listenFd)
 	
 	int clientFd;
 	
-	while((clientFd = accept(listenFd,(struct sockaddr*)&client_addr, &client_len)))
+	while((clientFd = accept(listenFd, (struct sockaddr*)&client_addr, &client_len)) >= 0)
 	{
-		if(clientFd < 0)
-			break;
 
 		int flags = fcntl(clientFd, F_GETFL, 0);
 		fcntl(clientFd, F_SETFL, flags | O_NONBLOCK);
 		//ERROR ?
-		clients.push_back(client(listenToHosts[listenFd], clientFd));
-
+		clients.insert(std::make_pair(clientFd, client(listenToHosts[listenFd], clientFd)));
 		socketFds.push_back(create_pollfd(clientFd, POLLIN));
 
 		inet_ntop(AF_INET, &(client_addr.sin_addr), client_ip, INET_ADDRSTRLEN);
@@ -177,13 +174,13 @@ void server::rmClient(size_t &i){
 			  << " client nbr: " << i - listenersNbr + 1 <<"\033[0m" << std::endl;
 
 	close(socketFds[i].fd);
+	clients.erase(socketFds[i].fd);
 	socketFds.erase(socketFds.begin() + i);
-	clients.erase(clients.begin() + (i - listenersNbr));
 	i--;
 }
 
-client& server::getClient(size_t& i){
-	return clients[i - listenersNbr];
+client& server::getClient(int& fd){
+	return clients.find(fd)->second;
 }
 
 
@@ -216,20 +213,21 @@ int server::polling()
 				NbrOfActiveSockets--;
 			}
 			else if((socketFds[i].revents & POLLIN)  && Working_flage){
-				std::cout << "POLLIN" << std::endl;
+				std::cout << "POLLIN FD: " << socketFds[i].fd << std::endl;
 				if(is_listener(socketFds[i].fd))
 						acceptClient(socketFds[i].fd);
 				else
 				{
-					if(!getClient(i).ft_recv(socketFds[i].events))
+					if(!getClient(socketFds[i].fd).ft_recv(socketFds[i].events))
 						rmClient(i);
+					//chekc client cgi
 				}
 				NbrOfActiveSockets--;
 			}
 			else if((socketFds[i].revents & POLLOUT)  && Working_flage)
 			{
-				std::cout << "POLLOUT" << std::endl;
-				if(!getClient(i).ft_send(socketFds[i].events))
+				std::cout << "POLLOUT FD: " << socketFds[i].fd  << std::endl;
+				if(!getClient(socketFds[i].fd).ft_send(socketFds[i].events))
 						rmClient(i);
 				NbrOfActiveSockets--;
 			}
