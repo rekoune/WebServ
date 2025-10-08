@@ -2,12 +2,14 @@
 
 UploadHandler::UploadHandler(): uploadSize(-1){
     currentState = SEARCHING_BOUNDARY;
+    currentTotalSize = 0;
     setFileTypes();
 };
 UploadHandler::~UploadHandler(){};
 
 UploadHandler::UploadHandler(const UploadHandler& other): uploadSize(-1){
     setFileTypes();
+    currentTotalSize = 0;
     currentState = SEARCHING_BOUNDARY;
     *this = other;
 };
@@ -28,6 +30,7 @@ UploadHandler& UploadHandler::operator=(const UploadHandler& other){
 UploadHandler::UploadHandler(HttpResourceInfo& resInfo) : uploadSize(-1){
     setFileTypes();
     this->resInfo = resInfo;
+    currentTotalSize = 0;
     currentState = SEARCHING_BOUNDARY;
 }
 void UploadHandler::setResInfo(const HttpResourceInfo& resInfo){
@@ -361,30 +364,30 @@ HttpStatusCode      UploadHandler::handleByContentType(const char* data, size_t 
 }
 
 HttpStatusCode UploadHandler::contentLengthHandling(const char* data, size_t size){
-    static size_t totalSize = 0;
+    // static size_t totalSize = 0;
     HttpStatusCode status = OK;
 
-    totalSize += size;
-    if (totalSize > (size_t)uploadSize){
+    currentTotalSize += size;
+    if (currentTotalSize > (size_t)uploadSize){
         std::cout << "sa9a sa9a sa9a" << std::endl;
         parseState = PARSE_ERROR;
-        std::cout << "total size = " << totalSize << " , max size = " << uploadSize<< std::endl;
-        totalSize = 0;
+        std::cout << "total size = " << currentTotalSize << " , max size = " << uploadSize<< std::endl;
+        currentTotalSize = 0;
         currentState = SEARCHING_BOUNDARY;
         return CONTENT_TOO_LARGE;
     }
     status = handleByContentType(data, size);
     if (parseState == PARSE_ERROR)
-        totalSize = 0;
+        currentTotalSize = 0;
     else {
-        if (totalSize != (size_t) uploadSize && currentState == END){
-            totalSize = 0;
+        if (currentTotalSize != (size_t) uploadSize && currentState == END){
+            currentTotalSize = 0;
             currentState = SEARCHING_BOUNDARY;
             parseState = PARSE_ERROR;
             return BAD_REQUEST;
         }
-        if (totalSize == (size_t)uploadSize){
-            totalSize = 0;
+        if (currentTotalSize == (size_t)uploadSize){
+            currentTotalSize = 0;
             if (contentType.find("multipart/form-data") != std::string::npos && currentState != END){
                 currentState = SEARCHING_BOUNDARY;
                 parseState = PARSE_ERROR;
