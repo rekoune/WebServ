@@ -21,3 +21,6 @@ clean:
 fclean: clean
 	rm -rf $(NAME)
 re: fclean all
+
+install:
+	cp $(NAME) ~/goinfre/PROJECT/
