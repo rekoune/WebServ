@@ -90,8 +90,8 @@ ssize_t client::sending(short& event){
 
 	std::cout << "total data from Post of fd:  ("<< fd << ") is :" << totalsend << "B" << std::endl;
 	if(totalsend == response.size()){
-		// if(!clientHandler.isKeepAlive())
-		// 	return 0;
+		if(!clientHandler.isKeepAlive())
+			return 0;
 		responseComplete = true;
 		event = POLLIN;
 		totalsend = 0;
