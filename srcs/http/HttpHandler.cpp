@@ -71,6 +71,9 @@ void HttpHandler::appendData(const char* data, size_t size){
 bool HttpHandler::isComplete(){
     return (this->reqParser.isComplete());
 }
+bool HttpHandler::isKeepAlive(){
+    return response.isKeepAlive();
+}
 
 std::vector<char> HttpHandler::getResponse(){
     
