@@ -28,6 +28,7 @@ class HttpHandler{
         void appendData(const char* data, size_t size);
         bool isComplete();
         std::vector<char> getResponse();
+        bool isKeepAlive();
 };
 
 # endif
