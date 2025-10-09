@@ -131,7 +131,7 @@ std::map<std::string, std::string>  Response::generateHeaders(std::map<std::stri
     if (resInfo.status != NO_CONTENT)
         headers.insert(std::pair<std::string, std::string> ("Content-Type", Utils::getFileType(fileTypes, Utils::getFileName(resInfo.path))));
     
-    if (resInfo.status != OK && resInfo.status != CREATED){
+    if (resInfo.status != OK && resInfo.status != CREATED && resInfo.status != PARTIAL_CONTENT){
         headers.insert(std::pair<std::string, std::string> ("Connection", "close"));
         keepAlive = false;
     }
@@ -158,28 +158,33 @@ std::vector<char>   Response::getBodyFromFile(std::string& path){
     std::map<std::string, std::string>::iterator it = headers.find("range");
 
 
-    std::streamsize size;
+    std::streamsize size = 0;
     size_t startPos = 0;
     std::string range;
+    std::streamsize fileSize;
 
     file.seekg(startPos, std::ios::end);
-    size = Utils::getFileSize(path);
+    fileSize = Utils::getFileSize(path);
     if (it != headers.end()){
         range = std::string (it->second.begin() + 6, it->second.end());
         resInfo.status = PARTIAL_CONTENT;
     }
     startPos = Utils::strToNumber(range);
-    if (startPos >= (size_t)size)
+    if (startPos >= (size_t)fileSize)
         startPos = 0;
-    if (size > 30 * 1024 * 1024)
-        size = 5 * 1024 * 1024; //to kb
-    std::cout << "start pos = " << startPos << " , size = " << size << " , size + range = " << size + startPos << " , total size = " << Utils::getFileSize(path) << std::endl;
+    if (fileSize > 30 * 1024 * 1024)
+        size = 5 * 1024 * 1024;
+    if (size + startPos > (size_t)fileSize)
+        size = fileSize - (startPos - 1);
+    if (size == 0)
+        size = fileSize;
+    std::cout << "start pos = " << startPos << " , size = " << size << " , size + range = " << size + startPos << " , total size = " << fileSize << std::endl;
     std::string contentRange("bytes ");
     contentRange.append(Utils::toString(startPos));
     contentRange.append("-");
     contentRange.append(Utils::toString(startPos + size));
     contentRange.append("/");
-    contentRange.append(Utils::toString(file.tellg()));
+    contentRange.append(Utils::toString(fileSize));
     resElements.headers.insert(std::pair<std::string, std::string> ("Content-Range", contentRange));
     // }
 
