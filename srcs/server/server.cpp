@@ -221,6 +221,7 @@ int server::polling()
 					if(!getClient(socketFds[i].fd).ft_recv(socketFds[i].events))
 						rmClient(i);
 					//chekc client cgi
+					
 				}
 				NbrOfActiveSockets--;
 			}
