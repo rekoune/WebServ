@@ -141,14 +141,8 @@ std::map<std::string, std::string>  Response::generateHeaders(std::map<std::stri
     }
     if (resInfo.method == "GET")
         headers.insert(std::pair<std::string, std::string> ("Accept-Ranges", "bytes"));
-    std::map<std::string, std::string>::iterator it = resInfo.headers.find("range");
-    if (it != resInfo.headers.end() || access(resInfo.path.c_str(), F_OK))
+    if (headers.find("Content-Length") == headers.end())
         headers.insert(std::pair<std::string, std::string> ("Content-Length", Utils::toString(resElements.body.size())));
-    else{
-        headers.insert(std::pair<std::string, std::string> ("Content-Length", Utils::toString(Utils::getFileSize(resInfo.path))));
-        std::cout << "PATH == " << resInfo.path << std::endl;
-    }
-
     return (headers);
 }
 
@@ -163,7 +157,6 @@ std::vector<char>   Response::getBodyFromFile(std::string& path){
     std::string range;
     std::streamsize fileSize;
 
-    file.seekg(startPos, std::ios::end);
     fileSize = Utils::getFileSize(path);
     if (it != headers.end()){
         range = std::string (it->second.begin() + 6, it->second.end());
@@ -172,20 +165,27 @@ std::vector<char>   Response::getBodyFromFile(std::string& path){
     startPos = Utils::strToNumber(range);
     if (startPos >= (size_t)fileSize)
         startPos = 0;
-    if (fileSize > 30 * 1024 * 1024)
-        size = 5 * 1024 * 1024;
-    if (size + startPos > (size_t)fileSize)
-        size = fileSize - (startPos - 1);
+    if (fileSize > 30000000)
+        size = 3000000;
+    if (size + startPos > (size_t)fileSize){
+        size = fileSize - startPos;
+        std::cout << "SIZE = " << size << " , FILE SIZE = " << fileSize  << " , START POS = " << startPos  << std::endl;
+        // exit (0);
+    }
     if (size == 0)
         size = fileSize;
     std::cout << "start pos = " << startPos << " , size = " << size << " , size + range = " << size + startPos << " , total size = " << fileSize << std::endl;
-    std::string contentRange("bytes ");
-    contentRange.append(Utils::toString(startPos));
-    contentRange.append("-");
-    contentRange.append(Utils::toString(startPos + size));
-    contentRange.append("/");
-    contentRange.append(Utils::toString(fileSize));
-    resElements.headers.insert(std::pair<std::string, std::string> ("Content-Range", contentRange));
+    if (it != headers.end()){
+        std::string contentRange("bytes ");
+        contentRange.append(Utils::toString(startPos));
+        contentRange.append("-");
+        contentRange.append(Utils::toString(startPos + (size - 1)));
+        contentRange.append("/");
+        contentRange.append(Utils::toString(fileSize));
+        resElements.headers.insert(std::pair<std::string, std::string> ("Content-Range", contentRange));
+    }
+    else
+        resElements.headers.insert(std::pair<std::string, std::string> ("Content-Length", Utils::toString(fileSize)));
     // }
 
     file.seekg(startPos, std::ios::beg);
