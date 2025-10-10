@@ -10,7 +10,7 @@
 # include <sstream>
 # include <fstream>
 # include <dirent.h>
-# include "struct.h"
+# include "Structs.hpp"
 
 
 class Response{
