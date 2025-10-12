@@ -15,6 +15,7 @@ private:
 	
 	std::vector<struct pollfd> socketFds;
 	std::map<int, client> clients;
+	std::map<int, client*> cgi;
 
 	std::map<int, std::vector<ServerConfig> > listenToHosts; 
 
