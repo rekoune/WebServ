@@ -3,6 +3,7 @@
 # define RESPONSE_HPP
 
 # include "ResourceResolver.hpp"
+# include "GetHandler.hpp"
 # include <vector>
 # include <map>
 # include <string>
@@ -20,6 +21,8 @@ class Response{
         std::vector<char>                   response;
         std::map<std::string, std::string>  fileTypes;
         bool                                keepAlive;
+        bool                                done;
+        GetHandler                          getHandler;
         
         void                                errorHandling();
         void                                successHandling();
@@ -27,7 +30,7 @@ class Response{
         std::vector<char>                   generateErrorBody();
         std::map<std::string, std::string>  generateHeaders(std::map<std::string, std::string>& headers);
         std::string                         getStatusMessage(HttpStatusCode status);
-        std::vector<char>                   getBodyFromFile(std::string& path);
+        void                                getBodyFromFile(std::string& path);
         HttpStatusCode                      writeBodyInFile(std::string& path, std::vector<char>& body);
         void                                setFileTypes();
         void                                listDirectory();
@@ -46,9 +49,10 @@ class Response{
         bool                isKeepAlive();
         Response&           operator=(const Response& other);
         void                setResInfo(const HttpResourceInfo& info);
-        std::vector<char>   getResponse() const;
+        std::vector<char>   getResponse();
         void                handle();
         void                clear();
+        bool                isDone();
 };
 
 # endif

@@ -1,4 +1,4 @@
-SRC= main.cpp request/RequestParser.cpp request/ResourceResolver.cpp request/UploadHandler.cpp ../config/configParser.cpp ../config/configValidate.cpp ../utils/Utils.cpp response/Response.cpp HttpHandler.cpp  
+SRC= main.cpp request/RequestParser.cpp request/ResourceResolver.cpp request/UploadHandler.cpp ../config/configParser.cpp ../config/configValidate.cpp ../utils/Utils.cpp response/Response.cpp response/GetHandler.cpp HttpHandler.cpp  
 OBJ = $(SRC:.cpp=.o)
 NAME = webserver
 
