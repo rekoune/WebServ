@@ -61,8 +61,10 @@ void    UploadHandler::setFileTypes(){
     fileTypes.insert(std::pair<std::string, std::string> ("png", "image/png"));
     fileTypes.insert(std::pair<std::string, std::string> ("jng", "image/x-jng"));
     fileTypes.insert(std::pair<std::string, std::string> ("webp", "image/webp"));
+    fileTypes.insert(std::pair<std::string, std::string> ("heic", "image/heic"));
 
     fileTypes.insert(std::pair<std::string, std::string> ("mp4", "video/mp4"));
+    fileTypes.insert(std::pair<std::string, std::string> ("MP4", "video/mp4"));
     fileTypes.insert(std::pair<std::string, std::string> ("mov", "video/quicktime"));
     fileTypes.insert(std::pair<std::string, std::string> ("webm", "video/webm"));
 

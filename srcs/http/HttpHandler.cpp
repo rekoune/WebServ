@@ -1,6 +1,6 @@
 # include "../../includes/HttpHandler.hpp"
 
-HttpHandler::HttpHandler():sameReq(true){};
+HttpHandler::HttpHandler():sameReq(true), sameRes(true){};
 HttpHandler::~HttpHandler(){};
 
 // HttpHandler::HttpHandler (std::vector<char> req, const ServerConfig& server){
@@ -8,7 +8,7 @@ HttpHandler::~HttpHandler(){};
 //     this->server = server;
 //     this->req.setClientMaxBody(server.client_max_body_size);
 // }
-HttpHandler::HttpHandler (const ServerConfig& server): sameReq(true){
+HttpHandler::HttpHandler (const ServerConfig& server): sameReq(true), sameRes(true){
     this->server = server;
     this->reqParser = RequestParser(server);
     this->reqParser.setClientMaxBody(server.client_max_body_size);
@@ -24,6 +24,7 @@ HttpHandler& HttpHandler::operator=(const HttpHandler& other){
     this->resInfo = other.resInfo;
     this->response = other.response;
     this->sameReq = other.sameReq;
+    this->sameRes = other.sameRes;
     return (*this);
 }
 
@@ -53,13 +54,12 @@ void HttpHandler::appendData(const char* data, size_t size){
     if (sameReq ==  false){
         // std::vector<char> test;
         // Utils::pushInVector(test, data, size);
-        std::cout << "=================== new request +++++++++++++++++++++++++++++" << std::endl;
         // //std::cout.write(&test[0], test.size())<< std::endl;
         // //std::cout << "size = " <<test.size() << std::endl;
         // //std::cout << "==============================================================" << std::endl;
         this->reqParser = RequestParser(server);
         this->response = Response();
-        std::cout << "kdkdkdk " << response.isDone() << std::endl;
+        std::cout << "=================== new request +++++++++++++++++++++++++++++" << std::endl;
         this->reqParser.setClientMaxBody(server.client_max_body_size);
         // this->response.clear();
         sameReq = true;
@@ -70,6 +70,7 @@ void HttpHandler::appendData(const char* data, size_t size){
     this->resInfo.status = this->reqParser.appendData(data, size);
     if (isComplete())
         std::cout << "the Request is complete " << std::endl;
+        std::cout << "Response adress = " << &this->response << " , rq parser adrress = " << &this->reqParser << std::endl;
         sameReq = false;
     }
 }
@@ -85,21 +86,24 @@ bool HttpHandler::isResDone(){
 }
 std::vector<char> HttpHandler::getResponse(){
     // std::cout << response.isDone() << std::endl;
-    static bool test = true;
-        // sameReq = false;
+    // static bool test = true;
+    // sameReq = false;
     // std::cout << "test = " << test << std::endl;
-    if (test){
+    if (sameRes){
     // if (sameReq == true){
         std::cout << "BAL BAL BAL BAL BAL " << std::endl;
-        test = false;
+        sameRes = false;
+        std::cout << "|||||>>> reqParser method = " << reqParser.getResourceInfo().method << std::endl;
         this->response.setResInfo(reqParser.getResourceInfo());
         response.handle();
     }
 
     std::cout << " >> << >> is done =  = " << response.isDone() << std::endl;
-    std::vector <char> res = response.getResponse();
+    std::vector <char> res;
+    if (!response.isDone())
+        res = response.getResponse();
     if (response.isDone()){
-        test = true;
+        sameRes = true;
         std::cout << "**************** hona **********************************" << std::endl;
         std::cout << "response size = " << res.size() << std::endl;
     }

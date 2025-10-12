@@ -29,16 +29,17 @@ std::vector<char> Response::getResponse () {
     std::vector<char> body;
 
     if (this->resInfo.method != "GET" || !this->resElements.body.empty()){
+        std::cout << "Response adrress = " << &*this << std::endl;
         std::cout << "METHOD IS NOT GET OR THE BODY IS NOT EMPTY !!" << std::endl;
         std::cout << "body size = " << resElements.body.size() << std::endl;
         std::cout << "method = " << resInfo.method << std::endl;
+        std::cout.write(response.data(), response.size()) << std::endl;;
         done = true;
         return (this->response);
     }
     else{
         std::cout << " >>>>>>> ANA HONA ===============" << std::endl;
-        std::cout.write(response.data(), response.size()) << std::endl;;
-        body = getHandler.get(1000000);
+        body = getHandler.get(5000000);
         done = getHandler.isDone();
         if (!response.empty()){
             body.insert(body.begin(), response.begin(), response.end());
@@ -68,8 +69,10 @@ void    Response::setFileTypes(){
     fileTypes.insert(std::pair<std::string, std::string> ("png", "image/png"));
     fileTypes.insert(std::pair<std::string, std::string> ("jng", "image/x-jng"));
     fileTypes.insert(std::pair<std::string, std::string> ("webp", "image/webp"));
+    fileTypes.insert(std::pair<std::string, std::string> ("heic", "image/heic"));
 
     fileTypes.insert(std::pair<std::string, std::string> ("mp4", "video/mp4"));
+    fileTypes.insert(std::pair<std::string, std::string> ("MP4", "video/mp4"));
     fileTypes.insert(std::pair<std::string, std::string> ("mov", "video/quicktime"));
     fileTypes.insert(std::pair<std::string, std::string> ("webm", "video/webm"));
 
@@ -212,6 +215,7 @@ void    Response::getBodyFromFile(std::string& path){
         contentRange.append("/");
         contentRange.append(Utils::toString(fileSize));
         resElements.headers.insert(std::pair<std::string, std::string> ("Content-Range", contentRange));
+        resElements.headers.insert(std::pair<std::string, std::string> ("Content-Length", Utils::toString(fileSize - startPos)));
     }
     else
         resElements.headers.insert(std::pair<std::string, std::string> ("Content-Length", Utils::toString(fileSize)));
