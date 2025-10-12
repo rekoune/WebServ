@@ -13,6 +13,7 @@ class HttpHandler{
         HttpResourceInfo resInfo;
         Response response;
         bool        sameReq;
+        // bool        resDone;
 
     public:
         HttpHandler();
@@ -29,6 +30,7 @@ class HttpHandler{
         bool isComplete();
         std::vector<char> getResponse();
         bool isKeepAlive();
+        bool isResDone();
 };
 
 # endif

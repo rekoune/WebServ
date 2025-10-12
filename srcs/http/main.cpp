@@ -15,61 +15,45 @@ int main (){
     HttpHandler http(config.servers[0]);
 
     std::string str;
-    std::string str2;
-    std::string str3;
+    std::vector<char> res ;
+    size_t total = 0;
+    size_t headSize = 0;
+    int a = 0;
+    str.append("GET /upload/content/videos HTTP/1.1\r\nHost: arekoune\r\n\r\n");
     
-    str.append("POST /upload/Files HTTP/1.1\r\nHost: abdellah\r\nContent-Type: multipart/form-data; boundary=abde\r\ncontent-length:");
-    str2.append("--abde\r\nContent-Disposition: form-data; name=\"username\";filename=\"abde\"\r\n\r\nabdellah a\r\n");
-    str3.append("--abde\r\nContent-Disposition: form-data; name=\"username\";filename=\"test\"\r\n\r\nrekoune r\r\n--abde--\r\n");
-    str.append(Utils::toString(str3.length() + str2.length()));
-    str.append("\r\n\r\n");
-    str.append(str2);
-    str.append(str3);
-    // HttpStatusCode status; 
-    http.appendData(str.c_str(), str.length());
-    // http.appendData(str3.c_str(), str3.length());
-    std::vector<char> response;
-    // int i = 0;
-    // while(!http.isComplete()){
-    //     if (i == (int)str.length())
-    //         break;
-    //     // std::cout << "+++  i == " << i  << "length = " << str.length()<< std::endl;
-    //     http.appendData(&str[i++], 1);
-    // }
-    if (http.isComplete()){
-        response = http.getResponse();
-        std::cout << "=====================Response====================" << std::endl;
-        std::cout.write(response.data(), response.size()) << std::endl;
+    http.appendData(&str[0], str.length());
+    while(!http.isResDone()){
+        res = http.getResponse();
+        if (a == 0){
+            a = 1;
+            headSize = res.size() - 10000000;
+            // std::cout.write(res.data(), headSize) << std::endl;;
+        }
+        total += res.size();
+        // std::cout << "IS Done = " << http.isResDone() << std::endl;
+        // std::cout << "========= Response ===========" << std::endl;
+        std::cout.write(res.data(), res.size());
     }
-    else{
-        std::cout << "the request is not complite !!!" << std::endl;
-    }
-    // std::cout << "status 1 = " << status << std::endl;
-    std::cout << "is complete = " << http.isComplete() << std::endl;
-
-    std::cout <<  "============================================= new Request ===================================================" << std::endl;
+    std::cout << "Response size = " << total<< std::endl;
+    std::cout << "======================= req 2 =============================" << std::endl;
+    total = 0;
+    headSize = 0;
+    a = 0;
     str.clear();
-    response.clear();
-    str2.clear();
-    str3.clear();
-
-    str.append("POST /upload/videos HTTP/1.1\r\nHost: abdellah\r\nContent-Type: multipart/form-data; boundary=bla\r\ncontent-length:");
-    str2.append("--bla\r\nContent-Disposition: form-data; name=\"username\";filename=\"abde2\"\r\n\r\nabdellah 2\r\n");
-    str3.append("--bla\r\nContent-Disposition: form-data; name=\"username\";filename=\"test2\"\r\ncontent-type: text/css\r\n\r\nrekoune 2\r\n--bla--\r\n");
-    str.append(Utils::toString(str3.length() + str2.length()));
-    str.append("\r\n\r\n");
-    str.append(str2);
-    str.append(str3);
-    http.appendData(str.c_str(), str.length());
-
-    if (http.isComplete()){
-        response = http.getResponse();
-        std::cout << "=====================Response====================" << std::endl;
-        std::cout.write(response.data(), response.size()) << std::endl;
+    str.append("GET /upload/content/images HTTP/1.1\r\nHost: arekoune\r\n\r\n");
+    http.appendData(&str[0], str.length());
+    while(!http.isResDone()){
+        std::cout << "ra sa ra sa"<< std::endl;
+        res = http.getResponse();
+        if (a == 0){
+            a = 1;
+            headSize = res.size() - 10000000;
+            // std::cout.write(res.data(), headSize) << std::endl;;
+        }
+        total += res.size();
+        // std::cout << "IS Done = " << http.isResDone() << std::endl;
+        // std::cout << "========= Response ===========" << std::endl;
+        std::cout.write(res.data(), res.size());
     }
-    else{
-        std::cout << "the request is not complite !!!" << std::endl;
-    }
-    // std::cout << "status 1 = " << status << std::endl;
-    std::cout << "is complete = " << http.isComplete() << std::endl;
+    std::cout << "Response size = " << total<< std::endl;
 }

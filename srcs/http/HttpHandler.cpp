@@ -51,20 +51,26 @@ void HttpHandler::setServer(const ServerConfig& server){
 
 void HttpHandler::appendData(const char* data, size_t size){
     if (sameReq ==  false){
-        std::vector<char> test;
-        Utils::pushInVector(test, data, size);
-        // std::cout << "=================== new request +++++++++++++++++++++++++++++" << std::endl;
-        // std::cout.write(&test[0], test.size())<< std::endl;
-        // std::cout << "size = " <<test.size() << std::endl;
-        // std::cout << "==============================================================" << std::endl;
+        // std::vector<char> test;
+        // Utils::pushInVector(test, data, size);
+        std::cout << "=================== new request +++++++++++++++++++++++++++++" << std::endl;
+        // //std::cout.write(&test[0], test.size())<< std::endl;
+        // //std::cout << "size = " <<test.size() << std::endl;
+        // //std::cout << "==============================================================" << std::endl;
         this->reqParser = RequestParser(server);
+        this->response = Response();
+        std::cout << "kdkdkdk " << response.isDone() << std::endl;
         this->reqParser.setClientMaxBody(server.client_max_body_size);
-        this->response.clear();
+        // this->response.clear();
         sameReq = true;
+        
     }
     if (!isComplete()){
-        std::cout << "---------------------------------------------hona---------------------------------" << std::endl;
+    // std::cout << "---------------------------------------------hona---------------------------------" << std::endl;
     this->resInfo.status = this->reqParser.appendData(data, size);
+    if (isComplete())
+        std::cout << "the Request is complete " << std::endl;
+        sameReq = false;
     }
 }
 
@@ -74,12 +80,28 @@ bool HttpHandler::isComplete(){
 bool HttpHandler::isKeepAlive(){
     return response.isKeepAlive();
 }
-
+bool HttpHandler::isResDone(){
+    return response.isDone();
+}
 std::vector<char> HttpHandler::getResponse(){
-    
-    this->response.setResInfo(reqParser.getResourceInfo());
-    response.handle();
-    sameReq = false;
-    // std::cout << "status = " << resInfo.status << std::endl;
-    return (response.getResponse());
+    // std::cout << response.isDone() << std::endl;
+    static bool test = true;
+        // sameReq = false;
+    // std::cout << "test = " << test << std::endl;
+    if (test){
+    // if (sameReq == true){
+        std::cout << "BAL BAL BAL BAL BAL " << std::endl;
+        test = false;
+        this->response.setResInfo(reqParser.getResourceInfo());
+        response.handle();
+    }
+
+    std::cout << " >> << >> is done =  = " << response.isDone() << std::endl;
+    std::vector <char> res = response.getResponse();
+    if (response.isDone()){
+        test = true;
+        std::cout << "**************** hona **********************************" << std::endl;
+        std::cout << "response size = " << res.size() << std::endl;
+    }
+    return (res);
 }
