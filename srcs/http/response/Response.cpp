@@ -1,6 +1,6 @@
 # include "../../../includes/Response.hpp"
 
-Response::Response(){};
+Response::Response(): done(false){};
 Response::~Response(){};
 Response::Response(const Response& other){
     *this = other;
@@ -11,23 +11,49 @@ Response& Response::operator=(const Response& other){
     this->response = other.response;
     this->fileTypes = other.fileTypes;
     this->keepAlive = other.keepAlive;
+    this->done = other.done;
+    this->getHandler = other.getHandler;
     return (*this);
 }
 Response::Response(const HttpResourceInfo info){
     this->resInfo = info;
     keepAlive = true;
+    done = false;
 }
 void Response::setResInfo(const HttpResourceInfo& info){
     this->resInfo = info;
     keepAlive = true;
+    done = false;
 }
-std::vector<char> Response::getResponse () const {
-    return (this->response);
+std::vector<char> Response::getResponse () {
+    std::vector<char> body;
+
+    if (this->resInfo.method != "GET" || !this->resElements.body.empty()){
+        std::cout << "METHOD IS NOT GET OR THE BODY IS NOT EMPTY !!" << std::endl;
+        std::cout << "body size = " << resElements.body.size() << std::endl;
+        std::cout << "method = " << resInfo.method << std::endl;
+        done = true;
+        return (this->response);
+    }
+    else{
+        std::cout << " >>>>>>> ANA HONA ===============" << std::endl;
+        std::cout.write(response.data(), response.size()) << std::endl;;
+        body = getHandler.get(1000000);
+        done = getHandler.isDone();
+        if (!response.empty()){
+            body.insert(body.begin(), response.begin(), response.end());
+            response.clear();
+        }
+    }
+    return (body);
 }
 
 bool Response::isKeepAlive(){
     return (this->keepAlive);
 }
+ bool Response::isDone(){
+    return (done);
+ }
 
 void    Response::setFileTypes(){
     fileTypes.insert(std::pair<std::string, std::string> ("html", "text/html"));
@@ -146,13 +172,13 @@ std::map<std::string, std::string>  Response::generateHeaders(std::map<std::stri
     return (headers);
 }
 
-std::vector<char>   Response::getBodyFromFile(std::string& path){
+void    Response::getBodyFromFile(std::string& path){
     std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
     std::map<std::string, std::string> headers = resInfo.headers;
     std::map<std::string, std::string>::iterator it = headers.find("range");
 
 
-    std::streamsize size = 0;
+    // std::streamsize size = 0;
     size_t startPos = 0;
     std::string range;
     std::streamsize fileSize;
@@ -165,21 +191,24 @@ std::vector<char>   Response::getBodyFromFile(std::string& path){
     startPos = Utils::strToNumber(range);
     if (startPos >= (size_t)fileSize)
         startPos = 0;
-    if (fileSize > 30000000)
-        size = 3000000;
-    if (size + startPos > (size_t)fileSize){
-        size = fileSize - startPos;
-        std::cout << "SIZE = " << size << " , FILE SIZE = " << fileSize  << " , START POS = " << startPos  << std::endl;
-        // exit (0);
-    }
-    if (size == 0)
-        size = fileSize;
-    std::cout << "start pos = " << startPos << " , size = " << size << " , size + range = " << size + startPos << " , total size = " << fileSize << std::endl;
+    // if (fileSize > 30000000)
+    //     size = 3000000;
+    // if (size + startPos > (size_t)fileSize){
+    //     size = fileSize - startPos;
+    //     std::cout << "SIZE = " << size << " , FILE SIZE = " << fileSize  << " , START POS = " << startPos  << std::endl;
+    //     // exit (0);
+    // }
+    // if (size == 0)
+    //     size = fileSize;
+    // std::cout << "start pos = " << startPos << " , size = " << size << " , size + range = " << size + startPos << " , total size = " << fileSize << std::endl;
+    getHandler.setPath(path);
+    getHandler.setPosition(startPos);
     if (it != headers.end()){
+        std::cout << "Range headers" << std::endl;
         std::string contentRange("bytes ");
         contentRange.append(Utils::toString(startPos));
         contentRange.append("-");
-        contentRange.append(Utils::toString(startPos + (size - 1)));
+        contentRange.append(Utils::toString(fileSize - 1));
         contentRange.append("/");
         contentRange.append(Utils::toString(fileSize));
         resElements.headers.insert(std::pair<std::string, std::string> ("Content-Range", contentRange));
@@ -188,12 +217,12 @@ std::vector<char>   Response::getBodyFromFile(std::string& path){
         resElements.headers.insert(std::pair<std::string, std::string> ("Content-Length", Utils::toString(fileSize)));
     // }
 
-    file.seekg(startPos, std::ios::beg);
-    std::vector<char> body(size);
-    file.read(&body[0], size);
-    std::cout << "body size = " << body.size() << std::endl;
-    file.close();
-    return (body);
+    // file.seekg(startPos, std::ios::beg);
+    // std::vector<char> body(size);
+    // file.read(&body[0], size);
+    // std::cout << "body size = " << body.size() << std::endl;
+    // file.close();
+    // return (body);
 }
 
 HttpStatusCode      Response::writeBodyInFile(std::string& path, std::vector<char>& body){
@@ -219,9 +248,9 @@ void    Response::buildResponse(){
     Utils::pushInVector(response, Utils::mapToString(resElements.headers));
     response.insert(response.end(), resElements.body.begin(), resElements.body.end());
 
-    this->resElements.statusLine.clear();
-    this->resElements.headers.clear();
-    this->resElements.body.clear();
+    // this->resElements.statusLine.clear();
+    // this->resElements.headers.clear();
+    // this->resElements.body.clear();
 }
 
 
@@ -241,7 +270,7 @@ void    Response::errorHandling(){
             resElements.body = generateErrorBody();
         }   
         else
-            resElements.body = getBodyFromFile(errorPath);
+            getBodyFromFile(errorPath);
 
     }
     else
@@ -293,7 +322,7 @@ void    Response::handleGET(){
             resInfo.status = FORBIDDEN;
             errorHandling();
         }
-        resElements.body = getBodyFromFile(resInfo.path);
+        getBodyFromFile(resInfo.path);
     }
     else if (resInfo.type == DIR_LS){
         listDirectory();

@@ -1,4 +1,4 @@
-#include "GetHandler.hpp"
+#include "../../../includes/GetHandler.hpp"
 
 GetHandler::GetHandler(): done(false){}
 
@@ -17,10 +17,12 @@ GetHandler& GetHandler::operator=(const GetHandler& other){
     this-> path = other.path;
     this-> fileSize = other.fileSize;
     this-> position = other.position;
+    return (*this);
 }
 
 void GetHandler::setPath(std::string path){
     this->path = path;
+    done = false;
     this->fileSize = Utils::getFileSize(path);
     if (File.is_open())
         File.close();
@@ -28,6 +30,7 @@ void GetHandler::setPath(std::string path){
 }
 void GetHandler::setPosition(size_t position){
     this->position = position;
+    done = false;
 }
 
 bool GetHandler::isDone(){
@@ -35,6 +38,7 @@ bool GetHandler::isDone(){
 }
 
 std::vector<char> GetHandler::get(size_t size){
+    std::cout << "position = " << position << " , file size = " << fileSize << std::endl;
     if (position >= fileSize){
       position = 0;
       done = true;
@@ -46,9 +50,11 @@ std::vector<char> GetHandler::get(size_t size){
     }
     File.seekg(position, std::ios::beg);
     std::vector<char> body(size);
+    std::cout << "Size = " << size << std::endl;
     File.read(&body[0], size);
     position += size;
     if (position >= fileSize - 1)
         done = true;
+    std::cout << "Body size = " << body.size()<< std::endl;
     return body;
 }

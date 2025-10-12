@@ -41,6 +41,8 @@ struct ResElements{
     std::string statusLine;
     std::map<std::string, std::string> headers;
     std::vector<char> body;
+    std::string       path;
+    size_t            position;
 };
 
 # endif
