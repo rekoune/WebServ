@@ -95,7 +95,8 @@ ssize_t client::sending(short& event){
 		if(!clientHandler.isKeepAlive())
 			return 0;
 		responseComplete = true;
-		event = POLLIN;
+		if(clientHandler.isResDone())
+			event = POLLIN;
 		totalsend = 0;
 		response.clear();
 		std::cout << "succufly send everyting !!!" << std::endl;
