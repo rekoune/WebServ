@@ -13,6 +13,7 @@
 # include <dirent.h>
 # include "Structs.hpp"
 
+# define DATA_SIZE (1 * 1024 * 1024)
 
 class Response{
     private:

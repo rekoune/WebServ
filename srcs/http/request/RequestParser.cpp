@@ -16,7 +16,6 @@ RequestParser::RequestParser(const RequestParser& other){
     *this = other;
 }
 RequestParser& RequestParser::operator=(const RequestParser& other){
-    // this->req = other.req;
     this->requestLine = other.requestLine;
     this->headers = other.headers;
     this->body = other.body;
@@ -26,7 +25,6 @@ RequestParser& RequestParser::operator=(const RequestParser& other){
     this->server = other.server;
     this->resInfo = other.resInfo;
     this->uploadHandler = other.uploadHandler;
-    // this->chunkBody = other.chunkBody;
     this->clientMaxBodySize = other.clientMaxBodySize;
     return (*this);
 }
@@ -173,7 +171,6 @@ HttpStatusCode RequestParser::parseRequestHeaders( std::string& req){
         getline(headerStream, key, ':');
         getline(headerStream, value);
         if ((!Utils::isBlank(key) && key.find(' ') != std::string::npos) || value.at(value.length() - 1) != '\r'){
-            std::cout << "ma7 ma7 ma7" << std::endl;
             return (BAD_REQUEST);
         }
         value.erase(value.length() - 1, 1);
@@ -185,7 +182,6 @@ HttpStatusCode RequestParser::parseRequestHeaders( std::string& req){
         getline(reqStream, line, '\n');
     }
     if (reqStream.eof() || headers.empty() || headers.find("host") == headers.end()){
-        std::cout << "ta7 ta7 ta7" << std::endl;
         return (BAD_REQUEST);
     }
     else if (this->requestLine.method == "POST"){
@@ -232,7 +228,6 @@ HttpStatusCode      RequestParser::appendData(const char* _data, size_t size){
             headerEndPos += 4;
             status = parseRequest(std::string(body.begin(), body.begin() + headerEndPos));
             if (status != OK){
-                std::cout << "bla bla bla" << std::endl;
                 parseState = PARSE_ERROR;
                 return status;
             }
@@ -240,7 +235,6 @@ HttpStatusCode      RequestParser::appendData(const char* _data, size_t size){
             resourceResolver.setServer(server);
             resourceResolver.setRequestLine(requestLine);
             if ((resInfo = resourceResolver.handle()).status != OK){
-                // std::cout << "hora hora hora status = " << resInfo.status << std::endl;
                 parseState = PARSE_ERROR;
                 return resInfo.status;
             }
@@ -260,8 +254,5 @@ HttpStatusCode      RequestParser::appendData(const char* _data, size_t size){
         parseState = uploadHandler.upload(_data, size);
         this -> resInfo = uploadHandler.getResourseInfo() ;
     }
-    // std::cout << "STATUS = " << resInfo.status  << std::endl;
-    // if (resInfo.status != OK || resInfo.status != CREATED)
-    //     exit(1);
     return resInfo.status;
 }

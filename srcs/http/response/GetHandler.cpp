@@ -38,7 +38,6 @@ bool GetHandler::isDone(){
 }
 
 std::vector<char> GetHandler::get(size_t size){
-    std::cout << "position = " << position << " , file size = " << fileSize << std::endl;
     if (position >= fileSize){
       position = 0;
       done = true;
@@ -50,11 +49,9 @@ std::vector<char> GetHandler::get(size_t size){
     }
     File.seekg(position, std::ios::beg);
     std::vector<char> body(size);
-    std::cout << "Size = " << size << std::endl;
     File.read(&body[0], size);
     position += size;
     if (position >= fileSize - 1)
         done = true;
-    std::cout << "Body size = " << body.size()<< std::endl;
     return body;
 }
