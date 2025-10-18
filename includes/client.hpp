@@ -3,7 +3,7 @@
 
 #include"Headers.hpp"
 
-#define BUFFER 65536
+#define BUFFER 204800
 
 class client{
 private:

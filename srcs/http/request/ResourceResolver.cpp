@@ -78,10 +78,8 @@ HttpStatusCode ResourceResolver::dirHandling(std::string& path, PathTypes& pathT
     }
     if (location.autoindex || resInfo.method == "POST")
         pathType = DIR_LS;
-    else{
-        std::cout << "hup hup hup " << std::endl;
+    else
         return (FORBIDDEN);
-    }
    return (OK);
 }
 
@@ -117,10 +115,8 @@ HttpStatusCode ResourceResolver::resolveResourceType(std::string& path, PathType
         status = dirHandling(path, pathType, location);
     else if (S_ISREG(type.st_mode))
         status = fileHandling(path, pathType, location);
-    else{
-        std::cout << "ha9 ha9 ha9" << std::endl;
+    else
         return (FORBIDDEN);
-    }
     return (status);
 }
 
@@ -142,12 +138,10 @@ HttpResourceInfo ResourceResolver::handle(){
             path.erase(path.end() -1);
         path.append(reqLine.target);
         status = resolveResourceType(path, pathType, location);
+        this->resInfo.type = pathType;
+        this->resInfo.path = path;
     }
     this->resInfo.status = status;
-    if (status == OK || status == CREATED){
-        this->resInfo.path = path;
-        this->resInfo.type = pathType;
-        this->resInfo.location = location;
-    }
+    this->resInfo.location = location;
     return (this->resInfo);
 }
