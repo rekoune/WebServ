@@ -2,6 +2,8 @@
 #define CGI_HPP
 
 #include <unistd.h>
+#include <iostream>
+#include "../Structs.hpp"
 
 class CgiExecutor
 {
@@ -20,9 +22,11 @@ class CgiExecutor
 		CgiExecutor(RequestContext& req_context);
 		void	setContext(RequestContext&	req_context);
 
-		std::string	getServerPort(std::string	host);
+		int		getReadFd();
+		CgiResult ReadResult();
 
-		bool	run(std::vector<char>& result, int&	cgi_status );
+		std::string	getServerPort(std::string	host);
+		bool	run(std::vector<char>& result, int&	cgi_status ); 
 
 
 };

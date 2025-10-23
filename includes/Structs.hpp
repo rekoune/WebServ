@@ -45,4 +45,11 @@ struct ResElements{
     size_t            position;
 };
 
+
+struct CgiResult{
+    std::map<std::string, std::string> headers;
+    std::vector<char> body;
+	int cgi_status;
+};
+
 # endif

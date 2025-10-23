@@ -62,6 +62,8 @@ std::vector<std::string>	CgiExecutor::buildEnv()
 	env.push_back("SERVER_SOFTWARE=webserv/1.1");
 	env.push_back("GATEWAY_INTERFACE=CGI/1.1");
 	env.push_back("SERVER_NAME=" + getServerName(host));
+	std::cout << "================" << std::endl;
+	std::cout << getServerName(host) << std::endl;
 	env.push_back("SERVER_PORT=" + getServerPort(host));
 
 	for (std::map<std::string, std::string>::iterator iter = headers.begin(); iter != headers.end(); iter++)

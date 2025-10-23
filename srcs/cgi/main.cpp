@@ -43,6 +43,9 @@ int main()
 
 	CgiExecutor cgi_executor(req_context);
 	cgi_executor.run(result, status);
+	// split the run() to getReadFd() and ReadResult()
+	int read_fd = cgi_executor.getReadFd();
+	
 
 
 	for (std::vector<char>::iterator i = result.begin(); i != result.end(); i++)

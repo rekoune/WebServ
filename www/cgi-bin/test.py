@@ -19,6 +19,7 @@ if content_length:
         length = int(content_length)
         body = sys.stdin.read(length)
         print(body)
+# can according to cgi standard, can i kill the child here, as teh child is the end of scrip role 
     except Exception as e:
         print(f"[Error reading body: {e}]")
 else:
