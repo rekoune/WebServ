@@ -57,7 +57,7 @@ std::vector<std::string>	CgiExecutor::buildEnv()
 
 	env.push_back("REQUEST_METHOD=" + req_context.req_line.method);
 	env.push_back("QUERY_STRING=" + req_context.query);
-	env.push_back("SCRIPT_NAME=" + req_context.script_name);
+	env.push_back("SCRIPT_NAME=" + Utils::getFileName(req_context.script_path));
 	env.push_back("SERVER_PROTOCOL=" + req_context.req_line.httpVersion);
 	env.push_back("SERVER_SOFTWARE=webserv/1.1");
 	env.push_back("GATEWAY_INTERFACE=CGI/1.1");

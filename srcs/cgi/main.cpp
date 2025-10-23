@@ -18,7 +18,7 @@ int main()
 	req_context.headers.insert(std::make_pair("Host", "10.10.10.1"));
 
 	req_context.query = "name=esmo&age=20";
-	req_context.script_name = "test.py";
+	req_context.script_name = "test.py"; // script name needs to parse it 
 	req_context.body.push_back('T');
 	req_context.body.push_back('H');
 	req_context.body.push_back('I');
