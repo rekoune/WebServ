@@ -9,15 +9,18 @@ struct RequestLine{
     std::string method;
     std::string target;
     std::string httpVersion;
+    std::string query;
 };
 struct HttpResourceInfo{
     HttpStatusCode status;
     std::string     path;
     PathTypes       type;
     LocationConfig  location;
+    std::string     prevLocation;
     ServerConfig    server;
     RequestLine     reqLine;
     std::string     method;
+    std::string     cgiExecutorPath;
     std::map<std::string, std::string>  headers;
 
     HttpResourceInfo(): status(OK){};
@@ -27,13 +30,8 @@ struct HttpResourceInfo{
 struct RequestContext{
 	RequestLine 						req_line;
 	std::vector<char>                   body;
-
-
-	std::string 						script_path;
+    std::string 						script_path;
     std::map<std::string, std::string>  headers;
-	std::string							query;
-	std::string							script_name;
-	std::string							server_name;
 
 };
 
