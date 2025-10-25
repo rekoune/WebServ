@@ -47,6 +47,13 @@ HttpStatusCode ResourceResolver::findLocation(std::vector<LocationConfig> locati
         return NOT_FOUND;
     }
     resultLocation = locations.at(matchedIndex);
+    if (!resultLocation.redirection_url.empty()){
+        if (resInfo.prevLocation == resultLocation.redirection_url)
+            return (LOOP_DETECTED);
+        resInfo.path = resultLocation.redirection_url;
+        return (static_cast<HttpStatusCode>(resultLocation.redirection_status));
+    }
+    // resInfo.prevLocation = resultLocation.path;
     return (OK);
 }
 
@@ -78,21 +85,31 @@ HttpStatusCode ResourceResolver::dirHandling(std::string& path, PathTypes& pathT
     }
     if (location.autoindex || resInfo.method == "POST")
         pathType = DIR_LS;
-    else{
-        std::cout << "hup hup hup " << std::endl;
+    else
         return (FORBIDDEN);
-    }
    return (OK);
 }
 
-bool ResourceResolver::isScript(std::string& path, LocationConfig& location){
-    (void)path;
-    (void)location;
+bool ResourceResolver::isScript(std::string& path, std::map<std::string, std::string>& cgiExtentions){
+    std::string extention;
+    std::string fileName;
+    size_t      dotPos;
+
+    fileName = Utils::getFileName(path);
+    dotPos = fileName.find(".");
+    if (dotPos != std::string::npos){
+        extention.append(fileName.begin() + dotPos , fileName.end());
+        std::map<std::string, std::string>::iterator it = cgiExtentions.find(extention);
+        if (it != cgiExtentions.end()){
+            resInfo.cgiExecutorPath = it->second;
+            return (true);
+        }
+    }
     return false;
 }
 
-HttpStatusCode ResourceResolver::fileHandling(std::string& path, PathTypes& pathType, LocationConfig& location){
-    if (isScript(path, location)){
+HttpStatusCode ResourceResolver::fileHandling(std::string& path, PathTypes& pathType){
+    if (isScript(path, resInfo.server.cgi_extension)){
         pathType = SCRIPT;
         return (OK);
     }
@@ -116,11 +133,9 @@ HttpStatusCode ResourceResolver::resolveResourceType(std::string& path, PathType
     if (S_ISDIR(type.st_mode))
         status = dirHandling(path, pathType, location);
     else if (S_ISREG(type.st_mode))
-        status = fileHandling(path, pathType, location);
-    else{
-        std::cout << "ha9 ha9 ha9" << std::endl;
+        status = fileHandling(path, pathType);
+    else
         return (FORBIDDEN);
-    }
     return (status);
 }
 
@@ -142,12 +157,11 @@ HttpResourceInfo ResourceResolver::handle(){
             path.erase(path.end() -1);
         path.append(reqLine.target);
         status = resolveResourceType(path, pathType, location);
+        this->resInfo.type = pathType;
+        this->resInfo.path = path;
     }
     this->resInfo.status = status;
-    if (status == OK || status == CREATED){
-        this->resInfo.path = path;
-        this->resInfo.type = pathType;
-        this->resInfo.location = location;
-    }
+    this->resInfo.location = location;
+    this->resInfo.prevLocation = location.path;
     return (this->resInfo);
 }

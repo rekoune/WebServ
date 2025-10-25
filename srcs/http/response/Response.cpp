@@ -29,16 +29,11 @@ std::vector<char> Response::getResponse () {
     std::vector<char> body;
 
     if (this->resInfo.method != "GET" || !this->resElements.body.empty()){
-        std::cout << "METHOD IS NOT GET OR THE BODY IS NOT EMPTY !!" << std::endl;
-        std::cout << "body size = " << resElements.body.size() << std::endl;
-        std::cout << "method = " << resInfo.method << std::endl;
         done = true;
         return (this->response);
     }
     else{
-        std::cout << " >>>>>>> ANA HONA ===============" << std::endl;
-        std::cout.write(response.data(), response.size()) << std::endl;;
-        body = getHandler.get(1000000);
+        body = getHandler.get(DATA_SIZE);
         done = getHandler.isDone();
         if (!response.empty()){
             body.insert(body.begin(), response.begin(), response.end());
@@ -68,8 +63,10 @@ void    Response::setFileTypes(){
     fileTypes.insert(std::pair<std::string, std::string> ("png", "image/png"));
     fileTypes.insert(std::pair<std::string, std::string> ("jng", "image/x-jng"));
     fileTypes.insert(std::pair<std::string, std::string> ("webp", "image/webp"));
+    fileTypes.insert(std::pair<std::string, std::string> ("heic", "image/heic"));
 
     fileTypes.insert(std::pair<std::string, std::string> ("mp4", "video/mp4"));
+    fileTypes.insert(std::pair<std::string, std::string> ("MP4", "video/mp4"));
     fileTypes.insert(std::pair<std::string, std::string> ("mov", "video/quicktime"));
     fileTypes.insert(std::pair<std::string, std::string> ("webm", "video/webm"));
 
@@ -106,6 +103,14 @@ std::string         Response::getStatusMessage(HttpStatusCode status){
             return ("OK");
         case PARTIAL_CONTENT:
             return ("PARTIAL_CONTENT");
+        case MOVED_PERMANENTLY:
+            return ("MOVED_PERMANENTLY");
+        case FOUND:
+            return ("FOUND");
+        case TEMPORARY_REDIRECT:
+            return ("TEMPORARY_REDIRECT");
+        case PERMANENT_REDIRECT:
+            return ("PERMANENT_REDIRECT");
         case CREATED:
             return ("CREATED");
         case NO_CONTENT:
@@ -128,6 +133,8 @@ std::string         Response::getStatusMessage(HttpStatusCode status){
             return ("NOT_IMPLEMENTED");
         case HTTP_VERSION_NOT_SUPPORTED:
             return ("HTTP_VERSION_NOT_SUPPORTED");
+        case LOOP_DETECTED:
+            return ("LOOP_DETECTED");
     }
     return "DEFAUTL";
 }
@@ -154,10 +161,13 @@ std::map<std::string, std::string>  Response::generateHeaders(std::map<std::stri
 
     headers.insert(std::pair<std::string, std::string> ("Server", "WebServer"));
     headers.insert(std::pair<std::string, std::string> ("Date", Utils::getDate()));
-    if (resInfo.status != NO_CONTENT)
+    if (resInfo.status != NO_CONTENT && resElements.body.empty()){
         headers.insert(std::pair<std::string, std::string> ("Content-Type", Utils::getFileType(fileTypes, Utils::getFileName(resInfo.path))));
+    }
     
-    if (resInfo.status != OK && resInfo.status != CREATED && resInfo.status != PARTIAL_CONTENT){
+    if (resInfo.status != OK && resInfo.status != CREATED && resInfo.status != PARTIAL_CONTENT && 
+        resInfo.status != MOVED_PERMANENTLY && resInfo.status != FOUND && resInfo.status != TEMPORARY_REDIRECT
+        && resInfo.status != PERMANENT_REDIRECT){
         headers.insert(std::pair<std::string, std::string> ("Connection", "close"));
         keepAlive = false;
     }
@@ -167,8 +177,9 @@ std::map<std::string, std::string>  Response::generateHeaders(std::map<std::stri
     }
     if (resInfo.method == "GET")
         headers.insert(std::pair<std::string, std::string> ("Accept-Ranges", "bytes"));
-    if (headers.find("Content-Length") == headers.end())
+    if (headers.find("Content-Length") == headers.end() || !resElements.body.empty()){
         headers.insert(std::pair<std::string, std::string> ("Content-Length", Utils::toString(resElements.body.size())));
+    }
     return (headers);
 }
 
@@ -178,7 +189,6 @@ void    Response::getBodyFromFile(std::string& path){
     std::map<std::string, std::string>::iterator it = headers.find("range");
 
 
-    // std::streamsize size = 0;
     size_t startPos = 0;
     std::string range;
     std::streamsize fileSize;
@@ -191,20 +201,9 @@ void    Response::getBodyFromFile(std::string& path){
     startPos = Utils::strToNumber(range);
     if (startPos >= (size_t)fileSize)
         startPos = 0;
-    // if (fileSize > 30000000)
-    //     size = 3000000;
-    // if (size + startPos > (size_t)fileSize){
-    //     size = fileSize - startPos;
-    //     std::cout << "SIZE = " << size << " , FILE SIZE = " << fileSize  << " , START POS = " << startPos  << std::endl;
-    //     // exit (0);
-    // }
-    // if (size == 0)
-    //     size = fileSize;
-    // std::cout << "start pos = " << startPos << " , size = " << size << " , size + range = " << size + startPos << " , total size = " << fileSize << std::endl;
     getHandler.setPath(path);
     getHandler.setPosition(startPos);
     if (it != headers.end()){
-        std::cout << "Range headers" << std::endl;
         std::string contentRange("bytes ");
         contentRange.append(Utils::toString(startPos));
         contentRange.append("-");
@@ -212,17 +211,12 @@ void    Response::getBodyFromFile(std::string& path){
         contentRange.append("/");
         contentRange.append(Utils::toString(fileSize));
         resElements.headers.insert(std::pair<std::string, std::string> ("Content-Range", contentRange));
+        resElements.headers.insert(std::pair<std::string, std::string> ("Content-Length", Utils::toString(fileSize - startPos)));
     }
+    if (!resElements.body.empty())
+        resElements.headers.insert(std::pair<std::string, std::string> ("Content-Length", Utils::toString(resElements.body.size())));
     else
         resElements.headers.insert(std::pair<std::string, std::string> ("Content-Length", Utils::toString(fileSize)));
-    // }
-
-    // file.seekg(startPos, std::ios::beg);
-    // std::vector<char> body(size);
-    // file.read(&body[0], size);
-    // std::cout << "body size = " << body.size() << std::endl;
-    // file.close();
-    // return (body);
 }
 
 HttpStatusCode      Response::writeBodyInFile(std::string& path, std::vector<char>& body){
@@ -236,7 +230,6 @@ HttpStatusCode      Response::writeBodyInFile(std::string& path, std::vector<cha
         status = CREATED;
     std::ofstream file(path.c_str(), std::ios::out | std::ios::binary);
     if (!file){
-        std::cout << "jfj jfj jfj " << std::endl;
         return INTERNAL_SERVER_ERROR;
     }
     file.write(&body[0],body.size());
@@ -247,34 +240,31 @@ void    Response::buildResponse(){
     Utils::pushInVector(response, resElements.statusLine);
     Utils::pushInVector(response, Utils::mapToString(resElements.headers));
     response.insert(response.end(), resElements.body.begin(), resElements.body.end());
-
-    // this->resElements.statusLine.clear();
-    // this->resElements.headers.clear();
-    // this->resElements.body.clear();
 }
 
 
 void    Response::errorHandling(){
     std::map<int, std::string>::iterator errorPage;
+    if (resInfo.status == MOVED_PERMANENTLY || resInfo.status == FOUND || resInfo.status == TEMPORARY_REDIRECT || resInfo.status == PERMANENT_REDIRECT){
+        resElements.headers.insert(std::pair<std::string, std::string>("Location", resInfo.path));
+    }
     if ((errorPage = resInfo.server.error_pages.find(resInfo.status)) != resInfo.server.error_pages.end()){
         std::string errorPath;
 
         errorPath.append(resInfo.location.root);
-        // errorPath.append("/");
         errorPath.append(errorPage->second);
         resInfo.path = errorPath;
-        std::cout << "error path = " << errorPath << std::endl;
-        if (access(errorPath.c_str(), F_OK) == -1 || access(errorPath.c_str(), R_OK) == -1){
+        if (access(errorPath.c_str(), F_OK) == -1){
             std::cout << "qwr qwr qwr" << std::endl;
             resInfo.status = NOT_FOUND;
             resElements.body = generateErrorBody();
         }   
         else
             getBodyFromFile(errorPath);
-
     }
     else
         resElements.body = generateErrorBody();
+    // exit(1);
 }
 
 void    Response::generateListingBody(DIR* dir){
@@ -328,7 +318,11 @@ void    Response::handleGET(){
         listDirectory();
     }
     else if (resInfo.type == SCRIPT){
-        std::cout << "The request Target Is A Script" << std::endl;
+        RequestContext  cgiInfo;
+
+        cgiInfo.req_line = resInfo.reqLine;
+        cgiInfo.script_path = resInfo.path;
+        cgiInfo.headers = resInfo.headers;
     }
 }
 
@@ -338,7 +332,6 @@ void    Response::handleDELETE(){
         errorHandling();
     }
     else if (std::remove(resInfo.path.c_str()) != 0){
-        std::cout << "plm plm plm " << std::endl;
         resInfo.status = INTERNAL_SERVER_ERROR;
         errorHandling();
     }
@@ -396,10 +389,8 @@ void    Response::successHandling(){
 
 void Response::handle(){
     setFileTypes();
-    if (resInfo.status != OK && resInfo.status != CREATED){
-        std::cout << "in response handle status = " << resInfo.status << std::endl;
+    if (resInfo.status != OK && resInfo.status != CREATED)
         errorHandling();
-    }
     else
         successHandling();
     resElements.statusLine = getStatusLine();

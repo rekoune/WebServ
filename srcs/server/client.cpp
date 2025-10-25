@@ -72,7 +72,7 @@ ssize_t client::ft_recv(short& event){
  			event = POLLOUT;
 		}
 	}
-	std::cout << "\033[95mthe recevide is :\n" << buf << "\033[0m" << std::endl;
+	// std::cout << "\033[95mthe recevide is :\n" << buf << "\033[0m" << std::endl;
 	std::cout << "total recv is on fd: ("<< fd  << ") is : " << total << "B" <<  std::endl;
 
 	return read;
@@ -88,14 +88,15 @@ ssize_t client::sending(short& event){
 		return 0;
 	}
 	totalsend += nsend;
-	std::cout << "\033[95mSend: " << std::string(response.begin() + totalsend - nsend, response.begin() + totalsend).substr(0, 256) << (nsend > 99 ? "..." : "") << "\033[0m" << std::endl;
+	// std::cout << "\033[95mSend: " << std::string(response.begin() + totalsend - nsend, response.begin() + totalsend).substr(0, 256) << (nsend > 99 ? "..." : "") << "\033[0m" << std::endl;
 	// std::cout << "\033[95mSend: " << std::string(response.begin() + totalsend - nsend, response.begin() + totalsend) << "\033[0m" << std::endl;
 	std::cout << "total data from Post of fd:  ("<< fd << ") is :" << totalsend << "B" << std::endl;
 	if(totalsend == response.size()){
 		if(!clientHandler.isKeepAlive())
 			return 0;
 		responseComplete = true;
-		event = POLLIN;
+		if(clientHandler.isResDone())
+			event = POLLIN;
 		totalsend = 0;
 		response.clear();
 		std::cout << "succufly send everyting !!!" << std::endl;
