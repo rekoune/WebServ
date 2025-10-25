@@ -4,6 +4,7 @@
 # include "Enums.hpp"
 # include "Structs.hpp"
 # include <vector>
+# include <map>
 # include <fstream>
 # include <unistd.h>
 # include <sys/stat.h>
@@ -11,6 +12,14 @@
 
 class UploadHandler{
     private:
+        enum MultipartState {
+            SEARCHING_BOUNDARY,
+            SEARCHING_HEADERS,
+            SEARCHING_BODY,
+            END
+        };
+    
+        MultipartState      currentState;
         HttpResourceInfo    resInfo;
         std::vector<char>   bodySaver;
         std::ofstream       bodyFile;
@@ -18,8 +27,10 @@ class UploadHandler{
         ParseState          parseState;
         std::string         contentType;
         std::string         boundary;
+        std::vector<std::string> openedFiles;
         std::map<std::string, std::string>  fileTypes;
         long long           uploadSize;
+        size_t              currentTotalSize;
 
         void                setFileTypes();
         void                setFullPathByType(std::string& path, PathTypes& pathType, std::string contentType);
@@ -29,9 +40,14 @@ class UploadHandler{
         ParseState          singleChunk(std::vector<char>& oneChunk, size_t size);
         HttpStatusCode      contentLengthHandling(const char* data, size_t size);
         HttpStatusCode      handleByContentType(const char* data, size_t size);
-        HttpStatusCode      multipartHandling(const char* data, size_t size);
         HttpStatusCode      extractHeaders(std::string bodyHeaders);
         HttpStatusCode      checkHeaders(std::map<std::string, std::string>& headers);
+        HttpStatusCode      multipartHandling(const char* data, size_t size);
+        HttpStatusCode      searchForBoundary();
+        HttpStatusCode      searchForHeaders();
+        HttpStatusCode      searchForBody();
+        void                clearFiles(std::vector<std::string>& files);
+
     public:
         UploadHandler();
         ~UploadHandler();

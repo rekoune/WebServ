@@ -23,13 +23,14 @@ class RequestParser{
         HttpResourceInfo                    resInfo;
         UploadHandler                       uploadHandler;
 
-        long                                bodyMaxSize;
+        long long                           bodyMaxSize;
         size_t                              clientMaxBodySize;
 
         HttpStatusCode parseRequestLine(std::string& reqLine);
         HttpStatusCode parseRequestHeaders(std::string& req);
         HttpStatusCode setMethod(std::string& method);
         HttpStatusCode setTarget(std::string& target);
+        void           extractQuery(std::string& target, std::string& query);
         HttpStatusCode setHttpVersion(std::string& httpVersion);
         ParseState     checkPostHeaders(HttpStatusCode& status);
         

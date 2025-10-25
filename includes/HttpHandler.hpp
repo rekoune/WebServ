@@ -13,6 +13,8 @@ class HttpHandler{
         HttpResourceInfo resInfo;
         Response response;
         bool        sameReq;
+        bool        sameRes;
+        // bool        resDone;
 
     public:
         HttpHandler();
@@ -28,6 +30,8 @@ class HttpHandler{
         void appendData(const char* data, size_t size);
         bool isComplete();
         std::vector<char> getResponse();
+        bool isKeepAlive();
+        bool isResDone();
 };
 
 # endif
