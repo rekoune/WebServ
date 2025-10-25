@@ -103,6 +103,14 @@ std::string         Response::getStatusMessage(HttpStatusCode status){
             return ("OK");
         case PARTIAL_CONTENT:
             return ("PARTIAL_CONTENT");
+        case MOVED_PERMANENTLY:
+            return ("MOVED_PERMANENTLY");
+        case FOUND:
+            return ("FOUND");
+        case TEMPORARY_REDIRECT:
+            return ("TEMPORARY_REDIRECT");
+        case PERMANENT_REDIRECT:
+            return ("PERMANENT_REDIRECT");
         case CREATED:
             return ("CREATED");
         case NO_CONTENT:
@@ -125,6 +133,8 @@ std::string         Response::getStatusMessage(HttpStatusCode status){
             return ("NOT_IMPLEMENTED");
         case HTTP_VERSION_NOT_SUPPORTED:
             return ("HTTP_VERSION_NOT_SUPPORTED");
+        case LOOP_DETECTED:
+            return ("LOOP_DETECTED");
     }
     return "DEFAUTL";
 }
@@ -155,7 +165,9 @@ std::map<std::string, std::string>  Response::generateHeaders(std::map<std::stri
         headers.insert(std::pair<std::string, std::string> ("Content-Type", Utils::getFileType(fileTypes, Utils::getFileName(resInfo.path))));
     }
     
-    if (resInfo.status != OK && resInfo.status != CREATED && resInfo.status != PARTIAL_CONTENT){
+    if (resInfo.status != OK && resInfo.status != CREATED && resInfo.status != PARTIAL_CONTENT && 
+        resInfo.status != MOVED_PERMANENTLY && resInfo.status != FOUND && resInfo.status != TEMPORARY_REDIRECT
+        && resInfo.status != PERMANENT_REDIRECT){
         headers.insert(std::pair<std::string, std::string> ("Connection", "close"));
         keepAlive = false;
     }
@@ -233,6 +245,9 @@ void    Response::buildResponse(){
 
 void    Response::errorHandling(){
     std::map<int, std::string>::iterator errorPage;
+    if (resInfo.status == MOVED_PERMANENTLY || resInfo.status == FOUND || resInfo.status == TEMPORARY_REDIRECT || resInfo.status == PERMANENT_REDIRECT){
+        resElements.headers.insert(std::pair<std::string, std::string>("Location", resInfo.path));
+    }
     if ((errorPage = resInfo.server.error_pages.find(resInfo.status)) != resInfo.server.error_pages.end()){
         std::string errorPath;
 
@@ -249,6 +264,7 @@ void    Response::errorHandling(){
     }
     else
         resElements.body = generateErrorBody();
+    // exit(1);
 }
 
 void    Response::generateListingBody(DIR* dir){
@@ -302,7 +318,11 @@ void    Response::handleGET(){
         listDirectory();
     }
     else if (resInfo.type == SCRIPT){
-        std::cout << "The request Target Is A Script" << std::endl;
+        RequestContext  cgiInfo;
+
+        cgiInfo.req_line = resInfo.reqLine;
+        cgiInfo.script_path = resInfo.path;
+        cgiInfo.headers = resInfo.headers;
     }
 }
 

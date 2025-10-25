@@ -127,7 +127,7 @@ void    UploadHandler::setFullPathByType(std::string& path, PathTypes& pathType,
             return;
         }
         else
-        path.append(Utils::findExtensionByMime(fileTypes, contentType));
+            path.append(Utils::findExtensionByMime(fileTypes, contentType));
     }
     else if (pathType == DIR_LS){
         std::string prefix("File");

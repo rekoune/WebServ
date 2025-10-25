@@ -55,6 +55,16 @@ HttpStatusCode RequestParser::setMethod(std::string& method){
     return (OK);
 }
 
+void           RequestParser::extractQuery(std::string& target, std::string& query){
+    size_t pos;
+
+    pos = target.find("?");
+    if (pos == std::string::npos)
+        return;
+    query.append(target.begin() + pos, target.end());
+    target.erase(target.begin() + pos, target.end());
+}
+
 HttpStatusCode RequestParser::setTarget(std::string& target){
     std::deque<std::string> deque;
     std::stringstream targetStream(target);
@@ -82,6 +92,7 @@ HttpStatusCode RequestParser::setTarget(std::string& target){
     }
     if (target.length() > 1 && target.at(target.length() - 1) == '/' && target.at(target.length() - 2) != '/' )
         this->requestLine.target.append("/");
+    extractQuery(requestLine.target, requestLine.query);
     return (OK);
 }
 
