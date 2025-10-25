@@ -1,15 +1,5 @@
 #include "../../includes/client.hpp"
 
-// void printingserver(const ServerConfig& servers){
-// 	std::cout << "\033[34mroot: \033[0m" << servers.root << std::endl; // Blue text
-// 	std::cout << "\033[32mlocation: \033[0m" << servers.locations.size() << std::endl; // Green text
-// 	std::cout << "\033[35mserver_name: \033[0m" << servers.server_name[0] << std::endl; // Magenta text
-// 	std::cout << "\033[36mbody max size: \033[0m" << servers.client_max_body_size << std::endl; // Cyan text
-// }
-
-
-
-
 client::~client() {}
 
 client& client::operator=(const client& other){
@@ -33,6 +23,7 @@ client::client(std::vector<ServerConfig>& myservers, int fd) : myServers(myserve
 {
 	if(myServers.size() == 1){
 		clientHandler.setServer(myservers[0]);
+		myServers.clear();
 		hostSeted = true;
 	}
 }
@@ -106,8 +97,6 @@ ssize_t client::sending(short& event){
 
 
 ssize_t client::ft_send(short& event){
-	// ssize_t  nsend ;
-
 	if(responseComplete){
 		response = clientHandler.getResponse();
 		responseComplete = false;
@@ -130,26 +119,28 @@ void client::setHost(std::string &host){
 		for(size_t j = 0; j < myServers[i].server_name.size();j++){
 			if(host == myServers[i].server_name[j]){
 				clientHandler.setServer(myServers[i]);
+				myServers.clear();
 				hostSeted = true;
 				return ;
 			}
 		}
-		
 		std::map<std::string, std::vector<std::string> >::iterator it = myServers[i].host_port.begin();
 		while (it != myServers[i].host_port.end()){
 			if(host == it->first){
 				clientHandler.setServer(myServers[i]);
 				hostSeted = true;
+				myServers.clear();
 				return ;
 			}
 			it++;
-		}
-			
+		}	
 	}
 	if(!hostSeted)
 		clientHandler.setServer(myServers[0]);
+	myServers.clear();
 	hostSeted = true;
 }
+
 
 bool client::appendFirstRequest(const char* buf, ssize_t read)
 {
@@ -165,9 +156,7 @@ bool client::appendFirstRequest(const char* buf, ssize_t read)
 			size_t endPos = requestLine.find("\r\n", hostPos);
 			std::string hostName = requestLine.substr(hostPos, endPos - hostPos);
 			size_t colonPos = hostName.find(':');
-            if (colonPos != std::string::npos) {
-                hostName = hostName.substr(0, colonPos);
-            }
+            hostName = hostName.substr(0, colonPos);
 			setHost(hostName);
 			std::cout << "found host name: " << hostName << std::endl;
 			clientHandler.appendData(&requestData[0], requestData.size());
