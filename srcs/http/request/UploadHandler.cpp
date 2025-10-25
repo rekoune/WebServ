@@ -61,8 +61,10 @@ void    UploadHandler::setFileTypes(){
     fileTypes.insert(std::pair<std::string, std::string> ("png", "image/png"));
     fileTypes.insert(std::pair<std::string, std::string> ("jng", "image/x-jng"));
     fileTypes.insert(std::pair<std::string, std::string> ("webp", "image/webp"));
+    fileTypes.insert(std::pair<std::string, std::string> ("heic", "image/heic"));
 
     fileTypes.insert(std::pair<std::string, std::string> ("mp4", "video/mp4"));
+    fileTypes.insert(std::pair<std::string, std::string> ("MP4", "video/mp4"));
     fileTypes.insert(std::pair<std::string, std::string> ("mov", "video/quicktime"));
     fileTypes.insert(std::pair<std::string, std::string> ("webm", "video/webm"));
 
@@ -125,7 +127,7 @@ void    UploadHandler::setFullPathByType(std::string& path, PathTypes& pathType,
             return;
         }
         else
-        path.append(Utils::findExtensionByMime(fileTypes, contentType));
+            path.append(Utils::findExtensionByMime(fileTypes, contentType));
     }
     else if (pathType == DIR_LS){
         std::string prefix("File");
@@ -140,10 +142,8 @@ HttpStatusCode     UploadHandler::getUploadPath(std::string& uploadPath){
     uploadPath.append(resInfo.location.root);
     uploadPath.append(resInfo.location.path);
     uploadPath.append(resInfo.location.upload_store);
-    if (access(uploadPath.c_str(), F_OK) != 0){
-        std::cout << "kdk kdk kdk " << std::endl;
+    if (access(uploadPath.c_str(), F_OK) != 0)
         return NOT_FOUND;
-    }
     uploadPath.append(resInfo.path.begin() + resInfo.location.root.length() + resInfo.location.path.length(), resInfo.path.end());
     status = getPathType(uploadPath, resInfo.type);
     if (status == OK)
@@ -158,7 +158,6 @@ HttpStatusCode      UploadHandler::checkHeaders(std::map<std::string, std::strin
     size_t              namePos;
     it = headers.find("content-disposition");
     if (it == headers.end() || it->second.find("form-data") == std::string::npos){
-        std::cout << "9al 9al 9al" << std::endl;
         parseState = PARSE_ERROR;
         return BAD_REQUEST;
     }
@@ -180,8 +179,6 @@ HttpStatusCode      UploadHandler::checkHeaders(std::map<std::string, std::strin
     bodyFile.close();
     bodyFile.open(uploadPath.c_str(), std::ios::out | std::ios::binary);
     if (!bodyFile){
-        std::cout << "lsf lsf lsf" << std::endl;
-        // exit(1);
         parseState = PARSE_ERROR;
         return (INTERNAL_SERVER_ERROR);
     }
@@ -204,10 +201,8 @@ HttpStatusCode  UploadHandler::extractHeaders(std::string bodyHeaders){
         std::stringstream headerStream(line);
         std::getline(headerStream, key, ':');
         std::getline(headerStream, value);
-        if ((!Utils::isBlank(key) && key.find(' ') != std::string::npos) || value.at(value.length() - 1) != '\r'){
-            std::cout << "joma joma joma" << std::endl;
+        if ((!Utils::isBlank(key) && key.find(' ') != std::string::npos) || value.at(value.length() - 1) != '\r')
             return (BAD_REQUEST);
-        }
         value.erase(value.length() - 1, 1);
         if (!Utils::isBlank(key) && !Utils::isBlank(value)){
             Utils::strToLower(key);
@@ -278,7 +273,6 @@ HttpStatusCode      UploadHandler::searchForBody(){
 
     if (!bodyFile.is_open()) {
         parseState = PARSE_ERROR;
-        std::cout << "wll wll wll " << std::endl;
         return INTERNAL_SERVER_ERROR;
     }
     boundaryPos = Utils::isContainStr(&bodySaver[0], bodySaver.size(), start.c_str(), start.length());
@@ -319,7 +313,6 @@ HttpStatusCode      UploadHandler::multipartHandling(const char* data, size_t si
     HttpStatusCode status = OK;
 
     if (resInfo.type != DIR_LS){
-        std::cout << "idd idd idd" << std::endl;
         parseState = PARSE_ERROR;
         return (NOT_FOUND);
     }
@@ -343,7 +336,6 @@ HttpStatusCode      UploadHandler::handleByContentType(const char* data, size_t 
     if (contentType.find("multipart/form-data") != std::string::npos){
         if (boundary.empty()){
             parseState = PARSE_ERROR;
-            std::cout << "kaa kaa kaa boundary is empty" << std::endl;
             return (BAD_REQUEST);
         }
         else
@@ -355,7 +347,6 @@ HttpStatusCode      UploadHandler::handleByContentType(const char* data, size_t 
             bodyFile.open(resInfo.path.c_str(), std::ios::out | std::ios::binary);
         }
         if (!bodyFile){
-            std::cout << "eik eik eik" << std::endl;
             return (INTERNAL_SERVER_ERROR);
         }
         bodyFile.write(data, size);
@@ -364,14 +355,11 @@ HttpStatusCode      UploadHandler::handleByContentType(const char* data, size_t 
 }
 
 HttpStatusCode UploadHandler::contentLengthHandling(const char* data, size_t size){
-    // static size_t totalSize = 0;
     HttpStatusCode status = OK;
 
     currentTotalSize += size;
     if (currentTotalSize > (size_t)uploadSize){
-        std::cout << "sa9a sa9a sa9a" << std::endl;
         parseState = PARSE_ERROR;
-        std::cout << "total size = " << currentTotalSize << " , max size = " << uploadSize<< std::endl;
         currentTotalSize = 0;
         currentState = SEARCHING_BOUNDARY;
         return CONTENT_TOO_LARGE;
@@ -406,10 +394,8 @@ ParseState     UploadHandler::singleChunk(std::vector<char>& oneChunk, size_t si
     if (oneChunk.size() <= size)
         return PARSE_ERROR;
     if (size == 0){
-        if (oneChunk.size() != 2 || oneChunk[0] != '\r' || oneChunk[1] != '\n'){
-            std::cout << "hey error error error " << std::endl;
+        if (oneChunk.size() != 2 || oneChunk[0] != '\r' || oneChunk[1] != '\n')
             return PARSE_ERROR;
-        }
         return PARSE_COMPLETE;
     }
     bodyFile.write(&oneChunk[0], size);
@@ -418,7 +404,6 @@ ParseState     UploadHandler::singleChunk(std::vector<char>& oneChunk, size_t si
 
 HttpStatusCode UploadHandler::chunkedBodyHandling(const char* data, size_t size){
     static long chunkSize = -1;
-    // static long sizeCounter = 0;
     static bool searchForBody = false;
     long        sizePos;
     HttpStatusCode status = OK;
@@ -467,10 +452,8 @@ ParseState  UploadHandler::upload(const char* data, size_t size){
     HttpStatusCode& status = resInfo.status;
     if (uploadPath.empty()){
         status = getUploadPath(uploadPath);
-        if (status != OK){
-            std::cout <<  "ekl ekl ekl" << std::endl;
+        if (status != OK)
             return PARSE_ERROR;
-        }
         std::map<std::string, std::string>::iterator it = resInfo.headers.find("content-type");
         if (it != resInfo.headers.end()){
             contentType = it->second;
@@ -506,7 +489,6 @@ ParseState  UploadHandler::upload(const char* data, size_t size){
         std::remove(resInfo.path.c_str());
         clearFiles(openedFiles);
         openedFiles.clear();
-        std::cout << "there is an error so the file was deleted !!!" << std::endl;
     }
     return parseState;
 }

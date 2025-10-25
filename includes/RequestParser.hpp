@@ -30,6 +30,7 @@ class RequestParser{
         HttpStatusCode parseRequestHeaders(std::string& req);
         HttpStatusCode setMethod(std::string& method);
         HttpStatusCode setTarget(std::string& target);
+        void           extractQuery(std::string& target, std::string& query);
         HttpStatusCode setHttpVersion(std::string& httpVersion);
         ParseState     checkPostHeaders(HttpStatusCode& status);
         

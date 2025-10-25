@@ -1,0 +1,8 @@
+#!/bin/bash
+echo "Analyzing storage in $HOME..."
+echo "Top 20 largest files:"
+find ~/ -type f -exec du -h {} + 2>/dev/null | sort -rh | head -20
+
+echo ""
+echo "Top 20 largest directories:"
+du -h ~/ 2>/dev/null | sort -rh | head -20

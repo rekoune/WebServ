@@ -13,6 +13,7 @@ class HttpHandler{
         HttpResourceInfo resInfo;
         Response response;
         bool        sameReq;
+        bool        sameRes;
         // bool        resDone;
 
     public:
