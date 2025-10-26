@@ -20,7 +20,6 @@ private:
 	std::map<int, std::vector<ServerConfig> > listenToHosts; 
 
 	bool is_listener(int fd);
-	unsigned int listenersNbr;
 
 	
 public:

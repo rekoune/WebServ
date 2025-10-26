@@ -4,19 +4,18 @@
 
 server::server(const server& other) :
 									socketFds(other.socketFds), clients(other.clients),
-									listenToHosts(other.listenToHosts), listenersNbr(other.listenersNbr) {}
+									listenToHosts(other.listenToHosts) {}
 
 server& server::operator=(const server& other){
 	if(this != &other){
 		socketFds = other.socketFds;
 		clients = other.clients;
 		listenToHosts = other.listenToHosts;
-		listenersNbr = other.listenersNbr;
 	}
 	return *this;
 }
 
-server::server(std::vector<ServerConfig>&	servers): listenersNbr(0) {
+server::server(std::vector<ServerConfig>&	servers)  {
 
 
 	std::map<std::string, int> iportToSocket; //ip:port -> socket;
@@ -30,19 +29,16 @@ server::server(std::vector<ServerConfig>&	servers): listenersNbr(0) {
 		while(it != host_port.end()){
 			for(size_t j = 0; j < it->second.size(); j++){
 				std::string socket = it->first + ":" + it->second[j];
-				std::cout<< "socket ip:port : |"<< socket << "|" << std::endl;
 				socketIt = iportToSocket.find(socket);
 				if(socketIt != iportToSocket.end()){
 					listenToHosts[socketIt->second].push_back(servers[i]); //listenToHost => socketfd -> serversconfig
 					//it's a listening socket to it's possible servers;
-					std::cout << "pushing the server-- nbr : " << i << std::endl;
 				}
 				else
 				{
 					int socketfd;
 					if((socketfd = listen_socket(it->first, it->second[j])) != -1){
 						listenToHosts[socketfd].push_back(servers[i]);
-						std::cout << "pushing the server-- nbr : " << i << std::endl;
 						iportToSocket[socket] = socketfd;
 					}
 				}
@@ -65,7 +61,7 @@ int server::listen_socket(const std::string& ip, const std::string& port)
 {
 	struct addrinfo *res, info;
 
-	std::cout << "creat a listen socket in : |" << ip << ":" << port << std::endl;
+	std::cout << "creat a listen socket in : " << ip << ":" << port << std::endl;
 
 	std::memset(&info, 0, sizeof(info));
 	info.ai_family = AF_INET;       
@@ -88,10 +84,8 @@ int server::listen_socket(const std::string& ip, const std::string& port)
 	}	
 
 	int opt = 1;
-	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 		std::cerr << "setsockopt(SO_REUSEADDR) error : " << strerror(errno) << std::endl;
-		//return ?
-	}
 	
 	if(bind(sockfd, res->ai_addr, res->ai_addrlen) == -1){
 		std::cerr << "bind error on " << ip << ":" << port << ": " << strerror(errno) << std::endl;
@@ -109,12 +103,12 @@ int server::listen_socket(const std::string& ip, const std::string& port)
 	}
 
 	int flags = fcntl(sockfd, F_GETFL, 0);
-	fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+	if(flags == -1 || fcntl(sockfd, F_SETFL, flags | O_NONBLOCK) == -1){
+		std::cerr << "fcntl error: " << strerror(errno) << std::endl;
+		close(sockfd);
+		return -1;
+	}
 
-	//ERROR ?
-
-	listenersNbr++;
-	// listenFds.push_back(sockfd);
 	socketFds.push_back(create_pollfd(sockfd, POLLIN));	
 	return sockfd;
 }
@@ -147,7 +141,6 @@ void server::acceptClient(int listenFd)
 {
 	struct sockaddr_in client_addr;
     socklen_t client_len = sizeof(client_addr);
-    char client_ip[INET_ADDRSTRLEN]; //shoue be rmoved /`
 	
 	int clientFd;
 	
@@ -155,24 +148,22 @@ void server::acceptClient(int listenFd)
 	{
 
 		int flags = fcntl(clientFd, F_GETFL, 0);
-		fcntl(clientFd, F_SETFL, flags | O_NONBLOCK);
-		//ERROR ?
+		if(flags == -1 || fcntl(clientFd, F_SETFL, flags | O_NONBLOCK) == -1){
+			std::cerr << "fcntl error: " << strerror(errno) << std::endl;
+			close(clientFd);
+			continue;
+		}
+
 		clients.insert(std::make_pair(clientFd, client(listenToHosts[listenFd], clientFd)));
 		socketFds.push_back(create_pollfd(clientFd, POLLIN));
 
-		inet_ntop(AF_INET, &(client_addr.sin_addr), client_ip, INET_ADDRSTRLEN);
-		unsigned short client_port = ntohs(client_addr.sin_port);
-
-		std::cout << "\033[32mNew connection from: " << client_ip << ":" << client_port << "\033[0m" << std::endl;
-		std::cout << "client nbr: " << socketFds.size() - listenersNbr << " FD : " << clientFd << std::endl;
+		std::cout << "\033[32mNew connection Fd : "<< clientFd <<"\033[0m" << std::endl;
 		std::memset(&client_addr, 0, client_len);
 	}
 }
 
 void server::rmClient(size_t &i){
-	std::cout << "\033[31mclosing the sockefd : " << socketFds[i].fd 
-			  << " client nbr: " << i - listenersNbr + 1 <<"\033[0m" << std::endl;
-
+	std::cout << "\033[31mclosing the sockefd : " << socketFds[i].fd <<"\033[0m" << std::endl;
 	close(socketFds[i].fd);
 	clients.erase(socketFds[i].fd);
 	socketFds.erase(socketFds.begin() + i);
@@ -194,6 +185,10 @@ void handleSigint(int sig) {
 
 int server::polling()
 {
+	if(listenToHosts.empty()){
+		std::cerr << "no listen Fds" << std::endl;
+		return 0;
+	}
 
 	signal(SIGINT, handleSigint); 
 	signal(SIGPIPE, SIG_IGN);
@@ -221,6 +216,8 @@ int server::polling()
 					if(!getClient(socketFds[i].fd).ft_recv(socketFds[i].events))
 						rmClient(i);
 					//chekc client cgi
+						// cgi.insert(std::make_pair(fd, &getClient(socketFds[i].fd)));
+
 					
 				}
 				NbrOfActiveSockets--;
