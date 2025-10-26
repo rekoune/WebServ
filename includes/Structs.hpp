@@ -35,6 +35,12 @@ struct RequestContext{
 
 };
 
+struct CgiResult{
+    std::map<std::string, std::string> headers;
+    std::vector<char> body;
+	HttpStatusCode status;
+};
+
 struct ResElements{
     std::string statusLine;
     std::map<std::string, std::string> headers;

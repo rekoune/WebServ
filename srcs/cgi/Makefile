@@ -1,4 +1,5 @@
-# HTTP_SRC = ../http/request/RequestParser.cpp ../http/request/ResourceResolver.cpp ../http/request/UploadHandler.cpp ../http/HttpHandler.cpp ../http/response/Response.cpp ../utils/Utils.cpp 
+HTTP_SRC = ../http/request/RequestParser.cpp ../http/request/ResourceResolver.cpp ../http/request/UploadHandler.cpp ../http/HttpHandler.cpp ../http/response/Response.cpp ../http/response/GetHandler.cpp ../utils/Utils.cpp 
+# SERVER_SRC = ../server/server.cpp  srcs/server/client.cpp 
 # SERVER_SRC = ../server/server.cpp  ../server/client.cpp 
 CONFIG_SRC = ../config/configParser.cpp ../config/configValidate.cpp
 CGI_SRC = CgiExecutor.cpp 

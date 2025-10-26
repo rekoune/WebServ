@@ -57,7 +57,6 @@ ssize_t client::ft_recv(short& event){
 		totalrecv += read;
 		total = totalrecv;
 		if(clientHandler.isComplete()){
-			//chekc for cgi
 			std::cout << "all has been receved" << std::endl;
 			totalrecv = 0;
  			event = POLLOUT;
