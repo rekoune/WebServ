@@ -24,6 +24,7 @@ class Response{
         bool                                keepAlive;
         bool                                done;
         GetHandler                          getHandler;
+        RequestContext                      cgiInfo;
         
         void                                errorHandling();
         void                                successHandling();

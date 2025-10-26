@@ -28,6 +28,11 @@ void Response::setResInfo(const HttpResourceInfo& info){
 std::vector<char> Response::getResponse () {
     std::vector<char> body;
 
+    // exit(1);
+    // std::cout << "resource type = " << resInfo.type << std::endl;
+    // std::cout <<"script path = " << cgiInfo.script_path << std::endl;
+    // std::cout <<"script query = " << cgiInfo.req_line.query<< std::endl;
+
     if (this->resInfo.method != "GET" || !this->resElements.body.empty()){
         done = true;
         return (this->response);
@@ -319,8 +324,6 @@ void    Response::handleGET(){
         listDirectory();
     }
     else if (resInfo.type == SCRIPT){
-        RequestContext  cgiInfo;
-
         cgiInfo.req_line = resInfo.reqLine;
         cgiInfo.script_path = resInfo.path;
         cgiInfo.headers = resInfo.headers;
