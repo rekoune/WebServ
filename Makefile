@@ -24,3 +24,4 @@ re: fclean all
 
 install:
 	cp $(NAME) ~/goinfre/PROJECT/
+	cp conf.conf ~/goinfre/PROJECT/
