@@ -7,22 +7,32 @@ class CgiExecutor
 {
 	private :
 		RequestContext				req_context;
+		CgiResult					result;
+		pid_t						pid;
+		// size_t						start_time;
+		int							result_fd;
+		bool						done;
 
+
+
+		// INTERNAL UTILS
 		std::vector<std::string>	buildEnv();
-		bool						executeScript(std::vector<char>& result, int& cgi_status,  char** envp, char **argv);
+		int							executeScript(std::vector<char>& result, HttpStatusCode& status,  char** envp, char **argv);
 
-
-		// void						parseTarget(std::string& script_name, std::string& query );
 
 	public :
+		// Utils 
+		std::string	getServerPort(std::string	host);
+		// Class
 		CgiExecutor();
 		~CgiExecutor();
 		CgiExecutor(RequestContext& req_context);
 		void	setContext(RequestContext&	req_context);
 
-		std::string	getServerPort(std::string	host);
 
-		bool	run(std::vector<char>& result, int&	cgi_status );
+		int	run();		
+		CgiResult	getResult(size_t buffer_size);
+		bool	isDone();
 
 
 };

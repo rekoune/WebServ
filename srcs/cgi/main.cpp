@@ -1,7 +1,7 @@
 #include "../../includes/RequestParser.hpp"
 #include "../../includes/Response.hpp"
 #include "../../includes/cgi/CgiExecutor.hpp"
-
+ # include <fcntl.h>
 int main()
 {
 	RequestLine req_line;
@@ -17,8 +17,7 @@ int main()
 	req_context.headers.insert(std::make_pair("Accept", "*/*"));
 	req_context.headers.insert(std::make_pair("Host", "10.10.10.1"));
 
-	req_context.query = "name=esmo&age=20";
-	req_context.script_name = "test.py"; // script name needs to parse it 
+	req_context.req_line.query = "name=esmo&age=20";
 	req_context.body.push_back('T');
 	req_context.body.push_back('H');
 	req_context.body.push_back('I');
@@ -38,18 +37,25 @@ int main()
 	// }
 
 
-	int status;
-	std::vector<char> result;
+	int  buffer = 4 * 1024;
+	CgiExecutor cgi_executor;
+	cgi_executor.setContext(req_context);
+	int fd = cgi_executor.run();
+	int flags = fcntl(fd, F_GETFL, 0);
+	fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+	sleep(1);
+	CgiResult result;
+	result = cgi_executor.getResult(buffer);
 
-	CgiExecutor cgi_executor(req_context);
-	cgi_executor.run(result, status);
-
-
-	for (std::vector<char>::iterator i = result.begin(); i != result.end(); i++)
-	{
-		std::cout << *i;
-	}
-	std::cout << "status" << status << std::endl;
+	// print body 
+	std::cout << "FD == " << fd << std::endl;
+	std::cout << "===================== status ====================" << std::endl;
+	std::cout << "status" << result.status << std::endl;
+	std::cout << "===================== body ====================" << std::endl;
+	std::cout.write(&result.body[0], result.body.size());
+	std::cout << "---------------------------------------------------------------" << std::endl;;
+	std::cout << "===================== headers ====================" << std::endl;
+	std::cout << Utils::mapToString(result.headers) << std::endl;
 	// std::cout  <<  "REQUEST_METHOD" << ": " << req.getRequestLine().target << " " << req.getRequestLine().method <<" " << req.getRequestLine().httpVersion << std::endl;
 	// // std::cout << "QUERY_STRING";
 	// // std::cout << "SCRIPT_NAME";
