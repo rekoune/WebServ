@@ -39,10 +39,28 @@ int main()
 
 	int  buffer = 4 * 1024;
 	CgiExecutor cgi_executor;
+	CgiResult result;
+
 	cgi_executor.setContext(req_context);
 	int fd = cgi_executor.run();
-	CgiResult result;
-	result = cgi_executor.getResult(buffer);
+	if (fd == -1 )
+	{
+		switch(cgi_executor.getResult().status)
+		{
+			case FORBIDDEN :
+				std::cout << "FORBIDDEN\n";
+				break ;
+			case INTERNAL_SERVER_ERROR : 
+				std::cout << "INTERNAL_SERVER_ERROR\n";
+				break ;
+			default : 
+				std::cout << "UNKNOWN\n";
+		}
+		return 0;
+
+	}
+	
+	result = cgi_executor.readResult(buffer);
 
 	int flags = fcntl(fd, F_GETFL, 0);
 	fcntl(fd, F_SETFL, flags | O_NONBLOCK);

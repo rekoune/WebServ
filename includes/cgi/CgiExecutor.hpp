@@ -30,9 +30,10 @@ class CgiExecutor
 		void	setContext(RequestContext&	req_context);
 
 
-		int	run();		
-		CgiResult	getResult(size_t buffer_size);
-		bool	isDone();
+		int			run();
+		CgiResult	readResult(size_t buffer_size);
+		CgiResult	getResult();
+		bool		isDone();
 
 
 };

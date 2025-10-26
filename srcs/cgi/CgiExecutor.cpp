@@ -23,6 +23,10 @@ bool	CgiExecutor::isDone()
 }
 
 
+CgiResult	CgiExecutor::getResult()
+{
+	return result;
+}
 
 
 
@@ -203,7 +207,9 @@ int	CgiExecutor::executeScript(std::vector<char>& body, HttpStatusCode&	status, 
 	}	
 }
 
-CgiResult	CgiExecutor::getResult(size_t buffer_size)
+
+
+CgiResult	CgiExecutor::readResult(size_t buffer_size)
 {
 	// read from the restl_pipe()
 	std::vector<char> body(buffer_size);
@@ -230,6 +236,11 @@ CgiResult	CgiExecutor::getResult(size_t buffer_size)
 
 int	CgiExecutor::run()
 {
+	if ( access(req_context.script_path.c_str(), X_OK) == -1)
+	{
+		result.status = FORBIDDEN;
+		return -1;
+	}
 	std::vector<std::string>	env_vec = buildEnv();
 	// for ( std::vector< std::string>::iterator iter = env_vec.begin(); iter != env_vec.end(); iter++)
 	// {
