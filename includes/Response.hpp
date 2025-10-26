@@ -3,6 +3,7 @@
 # define RESPONSE_HPP
 
 # include "ResourceResolver.hpp"
+# include "cgi/CgiExecutor.hpp"
 # include "GetHandler.hpp"
 # include <vector>
 # include <map>
@@ -25,7 +26,8 @@ class Response{
         bool                                done;
         GetHandler                          getHandler;
         RequestContext                      cgiInfo;
-        
+        CgiExecutor                         cgiExecutor;
+
         void                                errorHandling();
         void                                successHandling();
         std::string                         getStatusLine();

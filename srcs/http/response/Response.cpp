@@ -327,6 +327,8 @@ void    Response::handleGET(){
         cgiInfo.req_line = resInfo.reqLine;
         cgiInfo.script_path = resInfo.path;
         cgiInfo.headers = resInfo.headers;
+
+        cgiExecutor.setContext(cgiInfo);
     }
 }
 
