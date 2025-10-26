@@ -2,20 +2,30 @@
 #include "../../includes/cgi/CgiExecutor.hpp"
 
 
-CgiExecutor::CgiExecutor()
+CgiExecutor::CgiExecutor() : done(false)
 {}
 
 CgiExecutor::~CgiExecutor()
 {}
 
 CgiExecutor::CgiExecutor(RequestContext& req_context)
-	: req_context(req_context)     						 //server_software  is which program/software this webserver is (nginx/apache...). ours be like "webserv/1.1" or some thing like that. I NEED IT IN THE ENVP FOR SCRIPT
+	: req_context(req_context) , done(false)    						 //server_software  is which program/software this webserver is (nginx/apache...). ours be like "webserv/1.1" or some thing like that. I NEED IT IN THE ENVP FOR SCRIPT
 {}
 
 void	CgiExecutor::setContext(RequestContext&	req_context)
 {
 	this->req_context = req_context;
 }
+
+bool	CgiExecutor::isDone()
+{
+	return done;
+}
+
+
+
+
+
 
 
 std::string	getServerName(std::string	host)
@@ -56,8 +66,8 @@ std::vector<std::string>	CgiExecutor::buildEnv()
 
 
 	env.push_back("REQUEST_METHOD=" + req_context.req_line.method);
-	env.push_back("QUERY_STRING=" + req_context.query);
-	env.push_back("SCRIPT_NAME=" + req_context.script_name);
+	env.push_back("QUERY_STRING=" + req_context.req_line.query);
+	env.push_back("SCRIPT_NAME=" + Utils::getFileName(req_context.script_path));
 	env.push_back("SERVER_PROTOCOL=" + req_context.req_line.httpVersion);
 	env.push_back("SERVER_SOFTWARE=webserv/1.1");
 	env.push_back("GATEWAY_INTERFACE=CGI/1.1");
@@ -110,31 +120,28 @@ char ** 	vectorToEnvp(std::vector<std::string>& env_vec, std::vector <char*>& en
 
 }
 
-bool	CgiExecutor::executeScript(std::vector<char>& result, int&	cgi_status, char** envp, char **argv)
+
+int	CgiExecutor::executeScript(std::vector<char>& body, HttpStatusCode&	status, char** envp, char **argv)
 {
-	(void)cgi_status;
-	(void)result;
-	pid_t	pid;
+	(void)body;
+	(void)status;
+
 	int 	body_fd[2];
 	int		reslt_fd[2];
 
-	if (pipe(body_fd) == -1)
+	if (pipe(body_fd) == -1 ||  pipe(reslt_fd) == -1)
 	{
 		std::cerr << "pipe failed" << std::endl;
-		return false ;
+		this->result.status = INTERNAL_SERVER_ERROR;
+		return -1 ;
 	}
 
-	if ( pipe(reslt_fd) == -1 )
-	{
-		std::cerr << "pipe failed" << std::endl;
-		return false ;
-	}
-
-	pid = fork();
+	this->pid = fork();
 	if (pid == -1)
 	{
 		std::cerr << "fork failed" << std::endl;
-		return false ;
+		this->result.status = INTERNAL_SERVER_ERROR;
+		return -1 ;
 	}
 	if (pid == 0)
 	{
@@ -142,7 +149,7 @@ bool	CgiExecutor::executeScript(std::vector<char>& result, int&	cgi_status, char
 		if (dup2(reslt_fd[1], 1) == -1)
 		{
 			std::cerr << "dup2 failed" << std::endl;
-			return false ;
+			exit(1);
 		}
 		close(reslt_fd[1]);
 		close(reslt_fd[0]);
@@ -150,7 +157,7 @@ bool	CgiExecutor::executeScript(std::vector<char>& result, int&	cgi_status, char
 		if ( dup2(body_fd[0], 0) == -1 )
 		{
 			std::cerr << "dup2 failed" << std::endl;
-			return false ;
+			exit(1);
 		}
 
 		close (body_fd[0]);
@@ -168,40 +175,62 @@ bool	CgiExecutor::executeScript(std::vector<char>& result, int&	cgi_status, char
 		char *body_buffer = &req_context.body[0];
 
 		size_t	len = std::atoi(const_cast<const char *>(req_context.headers["content-length"].c_str()));
-		if ( len > req_context.body.size())
-			len = req_context.body.size();
+		
+
+		// TO_CHECK
+		/* CHECK IS LEN IN THE SAME AS LENGTH IN HEADERS (CONTENT-LENGTH) */
+		// if ( len > req_context.body.size())
+		// 	len = req_context.body.size();
 
 		write (body_fd[1], body_buffer,  len);
 		close(body_fd[1]);
 		close(body_fd[0]);
 
-		// read from the restl_pipe()
-		char	buffer;
 
+		// HANDLE EXITING OF THE CHILD IN THE BEGINNIG
+		int	status;
+		if (waitpid(pid, &status, WNOHANG) == pid)
+		{
+			result.status = INTERNAL_SERVER_ERROR;
+			return -1 ;
+		}
+		
+		
+		
 		close (reslt_fd[1]);
-		while (read(reslt_fd[0], &buffer, 1) > 0)
-		{
-			result.push_back(buffer);
-		}
-		std::cout << std::endl;
+		this->result_fd = reslt_fd[0];
+		return (reslt_fd[0]);	
+	}	
+}
 
-		close (reslt_fd[0]);
-		if ( waitpid(pid, &cgi_status, 0) == -1)
-		{
-			std::cout << "error in child process : " << std::endl;
-		}
-		WEXITSTATUS(cgi_status);
+CgiResult	CgiExecutor::getResult(size_t buffer_size)
+{
+	// read from the restl_pipe()
+	std::vector<char> body(buffer_size);
+	
+
+	//if read is done close the FD or if it fails
+	int read_return = read(this->result_fd, &body[0], buffer_size);
+	if (read_return == 0)
+	{
+		close (result_fd);
+		done = true;
 	}
-	return true;
-
+	else if (read_return == -1)
+	{
+		std::cerr << "hahaha\n";
+		result.status = INTERNAL_SERVER_ERROR;
+		return result;
+	}
+	result.body = body;
+	result.status = OK;
+	return (result);
 }
 
 
-
-bool	CgiExecutor::run(std::vector<char>& result, int&	cgi_status )
+int	CgiExecutor::run()
 {
 	std::vector<std::string>	env_vec = buildEnv();
-	(void)result, (void)cgi_status;
 	// for ( std::vector< std::string>::iterator iter = env_vec.begin(); iter != env_vec.end(); iter++)
 	// {
 	// 	std::cout << *iter << std::endl;
@@ -216,15 +245,10 @@ bool	CgiExecutor::run(std::vector<char>& result, int&	cgi_status )
 	args_vector.push_back(NULL);
 	char **argv = &args_vector[0];
 
-	if ( !executeScript(result, cgi_status, envp, argv))
-		return false;
-
+	// Executing script
+	result_fd = executeScript(result.body, result.status, envp, argv);
 	
-	(void)envp;
-
-
-	// execve();
-	return true;
+	return result_fd;
 }
 
 
