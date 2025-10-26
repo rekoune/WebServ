@@ -41,12 +41,11 @@ int main()
 	CgiExecutor cgi_executor;
 	cgi_executor.setContext(req_context);
 	int fd = cgi_executor.run();
-	int flags = fcntl(fd, F_GETFL, 0);
-	fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-	sleep(1);
 	CgiResult result;
 	result = cgi_executor.getResult(buffer);
 
+	int flags = fcntl(fd, F_GETFL, 0);
+	fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 	// print body 
 	std::cout << "FD == " << fd << std::endl;
 	std::cout << "===================== status ====================" << std::endl;

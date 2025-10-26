@@ -1,5 +1,5 @@
-#ifndef CGI_HPP 
-#define CGI_HPP
+#ifndef CGIEXECUTOR_HPP 
+#define CGIEXECUTOR_HPP
 
 #include <unistd.h>
 
