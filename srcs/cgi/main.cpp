@@ -43,6 +43,7 @@ int main()
 
 	cgi_executor.setContext(req_context);
 	int fd = cgi_executor.run();
+	// std::cout << fd << std::endl;
 	if (fd == -1 )
 	{
 		switch(cgi_executor.getResult().status)
@@ -57,10 +58,16 @@ int main()
 				std::cout << "UNKNOWN\n";
 		}
 		return 0;
+	}
+	while (!cgi_executor.isDone())
+	{
+
+		result = cgi_executor.readResult(buffer);
+
+		std::cout.write(result.body.data(), result.body.size()) ;
+		std::cout << "result.body.size()" << result.body.size() << std::endl;
 
 	}
-	
-	result = cgi_executor.readResult(buffer);
 
 	int flags = fcntl(fd, F_GETFL, 0);
 	fcntl(fd, F_SETFL, flags | O_NONBLOCK);

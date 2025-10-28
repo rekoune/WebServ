@@ -228,6 +228,8 @@ CgiResult	CgiExecutor::readResult(size_t buffer_size)
 		result.status = INTERNAL_SERVER_ERROR;
 		return result;
 	}
+	if (buffer_size > static_cast<size_t>(read_return))
+		body.erase(body.begin() + read_return, body.end());
 	result.body = body;
 	result.status = OK;
 	return (result);
