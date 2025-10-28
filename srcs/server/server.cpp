@@ -175,14 +175,6 @@ client& server::getClient(int& fd){
 }
 
 
-int Working_flage = 1;
-
-void handleSigint(int sig) {
-    (void)sig; 
-    Working_flage = 0;
-    std::cout << "\nshutting down..." << std::endl;
-}
-
 int server::polling()
 {
 	if(listenToHosts.empty()){
@@ -190,10 +182,9 @@ int server::polling()
 		return 0;
 	}
 
-	signal(SIGINT, handleSigint); 
 	signal(SIGPIPE, SIG_IGN);
-
-	while (Working_flage)
+	
+	while (workFlage)
 	{
 		std::cout << "=======================================start polling================================" << std::endl;
 		int NbrOfActiveSockets = poll(&socketFds[0], socketFds.size(), -1);
@@ -207,7 +198,7 @@ int server::polling()
 				rmClient(i);
 				NbrOfActiveSockets--;
 			}
-			else if((socketFds[i].revents & POLLIN)  && Working_flage){
+			else if(workFlage && (socketFds[i].revents & POLLIN)){
 				std::cout << "POLLIN FD: " << socketFds[i].fd << std::endl;
 				if(is_listener(socketFds[i].fd))
 						acceptClient(socketFds[i].fd);
@@ -222,7 +213,7 @@ int server::polling()
 				}
 				NbrOfActiveSockets--;
 			}
-			else if((socketFds[i].revents & POLLOUT)  && Working_flage)
+			else if(workFlage && (socketFds[i].revents & POLLOUT))
 			{
 				std::cout << "POLLOUT FD: " << socketFds[i].fd  << std::endl;
 				if(!getClient(socketFds[i].fd).ft_send(socketFds[i].events))
