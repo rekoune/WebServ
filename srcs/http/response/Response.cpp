@@ -28,21 +28,41 @@ void Response::setResInfo(const HttpResourceInfo& info){
 std::vector<char> Response::getResponse () {
     std::vector<char> body;
 
-    // exit(1);
-    // std::cout << "resource type = " << resInfo.type << std::endl;
-    // std::cout <<"script path = " << cgiInfo.script_path << std::endl;
-    // std::cout <<"script query = " << cgiInfo.req_line.query<< std::endl;
-
-    if (this->resInfo.method != "GET" || !this->resElements.body.empty()){
-        done = true;
-        return (this->response);
+    if (resInfo.type == SCRIPT){
+        // response.clear();
+        body = cgiExecutor.getResult(100).body;
+        Utils::pushInVector(response, &body[0], body.size());
+        body.clear();
+        done = cgiExecutor.isDone();
+        if (done){
+            std::string length = "Content-Length: " + std::string("2") + "\r\n\r\n";
+            std::string type = "Content-Type: " + std::string("text/html") + "\r\n";
+            std::cout << "RESPONSE SIZE = " << response.size() << std::endl;
+            Utils::pushInVector(body, getStatusLine());
+            Utils::pushInVector(body, type);
+            Utils::pushInVector(body, length);
+            Utils::pushInVector(body, &response[0], response.size());
+            response.clear();
+            // std::cout << "================ RESPONSE ==========================" << std::endl;
+            // std::cout.write(body.data(), body.size()) << std::endl;
+            // std::cout << "------------------------------------------------------" << std::endl;
+        }
+        // std::cout << "================ body ==========================" << std::endl;
+        // std::cout.write(response.data(), response.size()) << std::endl;
+        // std::cout << "------------------------------------------------------" << std::endl;
     }
     else{
-        body = getHandler.get(DATA_SIZE);
-        done = getHandler.isDone();
-        if (!response.empty()){
-            body.insert(body.begin(), response.begin(), response.end());
-            response.clear();
+        if (this->resInfo.method != "GET" || !this->resElements.body.empty()){
+            done = true;
+            return (this->response);
+        }
+        else{
+            body = getHandler.get(DATA_SIZE);
+            done = getHandler.isDone();
+            if (!response.empty()){
+                body.insert(body.begin(), response.begin(), response.end());
+                response.clear();
+            }
         }
     }
     return (body);
@@ -329,6 +349,12 @@ void    Response::handleGET(){
         cgiInfo.headers = resInfo.headers;
 
         cgiExecutor.setContext(cgiInfo);
+        int fd;
+        fd = cgiExecutor.run();
+        if (fd == -1){
+            resInfo.status = cgiExecutor.getResult(0).status;
+            errorHandling();
+        }
     }
 }
 
@@ -399,7 +425,10 @@ void Response::handle(){
         errorHandling();
     else
         successHandling();
+    if (resInfo.status == OK && resInfo.type == SCRIPT)
+        return;
     resElements.statusLine = getStatusLine();
+    // std::cout << "STATUS LINE = " << resElements.statusLine << std::endl;
     generateHeaders(resElements.headers);
     buildResponse();
 }

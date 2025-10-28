@@ -98,6 +98,8 @@ ssize_t client::sending(short& event){
 ssize_t client::ft_send(short& event){
 	if(responseComplete){
 		response = clientHandler.getResponse();
+		if (response.empty())
+			return(1);
 		responseComplete = false;
 	}
 	std::cout << "sending... " << std::endl;
