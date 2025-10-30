@@ -12,6 +12,19 @@ CgiExecutor::CgiExecutor(RequestContext& req_context)
 	: req_context(req_context) , done(false)    						 //server_software  is which program/software this webserver is (nginx/apache...). ours be like "webserv/1.1" or some thing like that. I NEED IT IN THE ENVP FOR SCRIPT
 {}
 
+
+CgiExecutor& CgiExecutor::operator=(const CgiExecutor& other)
+{
+	req_context = other.req_context;
+	result = other.result;
+	pid = other.pid;
+	result_fd = other.result_fd;
+	done  = other.done;
+	
+	return (*this);
+}
+
+
 void	CgiExecutor::setContext(RequestContext&	req_context)
 {
 	this->req_context = req_context;
