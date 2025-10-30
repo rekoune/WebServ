@@ -13,13 +13,14 @@ client& client::operator=(const client& other){
 		totalsend = other.totalsend;
 		totalrecv = other.totalrecv;
 		fd = other.fd;
+		cgiFd = other.cgiFd;
 	}
 	return *this;
 }
 
 
 client::client(std::vector<ServerConfig>& myservers, int fd) : myServers(myservers) ,hostSeted(false),
-		responseComplete(true) ,totalsend(0),totalrecv(0) ,fd(fd) 
+		responseComplete(true) ,totalsend(0),totalrecv(0) ,fd(fd) ,cgiFd(-1)
 {
 	if(myServers.size() == 1){
 		clientHandler.setServer(myservers[0]);
@@ -31,7 +32,7 @@ client::client(std::vector<ServerConfig>& myservers, int fd) : myServers(myserve
 client::client(const client& other): 
 		clientHandler(other.clientHandler),myServers(other.myServers) ,requestData(other.requestData),
 		response(other.response) ,hostSeted(other.hostSeted),responseComplete(other.responseComplete) ,
-		totalsend(other.totalsend),totalrecv(other.totalrecv) , fd(other.fd) {}
+		totalsend(other.totalsend),totalrecv(other.totalrecv) , fd(other.fd), cgiFd(other.cgiFd) {}
 
 
 ssize_t client::ft_recv(short& event){
@@ -58,6 +59,7 @@ ssize_t client::ft_recv(short& event){
 		total = totalrecv;
 		if(clientHandler.isComplete()){
 			//chekc for cgi
+			cgiFd = -1; // her the function that give's the cgi fd return ;
 			std::cout << "all has been receved" << std::endl;
 			totalrecv = 0;
  			event = POLLOUT;
@@ -95,6 +97,14 @@ ssize_t client::sending(short& event){
 	return nsend;
 }
 
+int client::cgiRun(){
+	response = clientHandler.getResponse();	
+	if(!response.empty()){
+		responseComplete = false;
+		cgiFd = -1;
+	}
+	return cgiFd;
+}
 
 ssize_t client::ft_send(short& event){
 	if(responseComplete){
@@ -168,6 +178,11 @@ bool client::appendFirstRequest(const char* buf, ssize_t read)
 	return false;
 }
 
+int client::getCgiFd(){
+	return cgiFd;
+}
 
-
+void client::resetCgiFd(){
+	cgiFd = -1;
+}
 

@@ -20,8 +20,7 @@ private:
 	std::map<int, std::vector<ServerConfig> > listenToHosts; 
 
 	bool is_listener(int fd);
-
-	
+	bool is_cgi(int fd);
 public:
 	server(std::vector<ServerConfig>&	servers);
 	server(const server& other);
