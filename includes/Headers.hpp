@@ -18,5 +18,7 @@
 #include "config/configStructs.hpp"
 #include "HttpHandler.hpp"
 
+extern bool workFlage;
+
 
 #endif 
