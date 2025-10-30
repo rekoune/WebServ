@@ -265,5 +265,12 @@ HttpStatusCode      RequestParser::appendData(const char* _data, size_t size){
         parseState = uploadHandler.upload(_data, size);
         this -> resInfo = uploadHandler.getResourseInfo() ;
     }
+    // if (parseState == PARSE_COMPLETE && resInfo.type == SCRIPT){
+    //     std::cout << "I'VE GOT ALL THE DATA I NEED AND IT'S A SCRIPT !!" << std::endl;
+    //     std::cout << "Path = " << resInfo.path  << std::endl;
+    //     std::cout << "reqline method = " << resInfo.reqLine.method << std::endl;
+    //     std::cout << "Headers = " << Utils::mapToString(resInfo.headers) << std::endl;
+    //     exit(1);
+    // }
     return resInfo.status;
 }
