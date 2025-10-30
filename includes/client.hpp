@@ -20,6 +20,7 @@ private:
 	size_t  totalsend;
 	size_t  totalrecv;
 	int fd;
+	int cgiFd;
 	
 public:
 
@@ -29,7 +30,11 @@ public:
 	~client();
 
 	int getFd();
-
+	int getCgiFd();
+	void resetCgiFd();
+	int cgiRun();
+	
+	
 	bool appendFirstRequest(const char* buf, ssize_t read);
 	bool isHostSeted();
 	void setHost(std::string &host);
@@ -39,7 +44,6 @@ public:
 	ssize_t sending(short& event);
 }; 
 
-// void printingserver(const ServerConfig& servers);
 
 #endif 
 
