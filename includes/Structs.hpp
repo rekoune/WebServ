@@ -20,10 +20,10 @@ struct HttpResourceInfo{
     ServerConfig    server;
     RequestLine     reqLine;
     std::string     method;
-    std::string     cgiExecutorPath;
+    int             cgiFD;
     std::map<std::string, std::string>  headers;
 
-    HttpResourceInfo(): status(OK){};
+    HttpResourceInfo(): status(OK), cgiFD(-1){};
 };
 
 

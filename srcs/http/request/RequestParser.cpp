@@ -26,6 +26,7 @@ RequestParser& RequestParser::operator=(const RequestParser& other){
     this->resInfo = other.resInfo;
     this->uploadHandler = other.uploadHandler;
     this->clientMaxBodySize = other.clientMaxBodySize;
+    this->cgiExecutor = other.cgiExecutor;
     return (*this);
 }
 
@@ -41,6 +42,10 @@ std::map<std::string, std::string>  RequestParser::getHeaders() const{
 }
 HttpResourceInfo                    RequestParser::getResourceInfo()const{
     return(this->resInfo);
+}
+
+CgiExecutor                         RequestParser::getCgiExecutor(){
+    return (this->cgiExecutor);
 }
 
 HttpStatusCode RequestParser::setMethod(std::string& method){
@@ -265,12 +270,15 @@ HttpStatusCode      RequestParser::appendData(const char* _data, size_t size){
         parseState = uploadHandler.upload(_data, size);
         this -> resInfo = uploadHandler.getResourseInfo() ;
     }
-    // if (parseState == PARSE_COMPLETE && resInfo.type == SCRIPT){
-    //     std::cout << "I'VE GOT ALL THE DATA I NEED AND IT'S A SCRIPT !!" << std::endl;
-    //     std::cout << "Path = " << resInfo.path  << std::endl;
-    //     std::cout << "reqline method = " << resInfo.reqLine.method << std::endl;
-    //     std::cout << "Headers = " << Utils::mapToString(resInfo.headers) << std::endl;
-    //     exit(1);
-    // }
+    if (parseState == PARSE_COMPLETE && resInfo.type == SCRIPT){
+        RequestContext cgiInfo;
+
+        cgiInfo.req_line = resInfo.reqLine;
+        cgiInfo.script_path = resInfo.path;
+        cgiInfo.headers = resInfo.headers;
+        cgiExecutor.setContext(cgiInfo);
+
+        resInfo.cgiFD = cgiExecutor.run();
+    }
     return resInfo.status;
 }

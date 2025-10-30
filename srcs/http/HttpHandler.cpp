@@ -38,6 +38,9 @@ bool HttpHandler::isKeepAlive(){
 bool HttpHandler::isResDone(){
     return response.isDone();
 }
+int HttpHandler::isScript(){
+    return (this->reqParser.getResourceInfo().cgiFD);
+}
 
 void HttpHandler::appendData(const char* data, size_t size){
     if (sameReq ==  false){
@@ -57,6 +60,7 @@ std::vector<char> HttpHandler::getResponse(){
     if (sameRes){
         sameRes = false;
         this->response.setResInfo(reqParser.getResourceInfo());
+        this->response.setCgiExecutor(reqParser.getCgiExecutor());
         response.handle();
     }
 

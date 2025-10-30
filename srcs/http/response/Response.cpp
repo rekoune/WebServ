@@ -33,47 +33,10 @@ int Response::isCgi(){
     return (cgiFd);
 }
 
-std::vector<char> Response::getResponse () {
-    std::vector<char> body;
-
-    if (resInfo.type == SCRIPT && resInfo.status == OK){
-        body = cgiExecutor.readResult(DATA_SIZE).body;
-        Utils::pushInVector(response, &body[0], body.size());
-        body.clear();
-        done = cgiExecutor.isDone();
-        if (done){
-            long pos = Utils::isContainStr(&response[0], response.size(), "\n\n", 2);
-            std::string length;
-            if (pos != -1){
-                length = "Content-Length: " + Utils::toString(response.size() - pos - 2) + "\r\n";
-
-            }
-            else{
-                length = "Content-Length: " + Utils::toString(response.size()) + "\r\n\r\n";
-            }
-            Utils::pushInVector(body, getStatusLine());
-            Utils::pushInVector(body, length);
-            Utils::pushInVector(body, &response[0], response.size());
-            response.clear();
-            cgiExecutor = CgiExecutor();
-        }
-    }
-    else{
-        if (this->resInfo.method != "GET" || !this->resElements.body.empty()){
-            done = true;
-            return (this->response);
-        }
-        else{
-            body = getHandler.get(DATA_SIZE);
-            done = getHandler.isDone();
-            if (!response.empty()){
-                body.insert(body.begin(), response.begin(), response.end());
-                response.clear();
-            }
-        }
-    }
-    return (body);
+void          Response::setCgiExecutor(const CgiExecutor& cgiExecutor){
+    this->cgiExecutor = cgiExecutor;
 }
+
 
 bool Response::isKeepAlive(){
     return (this->keepAlive);
@@ -351,14 +314,7 @@ void    Response::handleGET(){
         listDirectory();
     }
     else if (resInfo.type == SCRIPT){
-        cgiInfo.req_line = resInfo.reqLine;
-        cgiInfo.script_path = resInfo.path;
-        cgiInfo.headers = resInfo.headers;
-
-        cgiExecutor.setContext(cgiInfo);
-        int fd;
-        fd = cgiExecutor.run();
-        if (fd == -1){
+        if (resInfo.cgiFD == -1){
             resInfo.status = cgiExecutor.getResult().status;
             errorHandling();
         }
@@ -441,4 +397,45 @@ void Response::handle(){
 
 void Response::clear(){
     this->response.clear();
+}
+std::vector<char> Response::getResponse () {
+    std::vector<char> body;
+
+    if (resInfo.type == SCRIPT && resInfo.status == OK){
+        body = cgiExecutor.readResult(DATA_SIZE).body;
+        Utils::pushInVector(response, &body[0], body.size());
+        body.clear();
+        done = cgiExecutor.isDone();
+        if (done){
+            long pos = Utils::isContainStr(&response[0], response.size(), "\n\n", 2);
+            std::string length;
+            if (pos != -1){
+                length = "Content-Length: " + Utils::toString(response.size() - pos - 2) + "\r\n";
+
+            }
+            else{
+                length = "Content-Length: " + Utils::toString(response.size()) + "\r\n\r\n";
+            }
+            Utils::pushInVector(body, getStatusLine());
+            Utils::pushInVector(body, length);
+            Utils::pushInVector(body, &response[0], response.size());
+            response.clear();
+
+        }
+    }
+    else{
+        if (this->resInfo.method != "GET" || !this->resElements.body.empty()){
+            done = true;
+            return (this->response);
+        }
+        else{
+            body = getHandler.get(DATA_SIZE);
+            done = getHandler.isDone();
+            if (!response.empty()){
+                body.insert(body.begin(), response.begin(), response.end());
+                response.clear();
+            }
+        }
+    }
+    return (body);
 }

@@ -1,7 +1,7 @@
 # ifndef REQUESTPARSER_HPP
 # define REQUESTPARSER_HPP
 
-// # include "Structs.hpp"
+# include "Structs.hpp"
 # include "Enums.hpp"
 # include <map>
 # include <vector>
@@ -10,10 +10,10 @@
 # include "Utils.hpp"
 # include "ResourceResolver.hpp"
 # include "UploadHandler.hpp"
+# include "cgi/CgiExecutor.hpp"
 
 class RequestParser{
     private:
-        // std::string                         req;
         RequestLine                         requestLine;
         std::map<std::string, std::string>  headers;
         std::vector<char>                   body;
@@ -22,7 +22,7 @@ class RequestParser{
         ResourceResolver                    resourceResolver;
         HttpResourceInfo                    resInfo;
         UploadHandler                       uploadHandler;
-
+        CgiExecutor                         cgiExecutor;
         long long                           bodyMaxSize;
         size_t                              clientMaxBodySize;
 
@@ -48,6 +48,7 @@ class RequestParser{
         HttpStatusCode                      appendData(const char* _data, size_t size);
         void                                setClientMaxBody(size_t clientMaxBodySize);
         bool                                isComplete();
+        CgiExecutor                         getCgiExecutor();
 
 
 };

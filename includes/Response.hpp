@@ -54,6 +54,7 @@ class Response{
         ~Response();
         bool                isKeepAlive();
         Response&           operator=(const Response& other);
+        void                setCgiExecutor(const CgiExecutor& cgiExecutor);
         void                setResInfo(const HttpResourceInfo& info);
         std::vector<char>   getResponse();
         void                handle();
