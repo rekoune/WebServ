@@ -194,6 +194,22 @@ size_t       Utils::getFileSize(const std::string& filePath){
     return (size);
 }
 
+bool Utils::isScript(std::string& path, std::map<std::string, std::string>& cgiExtentions){
+    std::string extention;
+    std::string fileName;
+    size_t      dotPos;
+
+    fileName = Utils::getFileName(path);
+    dotPos = fileName.find(".");
+    if (dotPos != std::string::npos){
+        extention.append(fileName.begin() + dotPos , fileName.end());
+        std::map<std::string, std::string>::iterator it = cgiExtentions.find(extention);
+        if (it != cgiExtentions.end())
+            return (true);
+    }
+    return false;
+}
+
 // int main (){
 //     std::ofstream file("test");
 //     file << "abdellah";

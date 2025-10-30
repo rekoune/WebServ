@@ -27,6 +27,7 @@ class Response{
         GetHandler                          getHandler;
         RequestContext                      cgiInfo;
         CgiExecutor                         cgiExecutor;
+        int                                 cgiFd;
 
         void                                errorHandling();
         void                                successHandling();
@@ -44,6 +45,7 @@ class Response{
         void                                buildResponse();
         HttpStatusCode                      getPathType(std::string path, PathTypes& type);
         void                                setFullPathByType(std::string& path, PathTypes& pathType, std::string contentType);
+        int                                 isCgi();
 
     public:
         Response();

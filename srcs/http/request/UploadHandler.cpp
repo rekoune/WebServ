@@ -92,6 +92,7 @@ HttpStatusCode    UploadHandler::getPathType(std::string path, PathTypes& type){
     char            lastChar;
     HttpStatusCode  status = NOT_FOUND;
 
+    
     if (access(path.c_str(), F_OK) == 0){
         stat(path.c_str(), &statType);
         if (S_ISREG(statType.st_mode))
@@ -123,11 +124,19 @@ HttpStatusCode    UploadHandler::getPathType(std::string path, PathTypes& type){
 
 void    UploadHandler::setFullPathByType(std::string& path, PathTypes& pathType, std::string contentType){
     if (pathType == F){
+        if (Utils::isScript(path, resInfo.server.cgi_extension) && access(path.c_str(), F_OK) == 0){
+            pathType = SCRIPT;
+            std::string prefix("");
+            path.append(Utils::randomName(prefix));
+            return ;
+        }
         if (contentType.empty() || contentType == Utils::getFileType(fileTypes, Utils::getFileName(path))){
             return;
         }
-        else
-            path.append(Utils::findExtensionByMime(fileTypes, contentType));
+        else{
+            if (!Utils::isScript(path, resInfo.server.cgi_extension))
+                path.append(Utils::findExtensionByMime(fileTypes, contentType));
+        }
     }
     else if (pathType == DIR_LS){
         std::string prefix("File");
@@ -176,6 +185,7 @@ HttpStatusCode      UploadHandler::checkHeaders(std::map<std::string, std::strin
     if (it != headers.end())
         contentType = it->second;
     setFullPathByType(uploadPath, pathType, contentType);
+    resInfo.type = pathType;
     bodyFile.close();
     bodyFile.open(uploadPath.c_str(), std::ios::out | std::ios::binary);
     if (!bodyFile){
@@ -334,6 +344,8 @@ HttpStatusCode      UploadHandler::handleByContentType(const char* data, size_t 
     HttpStatusCode status = OK;
 
     if (contentType.find("multipart/form-data") != std::string::npos){
+        std::cout << "it's a mutipart" << std::endl;
+        exit(1);
         if (boundary.empty()){
             parseState = PARSE_ERROR;
             return (BAD_REQUEST);

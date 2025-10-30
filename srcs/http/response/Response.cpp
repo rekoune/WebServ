@@ -1,6 +1,6 @@
 # include "../../../includes/Response.hpp"
 
-Response::Response(): done(false){};
+Response::Response(): done(false), cgiFd(-1){};
 Response::~Response(){};
 Response::Response(const Response& other){
     *this = other;
@@ -13,43 +13,50 @@ Response& Response::operator=(const Response& other){
     this->keepAlive = other.keepAlive;
     this->done = other.done;
     this->getHandler = other.getHandler;
+    this->cgiFd = other.cgiFd;
     return (*this);
 }
 Response::Response(const HttpResourceInfo info){
     this->resInfo = info;
     keepAlive = true;
     done = false;
+    cgiFd = -1;
 }
 void Response::setResInfo(const HttpResourceInfo& info){
     this->resInfo = info;
     keepAlive = true;
     done = false;
+    cgiFd = -1;
 }
+
+int Response::isCgi(){
+    return (cgiFd);
+}
+
 std::vector<char> Response::getResponse () {
     std::vector<char> body;
 
-    if (resInfo.type == SCRIPT){
-        // response.clear();
-        body = cgiExecutor.getResult(100).body;
+    if (resInfo.type == SCRIPT && resInfo.status == OK){
+        body = cgiExecutor.readResult(DATA_SIZE).body;
         Utils::pushInVector(response, &body[0], body.size());
         body.clear();
         done = cgiExecutor.isDone();
         if (done){
-            std::string length = "Content-Length: " + std::string("2") + "\r\n\r\n";
-            std::string type = "Content-Type: " + std::string("text/html") + "\r\n";
-            std::cout << "RESPONSE SIZE = " << response.size() << std::endl;
+            long pos = Utils::isContainStr(&response[0], response.size(), "\n\n", 2);
+            std::string length;
+            if (pos != -1){
+                length = "Content-Length: " + Utils::toString(response.size() - pos - 2) + "\r\n";
+
+            }
+            else{
+                length = "Content-Length: " + Utils::toString(response.size()) + "\r\n\r\n";
+            }
             Utils::pushInVector(body, getStatusLine());
-            Utils::pushInVector(body, type);
             Utils::pushInVector(body, length);
             Utils::pushInVector(body, &response[0], response.size());
             response.clear();
-            // std::cout << "================ RESPONSE ==========================" << std::endl;
-            // std::cout.write(body.data(), body.size()) << std::endl;
-            // std::cout << "------------------------------------------------------" << std::endl;
+            cgiExecutor = CgiExecutor();
         }
-        // std::cout << "================ body ==========================" << std::endl;
-        // std::cout.write(response.data(), response.size()) << std::endl;
-        // std::cout << "------------------------------------------------------" << std::endl;
     }
     else{
         if (this->resInfo.method != "GET" || !this->resElements.body.empty()){
@@ -352,7 +359,7 @@ void    Response::handleGET(){
         int fd;
         fd = cgiExecutor.run();
         if (fd == -1){
-            resInfo.status = cgiExecutor.getResult(0).status;
+            resInfo.status = cgiExecutor.getResult().status;
             errorHandling();
         }
     }
@@ -428,7 +435,6 @@ void Response::handle(){
     if (resInfo.status == OK && resInfo.type == SCRIPT)
         return;
     resElements.statusLine = getStatusLine();
-    // std::cout << "STATUS LINE = " << resElements.statusLine << std::endl;
     generateHeaders(resElements.headers);
     buildResponse();
 }

@@ -47,7 +47,7 @@ void HttpHandler::appendData(const char* data, size_t size){
         sameReq = true;
     }
     if (!isComplete()){
-    this->resInfo.status = this->reqParser.appendData(data, size);
+        this->resInfo.status = this->reqParser.appendData(data, size);
     if (isComplete())
         sameReq = false;
     }
