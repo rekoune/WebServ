@@ -113,6 +113,14 @@ bool	parseServerDirective(std::string line, ServerConfig& currentServer, std::ve
 				return false ;
 			}
 		}
+		else if (directive.find ("index") == 0 && directive.length() > 5 &&  isitspace (directive[5]))
+		{
+			std::string	index_paths = cleanLine(directive.substr(5));
+			std::string index_path;
+			std::istringstream	iss(index_paths);
+			while (iss >> index_path)
+				currentServer.index.push_back(index_path);
+		}
 		else if (directive.find("root") == 0 && directive.length() > 4 &&  isitspace (directive[4])) {
 			// std::cout << "=============IS SPACE A SAHBI \n";
             currentServer.root = cleanLine(directive.substr(4));
@@ -231,14 +239,6 @@ bool	parseServerDirective(std::string line, ServerConfig& currentServer, std::ve
 				currentServer.error_pages[codes[i]] = path;
 			
 	    }
-		else if (directive.find("cgi_extension") == 0 && directive.length() > 13 &&  isitspace (directive[13]))
-		{
-			std::string	value = cleanLine(directive.substr(13));
-			std::istringstream	iss(value);
-			std::string	extension, interperter;
-			iss >> extension >> interperter;
-			currentServer.cgi_extension[extension] = interperter;
-		}
 		else 
 			valid_directive = false;
 	}
@@ -346,6 +346,21 @@ bool	parseLocationDirective(std::string line, LocationConfig& current_loc)
 			current_loc.redirection_url = redirection_url;
 			current_loc.redirection_status = std::atoi(status_str.c_str());
 		}
+		else if (directive.find("cgi_extension") == 0 && directive.length() > 13 &&  isitspace (directive[13]))
+		{
+			std::string	value = cleanLine(directive.substr(13));
+			std::istringstream	iss(value);
+			std::string	extension;
+			std::string extra;
+			iss >> extension;
+			iss >> extra;
+			if ( !extra.empty())
+			{
+				std::cerr << " CONFIG FILE ERROR: extra argument in cgi_extension" << std::endl;
+				return false ;
+			}
+			current_loc.cgi_extension.push_back(extension);
+		}
 		else 
 		{
 			is_valid_directive = false ;
@@ -425,6 +440,21 @@ void	fillDefaults(GlobaConfig& globalConfig)
 	{
 		if (serv_iter->host_port.empty())
 			serv_iter->host_port["0.0.0.0"].push_back("8000");
+		if (serv_iter->index.empty())
+			serv_iter->index.push_back("index.html");
+		for (std::vector<LocationConfig>::iterator loc_iter = serv_iter->locations.begin(); loc_iter != serv_iter->locations.end(); loc_iter++)
+		{
+			if (loc_iter->index.empty())
+			{
+				if ( !(serv_iter->index.empty()))
+					loc_iter->index = serv_iter->index;
+				else 
+				{
+						std::cout << "hheeeeere\n";
+					loc_iter->index.push_back("index.html");
+				}
+			}
+		}
 
 		// if (serv_iter->root.empty())
 		// 	serv_iter->root = "/";
@@ -594,3 +624,6 @@ bool parseConfig(const std::string& configFilePath, GlobaConfig& globalConfig)
 		return false ;
 	return true;
 }
+
+
+// 	RETURN A DEFAULT CONFIG FILE AS A FALL BACK 

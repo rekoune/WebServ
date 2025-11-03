@@ -15,7 +15,16 @@ int main(int ac, char **av)
 			return (1);			
 		}
 	}
-    else 
+    else if ( ac == 1)
+	{
+		if (!parseConfig("../../config/default.conf", globalconfig))
+		{
+			std::cout << "returned false \n";
+			// while (1){}
+			return (1);			
+		}
+	}
+	else 
         std::cout << " Error : no config file given \n";
     //PRININ SERVERS IN COFIG 
 
@@ -32,7 +41,19 @@ int main(int ac, char **av)
 			for (std::vector<std::string>::iterator server_num_iter = iter->server_name.begin() ; server_num_iter != iter->server_name.end(); server_num_iter++)
 			{
 
-			 	std::cout << i <<  *server_num_iter <<  std::endl;
+			 	std::cout << i << " : " <<  *server_num_iter <<  std::endl;
+				i++;
+
+			}
+
+
+
+			  i = 0;
+			std::cout << "server_index :" << std::endl;
+			for (std::vector<std::string>::iterator server_index_iter = iter->index.begin() ; server_index_iter != iter->index.end(); server_index_iter++)
+			{
+
+			 	std::cout << i << " : " <<  *server_index_iter <<  std::endl;
 				i++;
 
 			}
@@ -62,17 +83,19 @@ int main(int ac, char **av)
 
         	}
 
-        	std::cout << "cgi_extension: " << std::endl;
-        	for ( std::map<std::string, std::string>::iterator cgi_exten_iter = iter->cgi_extension.begin()
-        	        ; cgi_exten_iter != iter->cgi_extension.end(); cgi_exten_iter++)
-        	{
-        	    std::cout << cgi_exten_iter->first << " " << cgi_exten_iter->second << std::endl;
+			int N = 0;
 
-        	}
-
-        	std::cout << "location: " << std::endl;
         	for (std::vector<LocationConfig>::iterator iter_loc  = iter->locations.begin(); iter_loc != iter->locations.end(); ++iter_loc)
         	{
+        		std::cout << std::endl << "LOCATION: " << N++ << std::endl;
+				std::cout << "cgi_extension: " << std::endl;
+        		for ( std::vector<std::string>::iterator cgi_exten_iter = iter_loc->cgi_extension.begin()
+        		        ; cgi_exten_iter != iter_loc->cgi_extension.end(); cgi_exten_iter++)
+        		{
+        		    std::cout << *cgi_exten_iter  << std::endl;
+	
+        		}
+
         	    std::cout << "path: " << iter_loc->path << std::endl;
         	    std::cout << "root: " << iter_loc->root << std::endl;
         	    std::cout << "redirection: " << iter_loc-> redirection_status << " " << iter_loc->redirection_url << std::endl;

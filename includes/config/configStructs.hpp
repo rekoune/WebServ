@@ -29,13 +29,17 @@ struct LocationConfig
     std::string                 redirection_url;
     int                         redirection_status;
 
+    std::vector<std::string>  				            cgi_extension;
+
+
     LocationConfig()
-        :  index(1, "index.html") ,autoindex(false), redirection_status(0) {}
+        :  /* index(1, "index.html") , */autoindex(false), redirection_status(0) {}
 
 };
 
 struct ServerConfig
 {
+    std::vector<std::string>                            index;
 	std::vector<std::string>							server_name;
 	std::map<std::string, std::vector<std::string> >	host_port;
     std::string					        				root;
@@ -43,9 +47,8 @@ struct ServerConfig
     size_t						        				client_max_body_size;
     std::map<int, std::string>	        				error_pages;
 	std::vector<LocationConfig>	        				locations;
-    std::map<std::string, std::string>  				cgi_extension;
     ServerConfig() 
-        :  root("/"),  client_max_body_size(1024 * 1024)  
+        :  root("./www"),  client_max_body_size(1024 * 1024)  
 		{}	
 };
 
@@ -56,7 +59,7 @@ struct	GlobaConfig
 };
 
 // GlobaConfig parseConfig(const std::string& configFilePath);
-bool parseConfig(const std::string& configFilePath, GlobaConfig& globalConfig);
+bool    parseConfig(const std::string& configFilePath, GlobaConfig& globalConfig);
 bool	validateConfig(GlobaConfig& globalConfig);
 
 
