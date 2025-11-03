@@ -29,6 +29,9 @@ struct LocationConfig
     std::string                 redirection_url;
     int                         redirection_status;
 
+    std::vector<std::string>  				            cgi_extension;
+
+
     LocationConfig()
         :  /* index(1, "index.html") , */autoindex(false), redirection_status(0) {}
 
@@ -44,7 +47,6 @@ struct ServerConfig
     size_t						        				client_max_body_size;
     std::map<int, std::string>	        				error_pages;
 	std::vector<LocationConfig>	        				locations;
-    std::vector<std::string>  				            cgi_extension;
     ServerConfig() 
         :  root("./www"),  client_max_body_size(1024 * 1024)  
 		{}	
