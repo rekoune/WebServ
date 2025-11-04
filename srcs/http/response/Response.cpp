@@ -254,8 +254,8 @@ void    Response::errorHandling(){
             std::cout << "qwr qwr qwr" << std::endl;
             resInfo.status = NOT_FOUND;
             //you can call here error handling to search for the file of not found
-            errorHandling();
-            // resElements.body = generateErrorBody();
+            // errorHandling();
+            resElements.body = generateErrorBody();
         }   
         else
             getBodyFromFile(errorPath);
