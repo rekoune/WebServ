@@ -182,6 +182,7 @@ int	CgiExecutor::executeScript(std::vector<char>& body, HttpStatusCode&	status, 
 		// 	execve
 		execve(const_cast<const char *>(req_context.script_path.c_str()), argv, envp);
 		std::cerr << "execve failed" << std::endl;
+		perror("====== > EXECVE: ");
 		exit(1);
 	}
 	else 
@@ -230,6 +231,9 @@ CgiResult	CgiExecutor::readResult(size_t buffer_size)
 
 	//if read is done close the FD or if it fails
 	int read_return = read(this->result_fd, &body[0], buffer_size);
+	std::cout << "===========================\n";
+	std::cout << body.size() << std::endl;
+	std::cout.write(body.data(), body.size());
 	if (read_return == 0)
 	{
 		close (result_fd);

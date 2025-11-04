@@ -65,8 +65,9 @@ std::vector<char> HttpHandler::getResponse(){
     }
 
     std::vector <char> res;
-    if (!response.isDone())
+    if (!response.isDone()){
         res = response.getResponse();
+    }
     if (response.isDone()){
         sameRes = true;
     }

@@ -14,6 +14,7 @@ struct RequestLine{
 struct HttpResourceInfo{
     HttpStatusCode status;
     std::string     path;
+    std::string     cgiBodyPath;
     PathTypes       type;
     LocationConfig  location;
     std::string     prevLocation;

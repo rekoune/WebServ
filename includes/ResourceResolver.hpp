@@ -34,7 +34,7 @@ class ResourceResolver{
         void setRequestLine(const RequestLine& req);
         void setLocations(const std::vector<LocationConfig>& locations);
         void setServer(const ServerConfig&    server);
-        HttpResourceInfo handle();
+        HttpResourceInfo handle(std::map<std::string,std::string> headers);
         HttpResourceInfo getResponseInfo() const;
 
 };

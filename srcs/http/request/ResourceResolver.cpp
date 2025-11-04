@@ -53,7 +53,6 @@ HttpStatusCode ResourceResolver::findLocation(std::vector<LocationConfig> locati
         resInfo.path = resultLocation.redirection_url;
         return (static_cast<HttpStatusCode>(resultLocation.redirection_status));
     }
-    // resInfo.prevLocation = resultLocation.path;
     return (OK);
 }
 
@@ -92,7 +91,7 @@ HttpStatusCode ResourceResolver::dirHandling(std::string& path, PathTypes& pathT
 
 
 HttpStatusCode ResourceResolver::fileHandling(std::string& path, PathTypes& pathType){
-    if (Utils::isScript(path, resInfo.server.cgi_extension)){
+    if (Utils::isScript(path, resInfo.location.cgi_extension)){
         pathType = SCRIPT;
         return (OK);
     }
@@ -113,6 +112,10 @@ HttpStatusCode ResourceResolver::resolveResourceType(std::string& path, PathType
         }
         return (NOT_FOUND);
     }
+    std::map<std::string, std::string>::iterator it = this->resInfo.headers.find("content-type");
+    if (S_ISREG(type.st_mode) && it != resInfo.headers.end() && it->second.find("multipart/form-data") != std::string::npos){
+        return (BAD_REQUEST);
+    }
     if (S_ISDIR(type.st_mode))
         status = dirHandling(path, pathType, location);
     else if (S_ISREG(type.st_mode))
@@ -122,7 +125,7 @@ HttpStatusCode ResourceResolver::resolveResourceType(std::string& path, PathType
     return (status);
 }
 
-HttpResourceInfo ResourceResolver::handle(){
+HttpResourceInfo ResourceResolver::handle(std::map<std::string, std::string> headers){
     LocationConfig location;
     HttpStatusCode status;
     PathTypes   pathType;
@@ -131,8 +134,10 @@ HttpResourceInfo ResourceResolver::handle(){
     status = findLocation(locations, reqLine.target, location);
     this->resInfo.method = reqLine.method;
     this->resInfo.reqLine = reqLine;
+    this->resInfo.headers = headers;
     if (status == OK)
         status = isMethodAllowed(location.allowed_methods, reqLine.method);
+    this->resInfo.location = location;
     if (status == OK){
         path = location.root;
 
@@ -144,7 +149,6 @@ HttpResourceInfo ResourceResolver::handle(){
         this->resInfo.path = path;
     }
     this->resInfo.status = status;
-    this->resInfo.location = location;
     this->resInfo.prevLocation = location.path;
     return (this->resInfo);
 }
