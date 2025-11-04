@@ -131,6 +131,7 @@ HttpResourceInfo ResourceResolver::handle(std::map<std::string, std::string> hea
     PathTypes   pathType;
     std::string path;
 
+    
     status = findLocation(locations, reqLine.target, location);
     this->resInfo.method = reqLine.method;
     this->resInfo.reqLine = reqLine;

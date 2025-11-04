@@ -231,9 +231,6 @@ CgiResult	CgiExecutor::readResult(size_t buffer_size)
 
 	//if read is done close the FD or if it fails
 	int read_return = read(this->result_fd, &body[0], buffer_size);
-	std::cout << "===========================\n";
-	std::cout << body.size() << std::endl;
-	std::cout.write(body.data(), body.size());
 	if (read_return == 0)
 	{
 		close (result_fd);

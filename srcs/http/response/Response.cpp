@@ -211,8 +211,9 @@ void    Response::getBodyFromFile(std::string& path){
     }
     if (!resElements.body.empty())
         resElements.headers.insert(std::pair<std::string, std::string> ("Content-Length", Utils::toString(resElements.body.size())));
-    else
+    else{
         resElements.headers.insert(std::pair<std::string, std::string> ("Content-Length", Utils::toString(fileSize)));
+    }
 }
 
 HttpStatusCode      Response::writeBodyInFile(std::string& path, std::vector<char>& body){
@@ -246,14 +247,15 @@ void    Response::errorHandling(){
     }
     if ((errorPage = resInfo.server.error_pages.find(resInfo.status)) != resInfo.server.error_pages.end()){
         std::string errorPath;
-
         errorPath.append(resInfo.location.root);
         errorPath.append(errorPage->second);
         resInfo.path = errorPath;
         if (access(errorPath.c_str(), F_OK) == -1){
             std::cout << "qwr qwr qwr" << std::endl;
             resInfo.status = NOT_FOUND;
-            resElements.body = generateErrorBody();
+            //you can call here error handling to search for the file of not found
+            errorHandling();
+            // resElements.body = generateErrorBody();
         }   
         else
             getBodyFromFile(errorPath);
@@ -384,11 +386,12 @@ void    Response::successHandling(){
 
 void Response::handle(){
     setFileTypes();
-    if (resInfo.status != OK && resInfo.status != CREATED)
+    if (resInfo.status != OK && resInfo.status != CREATED){
         errorHandling();
+    }
     else
         successHandling();
-    if (resInfo.status == OK && resInfo.type == SCRIPT)
+    if ((resInfo.status == OK || resInfo.status == CREATED) && resInfo.type == SCRIPT)
         return;
     resElements.statusLine = getStatusLine();
     generateHeaders(resElements.headers);
@@ -401,21 +404,22 @@ void Response::clear(){
 std::vector<char> Response::getResponse () {
     std::vector<char> body;
 
-    if (resInfo.type == SCRIPT && resInfo.status == OK){
+    if (resInfo.type == SCRIPT && (resInfo.status == OK || resInfo.status == CREATED)){
         body = cgiExecutor.readResult(DATA_SIZE).body;
         Utils::pushInVector(response, &body[0], body.size());
         body.clear();
         done = cgiExecutor.isDone();
         if (done){
             long pos = Utils::isContainStr(&response[0], response.size(), "\n\n", 2);
+            CgiResult cgiResult = cgiExecutor.getResult();
             std::string length;
             if (pos != -1){
                 length = "Content-Length: " + Utils::toString(response.size() - pos - 2) + "\r\n";
-
             }
             else{
                 length = "Content-Length: " + Utils::toString(response.size()) + "\r\n\r\n";
             }
+            this->resInfo.status = cgiResult.status ;
             Utils::pushInVector(body, getStatusLine());
             Utils::pushInVector(body, length);
             Utils::pushInVector(body, &response[0], response.size());
@@ -424,7 +428,7 @@ std::vector<char> Response::getResponse () {
         }
     }
     else{
-        if (this->resInfo.method != "GET" || !this->resElements.body.empty()){
+        if ((this->resInfo.method != "GET" || !this->resElements.body.empty()) && (resInfo.status == OK || resInfo.status == CREATED)){
             done = true;
             return (this->response);
         }
