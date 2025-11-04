@@ -40,6 +40,10 @@ class CgiExecutor
 
 };
 
-
+// TODO:
+	// 1) build a session data struct (contains session id, and map < std::string, map<key, value> >);
+	// 
+	// 
+	// 
 
 #endif
