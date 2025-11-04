@@ -59,16 +59,22 @@ int main()
 		}
 		return 0;
 	}
+	std::vector<size_t> size_log;
+	std::vector<char> body;
 	while (!cgi_executor.isDone())
 	{
 
 		result = cgi_executor.readResult(buffer);
-
+		body.insert(body.end(), result.body.begin(), result.body.end());
+		std::cout << "<<<<<<<<<<<< body >>>>>>>>>>>>>>>>\n";
 		std::cout.write(result.body.data(), result.body.size()) ;
+		
+		
+		size_log.push_back(result.body.size());
 		std::cout << "result.body.size()" << result.body.size() << std::endl;
 
 	}
-
+	std::cout << "~~~~~~~~~~~~~~~~~~~ RESULT ~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n\n";
 	int flags = fcntl(fd, F_GETFL, 0);
 	fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 	// print body 
@@ -76,7 +82,7 @@ int main()
 	std::cout << "===================== status ====================" << std::endl;
 	std::cout << "status" << result.status << std::endl;
 	std::cout << "===================== body ====================" << std::endl;
-	std::cout.write(&result.body[0], result.body.size());
+	std::cout.write(body.data(), body.size());
 	std::cout << "---------------------------------------------------------------" << std::endl;;
 	std::cout << "===================== headers ====================" << std::endl;
 	std::cout << Utils::mapToString(result.headers) << std::endl;

@@ -2,6 +2,8 @@
 #define CGIEXECUTOR_HPP
 
 #include <unistd.h>
+#include <string>
+#include <signal.h>
 
 class CgiExecutor
 {
