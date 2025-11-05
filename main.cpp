@@ -18,7 +18,7 @@ int main(int c, char **v)
 	}
 
 	std::string path;
-	if(c != 1)
+	if(c == 2)
 		path = v[1];
 
 	GlobaConfig config;
@@ -26,5 +26,5 @@ int main(int c, char **v)
 		return 1;
 	std::cout << "\033[1;35mThe server starts\033[0m" << std::endl; 
 	server serv(config.servers);
-	serv.polling();
+	serv.serverCore();
 }

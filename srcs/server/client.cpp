@@ -98,6 +98,11 @@ ssize_t client::sending(short& event){
 	return nsend;
 }
 
+void client::setErrorResponse(){
+	response = clientHandler.getResponse();
+	responseComplete = false;
+}
+
 int client::cgiRun(){
 	response = clientHandler.getResponse();	
 	if(!response.empty()){
