@@ -59,8 +59,8 @@ ssize_t client::ft_recv(short& event){
 		total = totalrecv;
 		if(clientHandler.isComplete()){
 			//chekc for cgi
-			// cgiFd = clientHandler.isScript(); // her the function that give's the cgi fd return ;
-			cgiFd = -1; // her the function that give's the cgi fd return ;
+			cgiFd = clientHandler.isScript(); // her the function that give's the cgi fd return ;
+			// cgiFd = -1; // her the function that give's the cgi fd return ;
 			std::cout << "all has been receved" << std::endl;
 			totalrecv = 0;
  			event = POLLOUT;

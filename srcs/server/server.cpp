@@ -197,6 +197,7 @@ int server::polling()
 	
 	while (workFlage)
 	{
+		// sleep(1);
 		std::cout << "=======================================start polling================================" << std::endl;
 		int NbrOfActiveSockets = poll(&socketFds[0], socketFds.size(), -1);
 		if(NbrOfActiveSockets < 0)
@@ -204,14 +205,19 @@ int server::polling()
 
 		for(size_t i = 0; i < socketFds.size() && NbrOfActiveSockets > 0 ; i++){
 
-			std::cout << "nbr of client left to handle : " << NbrOfActiveSockets << std::endl;
+			std::cout << "nbr of client left to handle : " << NbrOfActiveSockets << " this is fd : "<< socketFds[i].fd<< std::endl;
 			client* currentClient = &getClient(socketFds[i].fd);
 
-			if(socketFds[i].revents & (POLLHUP | POLLERR | POLLNVAL)){
-				rmClient(i);
-				NbrOfActiveSockets--;
-			}
-			else if(workFlage && (socketFds[i].revents & POLLIN)){
+			// if(socketFds[i].revents & (POLLHUP | POLLERR | POLLNVAL)){
+			// 	if(is_cgi(socketFds[i].fd))
+			// 	{
+			// 		std::cout << "cgi try to exit..." << std::endl;
+			// 		continue;
+			// 	}
+			// 	rmClient(i);
+			// 	NbrOfActiveSockets--;
+			// }
+			if(workFlage && (socketFds[i].revents & POLLIN)){
 				std::cout << "POLLIN FD: " << socketFds[i].fd << std::endl;
 				if(is_listener(socketFds[i].fd))
 						acceptClient(socketFds[i].fd);
@@ -219,17 +225,21 @@ int server::polling()
 					int cgiStatus = cgi[socketFds[i].fd]->cgiRun();
 					if(cgiStatus == -1){
 						cgi.erase(socketFds[i].fd);
+						socketFds.erase(socketFds.begin() + i);
 						i--;
 						NbrOfActiveSockets--;
 					}
 				}
 				else
 				{
-					if(!currentClient->ft_recv(socketFds[i].events))
-						rmClient(i);
-					int cgiFd = currentClient->getCgiFd();
+					if(!currentClient->ft_recv(socketFds[i].events)){
+						rmClient(i); 
+						continue;
+					}
+					int cgiFd = currentClient->getCgiFd(); //here abort
 					if(cgiFd != -1){
 						cgi.insert(std::make_pair(cgiFd, currentClient));
+						std::cout << "cgi fd is : " << cgiFd << std::endl;
 						int flags = fcntl(cgiFd, F_GETFL, 0);
 						if(flags == -1 || fcntl(cgiFd, F_SETFL, flags | O_NONBLOCK) == -1){
 							std::cerr << "fcntl error: " << strerror(errno) << std::endl;
@@ -247,10 +257,21 @@ int server::polling()
 			{
 				std::cout << "POLLOUT FD: " << socketFds[i].fd  << std::endl;
 				NbrOfActiveSockets--;
-				if(currentClient->getCgiFd() != -1)
+				if(currentClient->getCgiFd() != -1){
+					std::cout << "continue " << std::endl;
 					continue;
+				}
 				if(!currentClient->ft_send(socketFds[i].events))
 						rmClient(i);
+			}
+			else if(socketFds[i].revents & (POLLHUP | POLLERR | POLLNVAL)){
+				if(is_cgi(socketFds[i].fd))
+				{
+					std::cout << "cgi try to exit..." << std::endl;
+					continue;
+				}
+				rmClient(i);
+				NbrOfActiveSockets--;
 			}
 
 		}
