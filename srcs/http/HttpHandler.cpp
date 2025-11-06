@@ -42,6 +42,10 @@ int HttpHandler::isScript(){
     return (this->reqParser.getResourceInfo().cgiFD);
 }
 
+std::vector<char> HttpHandler::getStatusResponse(const HttpStatusCode& statusCode){
+    return (this->response.getStatusResponse(statusCode));
+}
+
 void HttpHandler::appendData(const char* data, size_t size){
     if (sameReq ==  false){
         this->reqParser = RequestParser(server);
