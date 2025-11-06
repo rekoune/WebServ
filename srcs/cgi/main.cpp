@@ -1,6 +1,7 @@
 #include "../../includes/RequestParser.hpp"
 #include "../../includes/Response.hpp"
 #include "../../includes/cgi/CgiExecutor.hpp"
+#include "../../includes/cgi/SessionHandler.hpp"
  # include <fcntl.h>
 int main()
 {
@@ -16,6 +17,9 @@ int main()
 	req_context.headers.insert(std::make_pair("content-length", "12"));
 	req_context.headers.insert(std::make_pair("Accept", "*/*"));
 	req_context.headers.insert(std::make_pair("Host", "10.10.10.1"));
+	req_context.headers.insert(std::make_pair("Cookie", "SESSION_ID=abc123xyz; theme=dark; blabla=bloblo"));
+	req_context.headers.insert(std::make_pair("Set-Cookie", "nigga=dark"));
+
 
 	req_context.req_line.query = "name=esmo&age=20";
 	req_context.body.push_back('T');
@@ -51,9 +55,11 @@ int main()
 	// in the 2 cases : parse the cookies into the SessionData with the id detected 
 	// in the case of the cgi: should fetch the cookie in SessionData into the headers the scrip behave according to the cookies 
 	// and when reading from the scrip should fetch or save the cookies generated or writed from the script into the DataSession 
-	
 
-
+	std::array<SessionHandler, 3> arrayofsesshandler = {SessionHandler(), SessionHandler(), SessionHandler()};
+	arrayofsesshandler[0].addSession(req_context.headers);
+	arrayofsesshandler[1].addSession(req_context.headers);
+	arrayofsesshandler[2].addSession(req_context.headers);
 
 // // **MAIN FOR CGI RESULT READING 
 	// int  buffer = 4 * 1024;
