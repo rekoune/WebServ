@@ -18,9 +18,16 @@ private:
 	std::map<int, client*> cgi;
 
 	std::map<int, std::vector<ServerConfig> > listenToHosts; 
+	client* currentClient;
 
 	bool is_listener(int fd);
 	bool is_cgi(int fd);
+
+	void pollin(size_t &fdIndex);
+	void pollout(size_t &fdIndex);
+
+	void cgiSetup(size_t& fdIndex, int cigFd);
+	void rmCgi(size_t& fdIndex, bool workDone);
 public:
 	server(std::vector<ServerConfig>&	servers);
 	server(const server& other);
@@ -29,14 +36,17 @@ public:
 
 	int listen_socket(const std::string& ip, const std::string& port);
 	struct pollfd create_pollfd(int fd, short events);
-	int polling();
+	int serverCore();
 
 	client& getClient(int& fd);
 	void acceptClient(int listenFd);
-	void rmClient(size_t &i);
+	void rmClient(size_t &fdIndex);
+
 
 };
 
+
+// 
 
 
 

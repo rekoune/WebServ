@@ -1,4 +1,4 @@
-#include "../../includes/client.hpp"
+   #include "../../includes/client.hpp"
 
 client::~client() {}
 
@@ -59,8 +59,8 @@ ssize_t client::ft_recv(short& event){
 		total = totalrecv;
 		if(clientHandler.isComplete()){
 			//chekc for cgi
-			// cgiFd = clientHandler.isScript(); // her the function that give's the cgi fd return ;
-			cgiFd = -1; // her the function that give's the cgi fd return ;
+			cgiFd = clientHandler.isScript(); // her the function that give's the cgi fd return ;
+			// cgiFd = -1; // her the function that give's the cgi fd return ;
 			std::cout << "all has been receved" << std::endl;
 			totalrecv = 0;
  			event = POLLOUT;
@@ -96,6 +96,11 @@ ssize_t client::sending(short& event){
 		std::cout << "succufly send everyting !!!" << std::endl;
 	}
 	return nsend;
+}
+
+void client::setErrorResponse(){
+	response = clientHandler.getResponse();
+	responseComplete = false;
 }
 
 int client::cgiRun(){

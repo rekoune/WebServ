@@ -32,7 +32,7 @@ HttpResourceInfo ResourceResolver::getResponseInfo() const {
     return (this->resInfo);
 }
 
-HttpStatusCode ResourceResolver::findLocation(std::vector<LocationConfig> locations, std::string reqTarget, LocationConfig& resultLocation){
+HttpStatusCode ResourceResolver::findLocation(std::vector<LocationConfig> locations, std::string& reqTarget, LocationConfig& resultLocation){
     int matchedLenght = -1;
     int matchedIndex = -1;
     for(size_t i = 0; i < locations.size(); i++){
@@ -145,6 +145,8 @@ HttpResourceInfo ResourceResolver::handle(std::map<std::string, std::string> hea
         if (path.at(path.length() -1) == '/')
             path.erase(path.end() -1);
         path.append(reqLine.target);
+        if (location.path != "/")
+            path.erase(path.begin() + location.root.length() , path.begin() + location.path.length() + location.root.length());
         status = resolveResourceType(path, pathType, location);
         this->resInfo.type = pathType;
         this->resInfo.path = path;

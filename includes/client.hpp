@@ -33,6 +33,7 @@ public:
 	int getCgiFd();
 	void resetCgiFd();
 	int cgiRun();
+	void setErrorResponse();
 	
 	
 	bool appendFirstRequest(const char* buf, ssize_t read);

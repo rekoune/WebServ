@@ -148,13 +148,11 @@ void    UploadHandler::setFullPathByType(std::string& path, PathTypes& pathType,
 
 HttpStatusCode     UploadHandler::getUploadPath(std::string& uploadPath){
     HttpStatusCode status;
-
     uploadPath.append(resInfo.location.root);
-    uploadPath.append(resInfo.location.path);
     uploadPath.append(resInfo.location.upload_store);
     if (access(uploadPath.c_str(), F_OK) != 0)
         return NOT_FOUND;
-    uploadPath.append(resInfo.path.begin() + resInfo.location.root.length() + resInfo.location.path.length(), resInfo.path.end());
+    uploadPath.append(resInfo.path.begin() + resInfo.location.root.length(), resInfo.path.end());
     status = getPathType(uploadPath, resInfo.type);
     if (status == OK)
         resInfo.path = uploadPath;
@@ -166,13 +164,18 @@ HttpStatusCode      UploadHandler::checkHeaders(std::map<std::string, std::strin
     PathTypes           pathType = DIR_LS;
     std::string         contentType;
     size_t              namePos;
+
+    //because i expect here to get a directory
+    if (resInfo.type == F){
+        parseState = PARSE_ERROR;
+        return NOT_FOUND;
+    }
     it = headers.find("content-disposition");
     if (it == headers.end() || it->second.find("form-data") == std::string::npos){
         parseState = PARSE_ERROR;
         return BAD_REQUEST;
     }
     uploadPath = std::string(resInfo.path);
-    
     if ((namePos = it->second.find("filename=\"")) != std::string::npos){
         uploadPath.append("/");
         if (it->second.begin() + namePos + 10 == it->second.end() - 1)
