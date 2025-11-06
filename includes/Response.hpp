@@ -31,12 +31,11 @@ class Response{
 
         void                                errorHandling();
         void                                successHandling();
-        std::string                         getStatusLine();
-        std::vector<char>                   generateErrorBody();
+        std::string                         getStatusLine(const HttpStatusCode& status);
+        std::vector<char>                   generateErrorBody(const HttpStatusCode& status);
         std::map<std::string, std::string>  generateHeaders(std::map<std::string, std::string>& headers);
         std::string                         getStatusMessage(HttpStatusCode status);
         void                                getBodyFromFile(std::string& path);
-        HttpStatusCode                      writeBodyInFile(std::string& path, std::vector<char>& body);
         void                                setFileTypes();
         void                                listDirectory();
         void                                handleGET();
@@ -57,6 +56,7 @@ class Response{
         void                setCgiExecutor(const CgiExecutor& cgiExecutor);
         void                setResInfo(const HttpResourceInfo& info);
         std::vector<char>   getResponse();
+        std::vector<char>   getStatusResponse(const HttpStatusCode& statusCode);
         void                handle();
         void                clear();
         bool                isDone();
