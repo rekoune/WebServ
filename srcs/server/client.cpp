@@ -14,14 +14,13 @@ client& client::operator=(const client& other){
 		totalrecv = other.totalrecv;
 		fd = other.fd;
 		cgiFd = other.cgiFd;
-		cgiStartTime = other.cgiStartTime;
 	}
 	return *this;
 }
 
 
 client::client(std::vector<ServerConfig>& myservers, int fd) : myServers(myservers) ,hostSeted(false),
-		responseComplete(true) ,totalsend(0),totalrecv(0) ,fd(fd) ,cgiFd(-1) ,cgiStartTime(0)
+		responseComplete(true) ,totalsend(0),totalrecv(0) ,fd(fd) ,cgiFd(-1)
 {
 	if(myServers.size() == 1){
 		clientHandler.setServer(myservers[0]);
@@ -33,8 +32,7 @@ client::client(std::vector<ServerConfig>& myservers, int fd) : myServers(myserve
 client::client(const client& other): 
 		clientHandler(other.clientHandler),myServers(other.myServers) ,requestData(other.requestData),
 		response(other.response) ,hostSeted(other.hostSeted),responseComplete(other.responseComplete) ,
-		totalsend(other.totalsend),totalrecv(other.totalrecv) , fd(other.fd), cgiFd(other.cgiFd) ,
-		cgiStartTime(other.cgiStartTime) {}
+		totalsend(other.totalsend),totalrecv(other.totalrecv) , fd(other.fd), cgiFd(other.cgiFd) {}
 
 
 ssize_t client::ft_recv(short& event){
@@ -60,7 +58,9 @@ ssize_t client::ft_recv(short& event){
 		totalrecv += read;
 		total = totalrecv;
 		if(clientHandler.isComplete()){
+			//chekc for cgi
 			cgiFd = clientHandler.isScript(); // her the function that give's the cgi fd return ;
+			// cgiFd = -1; // her the function that give's the cgi fd return ;
 			std::cout << "all has been receved" << std::endl;
 			totalrecv = 0;
  			event = POLLOUT;
@@ -99,13 +99,7 @@ ssize_t client::sending(short& event){
 }
 
 void client::setErrorResponse(){
-	std::string errorResponse = "HTTP/1.1 408 Request Timeout\r\n"
-			   "Content-Type: text/html\r\n"
-			   "Content-Length: 58\r\n"
-			   "\r\n"
-			   "<html><body><h1>408 Request Timeout</h1></body></html>";
-	std::vector<char> res(errorResponse.begin(), errorResponse.end());
-	response = res;
+	response = clientHandler.getStatusResponse(REQUEST_TIME_OUT);
 	responseComplete = false;
 }
 

@@ -121,6 +121,8 @@ std::string         Response::getStatusMessage(HttpStatusCode status){
             return ("NOT_FOUND");
         case METHOD_NOT_ALLOWED:
             return ("METHOD_NOT_ALLOWED");
+        case REQUEST_TIME_OUT:
+            return ("REQUEST_TIME_OUT");
         case CONTENT_TOO_LARGE:
             return ("CONTENT_TOO_LARGE");
         case INTERNAL_SERVER_ERROR:
@@ -226,11 +228,13 @@ std::vector<char>   Response::getStatusResponse(const HttpStatusCode& statusCode
     headers.insert(std::pair<std::string, std::string> ("Date", Utils::getDate()));
     headers.insert(std::pair<std::string, std::string> ("Content-Length", Utils::toString(body.size())));
     headers.insert(std::pair<std::string, std::string> ("Connection", "close"));
-    headers.insert(std::pair<std::string, std::string> ("ContentType", "text/html"));
+    headers.insert(std::pair<std::string, std::string> ("Content-Type", "text/html"));
 
     Utils::pushInVector(response, getStatusLine(statusCode));
     Utils::pushInVector(response, Utils::mapToString(headers));
     Utils::pushInVector(response, &body[0], body.size());
+    done = true;
+    keepAlive = false;
     return (response);
 }
 
