@@ -229,8 +229,10 @@ void server::pollin(size_t &fdIndex)
 			return ;
 		}
 		int cgiFd = currentClient->getCgiFd(); 
-		if(cgiFd != -1)
+		if(cgiFd != -1){
 			cgiSetup(fdIndex, cgiFd);
+			currentClient->startTimer();
+		}
 	}
 }
 
@@ -239,8 +241,16 @@ void server::pollout(size_t& fdIndex)
 	struct pollfd& pfd = socketFds[fdIndex];
 	std::cout << "POLLOUT FD: " << pfd.fd  << std::endl;
 	if(currentClient->getCgiFd() != -1){
-		std::cout << "continue " << std::endl;
-		return ;
+		if(currentClient->checkTimeOut()){
+			for(size_t i = 0; i < socketFds.size(); i++){
+				if(currentClient->getCgiFd() == socketFds[i].fd){
+					rmCgi(i, false);
+					if(i < fdIndex)
+						fdIndex--; 
+				}
+			}
+		}
+		return;
 	}
 	if(!currentClient->ft_send(pfd.events))
 			rmClient(fdIndex);
@@ -248,6 +258,7 @@ void server::pollout(size_t& fdIndex)
 
 void server::rmCgi(size_t& fdIndex, bool workDone){
 	struct pollfd& pfd = socketFds[fdIndex];
+	cgi[pfd.fd]->resetCgiFd();
 	if(!workDone)
 		cgi[pfd.fd]->setErrorResponse();
 	cgi.erase(socketFds[fdIndex].fd);
@@ -291,7 +302,7 @@ int server::serverCore()
 			}
 		}
 	}
-	return 1;
+	return 0;
 }
 
  
