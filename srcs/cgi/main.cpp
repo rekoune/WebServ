@@ -56,10 +56,18 @@ int main()
 	// in the case of the cgi: should fetch the cookie in SessionData into the headers the scrip behave according to the cookies 
 	// and when reading from the scrip should fetch or save the cookies generated or writed from the script into the DataSession 
 
-	std::array<SessionHandler, 3> arrayofsesshandler = {SessionHandler(), SessionHandler(), SessionHandler()};
-	arrayofsesshandler[0].addSession(req_context.headers);
-	arrayofsesshandler[1].addSession(req_context.headers);
-	arrayofsesshandler[2].addSession(req_context.headers);
+	// std::array<SessionHandler, 3> arrayofsesshandler = {SessionHandler(), SessionHandler(), SessionHandler()};
+	// arrayofsesshandler[0].addSession(req_context.headers);
+	// arrayofsesshandler[1].addSession(req_context.headers);
+	// arrayofsesshandler[2].addSession(req_context.headers);
+	SessionHandler a = SessionHandler();
+	a.addSession(req_context.headers);
+	// sleep(1);
+	SessionHandler b = SessionHandler();
+	b.addSession(req_context.headers);
+	// sleep(1);
+	SessionHandler c = SessionHandler();
+	c.addSession(req_context.headers);
 
 // // **MAIN FOR CGI RESULT READING 
 	// int  buffer = 4 * 1024;

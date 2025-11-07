@@ -3,6 +3,14 @@
 
 SessionHandler::SessionHandler()
 {
+        static bool seeded = false;
+    if (!seeded)
+    {
+
+        std::srand(std::time(NULL) );
+        seeded = true;
+    }
+
 }
 
 SessionHandler::SessionHandler(const SessionHandler& other)
@@ -27,7 +35,6 @@ SessionHandler& SessionHandler::operator=(const SessionHandler& other)
 std::string SessionHandler::generateID()
 {
     std::string chars("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
-    std::srand(std::time(NULL));
     std::string ID;
     for (int i = 0; i < 16; i++)
     {
@@ -47,7 +54,7 @@ void SessionHandler::addSession(std::map<std::string, std::string>& headers)
     if (headers.count("cookie"))
     {
         std::map<std::string, std::string> cookies = splitCookieIntoMap(headers["cookie"]);
-        if (cookies.count("SESSION_ID"))
+        if (cookies.count("SESSION_ID") && data.find(cookies["SESSION_ID"]) != data.end())
         {
             id = cookies["SESSION_ID"];
         }
@@ -67,8 +74,9 @@ void SessionHandler::addSession(std::map<std::string, std::string>& headers)
     current_session_id = id;
     if (headers.empty())
         return ;
-        
+
     fillDataFromHeaders(id, headers);
+
 }
 
 
@@ -114,4 +122,5 @@ void	SessionHandler::fillDataFromHeaders(std::string ID, std::map<std::string, s
     data[ID] = cookie_map;
     // printMapStr(data[ID]);
     this->printSessionData();
+
 }
