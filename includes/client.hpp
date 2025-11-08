@@ -4,7 +4,8 @@
 #include"Headers.hpp"
 
 #define BUFFER 204800
-
+#define TIMEOUT 5
+	
 class client{
 private:
 	client();
@@ -21,6 +22,8 @@ private:
 	size_t  totalrecv;
 	int fd;
 	int cgiFd;
+
+	std::time_t cgiStartTime;
 	
 public:
 
@@ -34,6 +37,10 @@ public:
 	void resetCgiFd();
 	int cgiRun();
 	void setErrorResponse();
+
+	void startTimer();
+	std::time_t timeDefrence();
+	bool checkTimeOut();
 	
 	
 	bool appendFirstRequest(const char* buf, ssize_t read);

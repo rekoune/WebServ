@@ -25,6 +25,7 @@ class HttpHandler{
         void appendData(const char* data, size_t size);
         bool isComplete();
         std::vector<char> getResponse();
+        std::vector<char> getStatusResponse(const HttpStatusCode& statusCode);
         bool    isKeepAlive();
         bool    isResDone();
         int     isScript();

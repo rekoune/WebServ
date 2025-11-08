@@ -1,6 +1,7 @@
 #ifndef HEADERS_HPP 
 #define HEADERS_HPP
 
+#include <ctime>
 #include <iostream>
 #include <vector>
 #include <deque>

@@ -78,13 +78,13 @@ void    Response::setFileTypes(){
 
 }
 
-std::string Response::getStatusLine(){
+std::string Response::getStatusLine(const HttpStatusCode& status){
     std::string statusLine;
 
     statusLine.append("HTTP/1.1 ");
-    statusLine.append(Utils::toString(resInfo.status));
+    statusLine.append(Utils::toString(status));
     statusLine.append(" ");
-    statusLine.append(getStatusMessage(resInfo.status));
+    statusLine.append(getStatusMessage(status));
     statusLine.append("\r\n");
 
     return (statusLine);
@@ -121,6 +121,8 @@ std::string         Response::getStatusMessage(HttpStatusCode status){
             return ("NOT_FOUND");
         case METHOD_NOT_ALLOWED:
             return ("METHOD_NOT_ALLOWED");
+        case REQUEST_TIME_OUT:
+            return ("REQUEST_TIME_OUT");
         case CONTENT_TOO_LARGE:
             return ("CONTENT_TOO_LARGE");
         case INTERNAL_SERVER_ERROR:
@@ -135,19 +137,19 @@ std::string         Response::getStatusMessage(HttpStatusCode status){
     return "DEFAUTL";
 }
 
-std::vector<char>  Response::generateErrorBody(){
+std::vector<char>  Response::generateErrorBody(const HttpStatusCode& status){
     std::stringstream bodyStream;
     std::vector<char> body;
 
     resInfo.path = "error.html";
     bodyStream << "<html>\n<head><title>";
-    bodyStream << Utils::toString(this->resInfo.status);
+    bodyStream << Utils::toString(status);
     bodyStream << " ";
-    bodyStream << getStatusMessage(this->resInfo.status);
+    bodyStream << getStatusMessage(status);
     bodyStream << "</title></head>\n<body>\n<center><h1>";
-    bodyStream << Utils::toString(this->resInfo.status);
+    bodyStream << Utils::toString(status);
     bodyStream << " ";
-    bodyStream << getStatusMessage(this->resInfo.status);
+    bodyStream << getStatusMessage(status);
     bodyStream << "</h1></center>\n<hr><center>WebServer</center>\n</body>\n</html>\n";
     Utils::pushInVector(body, bodyStream.str());
     return (body);
@@ -216,21 +218,24 @@ void    Response::getBodyFromFile(std::string& path){
     }
 }
 
-HttpStatusCode      Response::writeBodyInFile(std::string& path, std::vector<char>& body){
-    HttpStatusCode  status;
+std::vector<char>   Response::getStatusResponse(const HttpStatusCode& statusCode){
+    std::vector<char> body;
+    std::vector<char> response;
+    std::map<std::string, std::string> headers;
 
-    if (body.empty())
-        return OK;
-    if (access(path.c_str(), F_OK) == 0)
-        status = OK;
-    else
-        status = CREATED;
-    std::ofstream file(path.c_str(), std::ios::out | std::ios::binary);
-    if (!file){
-        return INTERNAL_SERVER_ERROR;
-    }
-    file.write(&body[0],body.size());
-    return (status);
+    body = generateErrorBody(statusCode);
+    headers.insert(std::pair<std::string, std::string> ("Server", "WebServer"));
+    headers.insert(std::pair<std::string, std::string> ("Date", Utils::getDate()));
+    headers.insert(std::pair<std::string, std::string> ("Content-Length", Utils::toString(body.size())));
+    headers.insert(std::pair<std::string, std::string> ("Connection", "close"));
+    headers.insert(std::pair<std::string, std::string> ("Content-Type", "text/html"));
+
+    Utils::pushInVector(response, getStatusLine(statusCode));
+    Utils::pushInVector(response, Utils::mapToString(headers));
+    Utils::pushInVector(response, &body[0], body.size());
+    done = true;
+    keepAlive = false;
+    return (response);
 }
 
 void    Response::buildResponse(){
@@ -247,22 +252,20 @@ void    Response::errorHandling(){
     }
     if ((errorPage = resInfo.server.error_pages.find(resInfo.status)) != resInfo.server.error_pages.end()){
         std::string errorPath;
-        errorPath.append(resInfo.location.root);
+        errorPath.append(resInfo.server.root);
         errorPath.append(errorPage->second);
         resInfo.path = errorPath;
         if (access(errorPath.c_str(), F_OK) == -1){
             std::cout << "qwr qwr qwr" << std::endl;
+            std::cout << "error path = " << errorPath << std::endl;
             resInfo.status = NOT_FOUND;
-            //you can call here error handling to search for the file of not found
-            // errorHandling();
-            resElements.body = generateErrorBody();
+            resElements.body = generateErrorBody(resInfo.status);
         }   
         else
             getBodyFromFile(errorPath);
     }
     else
-        resElements.body = generateErrorBody();
-    // exit(1);
+        resElements.body = generateErrorBody(resInfo.status);
 }
 
 void    Response::generateListingBody(DIR* dir){
@@ -393,7 +396,7 @@ void Response::handle(){
         successHandling();
     if ((resInfo.status == OK || resInfo.status == CREATED) && resInfo.type == SCRIPT)
         return;
-    resElements.statusLine = getStatusLine();
+    resElements.statusLine = getStatusLine(resInfo.status);
     generateHeaders(resElements.headers);
     buildResponse();
 }
@@ -420,7 +423,7 @@ std::vector<char> Response::getResponse () {
                 length = "Content-Length: " + Utils::toString(response.size()) + "\r\n\r\n";
             }
             this->resInfo.status = cgiResult.status ;
-            Utils::pushInVector(body, getStatusLine());
+            Utils::pushInVector(body, getStatusLine(resInfo.status));
             Utils::pushInVector(body, length);
             Utils::pushInVector(body, &response[0], response.size());
             response.clear();

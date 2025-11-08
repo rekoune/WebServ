@@ -99,8 +99,24 @@ ssize_t client::sending(short& event){
 }
 
 void client::setErrorResponse(){
-	response = clientHandler.getResponse();
+	response = clientHandler.getStatusResponse(REQUEST_TIME_OUT);
 	responseComplete = false;
+}
+
+void client::startTimer(){
+	cgiStartTime = std::time(NULL);
+}
+
+std::time_t client::timeDefrence(){
+	return std::time(NULL) - cgiStartTime;
+}
+
+bool client::checkTimeOut()
+{
+	std::time_t time = timeDefrence();
+	if(time >= TIMEOUT)
+		return true;
+	return false;
 }
 
 int client::cgiRun(){
@@ -142,6 +158,8 @@ void client::setHost(std::string &host){
 				return ;
 			}
 		}
+	}
+	for(size_t i = 0; i < myServers.size() ; i++){
 		std::map<std::string, std::vector<std::string> >::iterator it = myServers[i].host_port.begin();
 		while (it != myServers[i].host_port.end()){
 			if(host == it->first){
