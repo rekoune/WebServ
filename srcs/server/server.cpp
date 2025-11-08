@@ -244,6 +244,7 @@ void server::pollout(size_t& fdIndex)
 		if(currentClient->checkTimeOut()){
 			for(size_t i = 0; i < socketFds.size(); i++){
 				if(currentClient->getCgiFd() == socketFds[i].fd){
+					std::cout << "\033[33mTimeout occurred, setting error response.\033[0m" << std::endl;
 					rmCgi(i, false);
 					if(i < fdIndex)
 						fdIndex--; 
