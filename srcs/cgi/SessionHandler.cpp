@@ -97,7 +97,7 @@ void	SessionHandler::appendHeaders(std::map<std::string, std::string> headers)
 
 void    SessionHandler::printSessionData()
 {
-    for (std::map<std::string, std::map< std::string, std::string> >::iterator i = data.begin(); i != data.end(); i++)
+    for (std::map<std::string, std::map< std::string, std::string> >::iterator i = this->data.begin(); i != this->data.end(); i++)
     {
         std::cout << "sission :" << i->first << std::endl << "COOOKIES" << std::endl;
         for (std::map< std::string, std::string>::iterator im = i->second.begin(); im != i->second.end(); im++)
@@ -121,6 +121,6 @@ void	SessionHandler::fillDataFromHeaders(std::string ID, std::map<std::string, s
 
     data[ID] = cookie_map;
     // printMapStr(data[ID]);
-    this->printSessionData();
+    // this->printSessionData();
 
 }

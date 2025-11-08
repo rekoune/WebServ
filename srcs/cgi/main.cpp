@@ -63,11 +63,14 @@ int main()
 	SessionHandler a = SessionHandler();
 	a.addSession(req_context.headers);
 	// sleep(1);
+	a.printSessionData();
 	SessionHandler b = SessionHandler();
 	b.addSession(req_context.headers);
+	b.printSessionData();
 	// sleep(1);
 	SessionHandler c = SessionHandler();
 	c.addSession(req_context.headers);
+	c.printSessionData();
 
 // // **MAIN FOR CGI RESULT READING 
 	// int  buffer = 4 * 1024;
