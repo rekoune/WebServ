@@ -9,9 +9,14 @@ CgiExecutor::~CgiExecutor()
 {
 	if (this->pid > 0)
 		if (waitpid(this->pid, NULL, WNOHANG))
+		{
+			std::cout << "==================== IM KILLING ====================\n";
 			kill(this->pid, SIGKILL);
-	if (this->result_fd > 0)
-		close (result_fd);
+			waitpid(this->pid, NULL, 1);
+		}
+		
+	// if (this->result_fd > 0)
+	// 	close (result_fd);
 }
 
 CgiExecutor::CgiExecutor(RequestContext& req_context)
@@ -242,7 +247,10 @@ CgiResult	CgiExecutor::readResult(size_t buffer_size)
 		close (result_fd);
 		done = true;
 		if (waitpid(pid, NULL, WNOHANG) == 0)
+		{
 			kill (pid, SIGKILL);
+			waitpid(pid, NULL, 1);
+		}
 	}
 	else if (read_return == -1)
 	{
