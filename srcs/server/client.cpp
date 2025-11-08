@@ -41,13 +41,16 @@ ssize_t client::ft_recv(short& event){
 
 
 	ssize_t read = recv(fd, buf, sizeof(buf), 0);
+	totalrecv += read;
 	if(read == -1){
 		std::cerr << "Error receiving data: " << strerror(errno) << std::endl; 
 		return 0;
 	}
 	else if(!isHostSeted()){
 		std::cout << "seting host...." << std::endl;
+		total = totalrecv;
 		if(appendFirstRequest(buf, read)){
+			cgiFd = clientHandler.isScript();
 			totalrecv = 0;
 			event = POLLOUT;
 		}
@@ -55,12 +58,9 @@ ssize_t client::ft_recv(short& event){
 	else if(read){
 		std::cout << "receving...." << std::endl;
 		clientHandler.appendData(buf, read);
-		totalrecv += read;
 		total = totalrecv;
 		if(clientHandler.isComplete()){
-			//chekc for cgi
 			cgiFd = clientHandler.isScript(); // her the function that give's the cgi fd return ;
-			// cgiFd = -1; // her the function that give's the cgi fd return ;
 			std::cout << "all has been receved" << std::endl;
 			totalrecv = 0;
  			event = POLLOUT;
@@ -114,6 +114,7 @@ std::time_t client::timeDefrence(){
 bool client::checkTimeOut()
 {
 	std::time_t time = timeDefrence();
+	std::cout << "\033[34mTime elapsed: " << time << " seconds\033[0m" << std::endl;
 	if(time >= TIMEOUT)
 		return true;
 	return false;
@@ -131,8 +132,6 @@ int client::cgiRun(){
 ssize_t client::ft_send(short& event){
 	if(responseComplete){
 		response = clientHandler.getResponse();
-		if (response.empty())
-			return(1);
 		responseComplete = false;
 	}
 	std::cout << "sending... " << std::endl;
