@@ -36,7 +36,7 @@ public:
 	int getCgiFd();
 	void resetCgiFd();
 	int cgiRun();
-	void setErrorResponse();
+	void setErrorResponse(HttpStatusCode& statuCode);
 
 	void startTimer();
 	std::time_t timeDefrence();

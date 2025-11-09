@@ -220,7 +220,7 @@ void server::pollin(size_t &fdIndex)
 	else if(is_cgi(pfd.fd)){
 		int cgiStatus = cgi[pfd.fd]->cgiRun();
 		if(cgiStatus == -1)
-			rmCgi(fdIndex, true);
+			rmCgi(fdIndex, true, OK);
 	}
 	else
 	{
@@ -245,7 +245,7 @@ void server::pollout(size_t& fdIndex)
 			for(size_t i = 0; i < socketFds.size(); i++){
 				if(currentClient->getCgiFd() == socketFds[i].fd){
 					std::cout << "\033[33mTimeout occurred, setting error response.\033[0m" << std::endl;
-					rmCgi(i, false);
+					rmCgi(i, false, REQUEST_TIME_OUT);
 					if(i < fdIndex)
 						fdIndex--; 
 				}
@@ -257,11 +257,11 @@ void server::pollout(size_t& fdIndex)
 			rmClient(fdIndex);
 }
 
-void server::rmCgi(size_t& fdIndex, bool workDone){
+void server::rmCgi(size_t& fdIndex, bool workDone, HttpStatusCode statuCode){
 	struct pollfd& pfd = socketFds[fdIndex];
 	cgi[pfd.fd]->resetCgiFd();
 	if(!workDone)
-		cgi[pfd.fd]->setErrorResponse();
+		cgi[pfd.fd]->setErrorResponse(statuCode);
 	cgi.erase(socketFds[fdIndex].fd);
 	socketFds.erase(socketFds.begin() + fdIndex);
 	fdIndex--;
@@ -296,7 +296,7 @@ int server::serverCore()
 			else if(socketFds[i].revents & (POLLHUP | POLLERR | POLLNVAL)){
 				NbrOfActiveSockets--;
 				if(is_cgi(socketFds[i].fd)){
-					rmCgi(i, false);
+					rmCgi(i, false, INTERNAL_SERVER_ERROR);
 					continue;
 				}
 				rmClient(i);

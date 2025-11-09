@@ -98,8 +98,8 @@ ssize_t client::sending(short& event){
 	return nsend;
 }
 
-void client::setErrorResponse(){
-	response = clientHandler.getStatusResponse(REQUEST_TIME_OUT);
+void client::setErrorResponse(HttpStatusCode& statuCode){
+	response = clientHandler.getStatusResponse(statuCode);
 	responseComplete = false;
 }
 
