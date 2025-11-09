@@ -78,7 +78,6 @@ std::map<std::string, std::string>  splitCookieIntoMap(std::string cookie)
         cookie_directive = cookie.substr(pos, cookie.size() - pos);
         // std::cout << "cookie_directive:" << cookie_directive << std::endl;
         parseCookieDirective(map, cookie_directive);
-
     }
     return map; 
 }

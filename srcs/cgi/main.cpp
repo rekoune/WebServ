@@ -60,17 +60,40 @@ int main()
 	// arrayofsesshandler[0].addSession(req_context.headers);
 	// arrayofsesshandler[1].addSession(req_context.headers);
 	// arrayofsesshandler[2].addSession(req_context.headers);
+	// std::map<std::string, std::string> cookie_header;
+	// cookie_header.insert(std::make_pair("Cookie", "SESSION_ID=n803NtIpHis8Wkcn"));
 	SessionHandler a = SessionHandler();
 	a.addSession(req_context.headers);
-	// sleep(1);
-	a.printSessionData();
-	SessionHandler b = SessionHandler();
-	b.addSession(req_context.headers);
-	b.printSessionData();
-	// sleep(1);
-	SessionHandler c = SessionHandler();
-	c.addSession(req_context.headers);
-	c.printSessionData();
+	std::map<std::string, std::string> headers_ig = a.fetchDataToHeaders();
+	printMapStr(headers_ig);
+
+	// // a.printSessionData();
+	// a.addSession(cookie_header);
+	// a.printSessionData();
+	// // std::cout << "cookie_header[Cookie]" <<  cookie_header["Cookie"] << std::endl;
+	// std::cout << "cookie_header[Set-Cookie]" <<  cookie_header["Set-Cookie"] << std::endl;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // // **MAIN FOR CGI RESULT READING 
 	// int  buffer = 4 * 1024;
