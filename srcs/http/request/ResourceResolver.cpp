@@ -48,8 +48,8 @@ HttpStatusCode ResourceResolver::findLocation(std::vector<LocationConfig> locati
     }
     resultLocation = locations.at(matchedIndex);
     if (!resultLocation.redirection_url.empty()){
-        if (resInfo.prevLocation == resultLocation.redirection_url)
-            return (LOOP_DETECTED);
+    //     if (resInfo.prevLocation == resultLocation.redirection_url)
+    //         return (LOOP_DETECTED);
         resInfo.path = resultLocation.redirection_url;
         return (static_cast<HttpStatusCode>(resultLocation.redirection_status));
     }
