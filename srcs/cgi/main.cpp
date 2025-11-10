@@ -60,12 +60,12 @@ int main()
 	// arrayofsesshandler[0].addSession(req_context.headers);
 	// arrayofsesshandler[1].addSession(req_context.headers);
 	// arrayofsesshandler[2].addSession(req_context.headers);
-	// std::map<std::string, std::string> cookie_header;
-	// cookie_header.insert(std::make_pair("Cookie", "SESSION_ID=n803NtIpHis8Wkcn"));
+	std::map<std::string, std::string> data_of_cookies;
+	data_of_cookies.insert(std::make_pair("Key", "value"));
 	SessionHandler a = SessionHandler();
 	a.addSession(req_context.headers);
-	std::map<std::string, std::string> headers_ig = a.fetchDataToHeaders();
-	printMapStr(headers_ig);
+	a.fetchDataToHeaders(req_context.headers);
+	printMapStr(req_context.headers);
 
 	// // a.printSessionData();
 	// a.addSession(cookie_header);

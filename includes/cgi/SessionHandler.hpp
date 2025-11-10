@@ -29,8 +29,8 @@ class   SessionHandler
 		void	addSession(std::map<std::string, std::string>& headers);
 
 		// EMPTY COOKIES FROM SESSION_DATA INTO HEADERS
-		void	fetchDataToHeaders();
-		void	appendHeaders(std::map<std::string, std::string> headers); // UTILS OF FETCH
+		void    fetchDataToHeaders(std::map<std::string, std::string>& headers);
+		// void	appendHeaders(std::map<std::string, std::string> headers); // UTILS OF FETCH
 		
 		// PUT THE COOKIES INTO SESSION_DATA
 		void	fillDataFromHeaders(std::string ID, std::map<std::string, std::string>& headers);
