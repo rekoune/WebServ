@@ -17,7 +17,7 @@ int main()
 	req_context.headers.insert(std::make_pair("content-length", "12"));
 	req_context.headers.insert(std::make_pair("Accept", "*/*"));
 	req_context.headers.insert(std::make_pair("Host", "10.10.10.1"));
-	req_context.headers.insert(std::make_pair("Cookie", "SESSION_ID=abc123xyz; theme=dark; blabla=bloblo"));
+	req_context.headers.insert(std::make_pair("Cookie", " theme=dark; blabla=bloblo"));
 	req_context.headers.insert(std::make_pair("Set-Cookie", "nigga=dark"));
 
 
@@ -61,9 +61,9 @@ int main()
 	// arrayofsesshandler[1].addSession(req_context.headers);
 	// arrayofsesshandler[2].addSession(req_context.headers);
 	std::map<std::string, std::string> data_of_cookies;
-	data_of_cookies.insert(std::make_pair("Key", "value"));
+	data_of_cookies.insert(std::make_pair("Cookie", "key=value; key1=value1; key2=value2; key3=value3"));
 	SessionHandler a = SessionHandler();
-	a.addSession(req_context.headers);
+	a.addSession(data_of_cookies);
 	a.fetchDataToHeaders(req_context.headers);
 	printMapStr(req_context.headers);
 

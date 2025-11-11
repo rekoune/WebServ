@@ -23,9 +23,7 @@ class   SessionHandler
 		~SessionHandler();
 		SessionHandler& operator=(const SessionHandler& other);
 
-		// NEW CLIENT ?
-		// 			  |
-		//		 	  V
+		// NEW CLIENT, WE ADD SESSION
 		void	addSession(std::map<std::string, std::string>& headers);
 
 		// EMPTY COOKIES FROM SESSION_DATA INTO HEADERS

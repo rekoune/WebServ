@@ -97,6 +97,7 @@ std::vector<std::string>	CgiExecutor::buildEnv()
 		else 
 		{
 			std::string env_name;
+			env_name += "HTTP_";
 			char 		c;
 			for (size_t i = 0; i < name.size(); i++)
 			{
@@ -111,6 +112,8 @@ std::vector<std::string>	CgiExecutor::buildEnv()
 			env_name += "=";
 			env_name += value;
 			env.push_back(env_name);
+
+			std::cout << "env_name==========="  << env_name << std::endl;
 		}
 
 	}

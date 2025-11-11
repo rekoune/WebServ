@@ -54,17 +54,18 @@ void SessionHandler::addSession(std::map<std::string, std::string>& headers)
 	if (headers.count("Cookie"))
 	{
 		std::map<std::string, std::string> cookies = splitCookieIntoMap(headers["Cookie"]);
+		// std::map<std::string, std::map<std::string, std::string> >::iterator i = data.begin();
 		if (cookies.count("SESSION_ID") && data.find(cookies["SESSION_ID"]) != data.end())
 		{
 			id = cookies["SESSION_ID"];
 		}
 	}
-	
+	std::cout << "id:" << id << std::endl;
 	if (id.empty())
 	{
 		// MEANS NEW CLIENT: NEW ID , SET-COOKIE, SET SESSION_ID
-	// GENREATE ID 
-	std::cout << " GENERATE NEW ID =========\n";
+		// GENREATE ID 
+		std::cout << " GENERATE NEW ID =========\n";
 		id = generateID();
 		headers.insert(std::make_pair("Set-Cookie",  "SESSION_ID=" + id /* + "; Path=/; HttpOnly" */));
 		if (!headers["Cookie"].empty())
@@ -92,7 +93,7 @@ bool	isSessionAvaible(std::string cookie_value_from_headers)
 void    SessionHandler::fetchDataToHeaders(std::map<std::string, std::string>& headers)
 {
 
-	std::string&     cookie_value = headers["Cookie"];
+	std::string&	cookie_value = headers["Cookie"];
 	bool			adding_semicolon = true;
 	if ( cookie_value.empty())
 		adding_semicolon = false;
@@ -129,14 +130,16 @@ void    SessionHandler::fetchDataToHeaders(std::map<std::string, std::string>& h
 
 void    SessionHandler::printSessionData()
 {
+	std::cout << "PRINTING SESSION DATA" << std::endl;
 	for (std::map<std::string, std::map< std::string, std::string> >::iterator i = this->data.begin(); i != this->data.end(); i++)
 	{
-		std::cout << "sission :" << i->first << std::endl << "COOOKIES" << std::endl;
+		std::cout << "sission :" << i->first << std::endl;
 		for (std::map< std::string, std::string>::iterator im = i->second.begin(); im != i->second.end(); im++)
 		{
 			std::cout << im->first << ":" << im->second << std::endl ;
 		}
 	}
+	std::cout << "PRINTING SESSION DATA -FINISHED-" << std::endl;
 }
 
 
@@ -147,12 +150,8 @@ void	SessionHandler::fillDataFromHeaders(std::string ID, std::map<std::string, s
 	if (headers.empty())
 		return ;
 	std::string cookies = headers.find("Cookie")->second;
-	// std::cout << "cookie->: " << cookies << std::endl;
 	// split the cookie 
 	std::map<std::string, std::string> cookie_map = splitCookieIntoMap(cookies);
 
 	data[ID] = cookie_map;
-	// printMapStr(data[ID]);
-	// this->printSessionData();
-
 }
