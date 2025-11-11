@@ -248,6 +248,14 @@ void    Response::errorHandling(){
     std::map<int, std::string>::iterator errorPage;
     if (resInfo.status == MOVED_PERMANENTLY || resInfo.status == FOUND || resInfo.status == TEMPORARY_REDIRECT || resInfo.status == PERMANENT_REDIRECT){
         resElements.headers.insert(std::pair<std::string, std::string>("Location", resInfo.path));
+        if (resInfo.method == "POST"){
+        // std::cout << isRedirect(resInfo.status) << std::endl;
+        // std::cout << "status = " << resInfo.status << std::endl;
+        // // exit(2);
+            resElements.headers.insert(std::pair<std::string, std::string>("Connection", "close"));
+            std::cout << "conection seted to false "<< std::endl;
+            keepAlive = false;
+        }
     }
     if ((errorPage = resInfo.server.error_pages.find(resInfo.status)) != resInfo.server.error_pages.end()){
         std::string errorPath;
