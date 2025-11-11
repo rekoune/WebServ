@@ -249,6 +249,14 @@ void    Response::errorHandling(){
     std::map<int, std::string>::iterator errorPage;
     if (resInfo.status == MOVED_PERMANENTLY || resInfo.status == FOUND || resInfo.status == TEMPORARY_REDIRECT || resInfo.status == PERMANENT_REDIRECT){
         resElements.headers.insert(std::pair<std::string, std::string>("Location", resInfo.path));
+        if (resInfo.method == "POST"){
+        // std::cout << isRedirect(resInfo.status) << std::endl;
+        // std::cout << "status = " << resInfo.status << std::endl;
+        // // exit(2);
+            resElements.headers.insert(std::pair<std::string, std::string>("Connection", "close"));
+            std::cout << "conection seted to false "<< std::endl;
+            keepAlive = false;
+        }
     }
     if ((errorPage = resInfo.server.error_pages.find(resInfo.status)) != resInfo.server.error_pages.end()){
         std::string errorPath;
@@ -404,10 +412,21 @@ void Response::handle(){
 void Response::clear(){
     this->response.clear();
 }
+
+bool           Response::isRedirect(const HttpStatusCode& status){
+    if (status == MOVED_PERMANENTLY ||
+        status == FOUND ||
+        status == TEMPORARY_REDIRECT ||
+        status == PERMANENT_REDIRECT )
+        return true;
+    return (false);
+}
+
 std::vector<char> Response::getResponse () {
     std::vector<char> body;
 
     if (resInfo.type == SCRIPT && (resInfo.status == OK || resInfo.status == CREATED)){
+            
         body = cgiExecutor.readResult(DATA_SIZE).body;
         Utils::pushInVector(response, &body[0], body.size());
         body.clear();
@@ -431,7 +450,7 @@ std::vector<char> Response::getResponse () {
         }
     }
     else{
-        if ((this->resInfo.method != "GET" || !this->resElements.body.empty()) && (resInfo.status == OK || resInfo.status == CREATED)){
+        if ((this->resInfo.method != "GET" || !this->resElements.body.empty()) && (resInfo.status == OK || resInfo.status == CREATED || isRedirect(resInfo.status))){
             done = true;
             return (this->response);
         }

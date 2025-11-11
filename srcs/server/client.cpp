@@ -76,6 +76,8 @@ ssize_t client::sending(short& event){
 	ssize_t nsend;
 
 	std::cout << "resopons size = " << response.size() << "total send =" << totalsend << std::endl;
+	std::cout << "Response: " << std::string(response.begin(), response.end()) << std::endl;
+	
 	nsend = send(fd, &response[0] + totalsend, response.size() - totalsend, 0);
 	if(nsend == -1){
 		std::cerr << "send error: " << strerror(errno) << std::endl;

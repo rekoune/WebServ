@@ -45,6 +45,7 @@ class Response{
         HttpStatusCode                      getPathType(std::string path, PathTypes& type);
         void                                setFullPathByType(std::string& path, PathTypes& pathType, std::string contentType);
         int                                 isCgi();
+        bool           isRedirect(const HttpStatusCode& status);
 
     public:
         Response();

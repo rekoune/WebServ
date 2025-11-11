@@ -50,8 +50,13 @@ server::~server()
 {
 	std::cout << "\033[31mDestroctor: closing socketFds\033[0m" << std::endl;
 	for(size_t i = 0; i < socketFds.size(); i++){
+		int fd = socketFds[i].fd;
 		std::cout << "closing fd : " <<  socketFds[i].fd << std::endl;;
-		close(socketFds[i].fd);
+
+		// if(is_cgi(fd))
+		// cgi.at(fd).clean()
+		// else
+		close(fd);
 	}
 }
 
@@ -178,13 +183,13 @@ void server::rmClient(size_t &fdIndex)
 	if (it != clients.end())
 		cgiFd = it->second.getCgiFd();
 		if(cgiFd != -1){
-		cgi.erase(cgiFd);
 		for(size_t i = 0; i < socketFds.size(); i++){
-			if(socketFds[i].fd == cgiFd)
-			socketFds.erase(socketFds.begin() + i);
-			if(i < fdIndex)
-			fdIndex--;
-			break;
+			if(socketFds[i].fd == cgiFd){
+				rmCgi(i, true, OK);
+				if(i < fdIndex)
+					fdIndex--;
+				break;
+			}
 		}
 	}
 	close(fd);
@@ -277,7 +282,7 @@ int server::serverCore()
 	signal(SIGPIPE, SIG_IGN);	
 	while (workFlage)
 	{
-		// sleep(1);
+		sleep(1);
 		std::cout << "=======================================start the poll================================" << std::endl;
 		int NbrOfActiveSockets = poll(&socketFds[0], socketFds.size(), -1);
 		if(NbrOfActiveSockets < 0)
