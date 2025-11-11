@@ -144,7 +144,6 @@ ParseState  RequestParser::checkPostHeaders(HttpStatusCode& status){
 
     length = headers.find("content-length");
     chunked = headers.find("transfer-encoding");
-
     
     if (length == headers.end() && chunked == headers.end()){
         status = BAD_REQUEST;
@@ -162,11 +161,15 @@ ParseState  RequestParser::checkPostHeaders(HttpStatusCode& status){
             return (PARSE_ERROR);
         }
         else if (bodyMaxSize > (long long)clientMaxBodySize){
-            status = CONTENT_TOO_LARGE;
-            std:: cout << "hona boyd max size = " << bodyMaxSize << " , client size = " << clientMaxBodySize << std::endl;
+            status = REQUEST_ENTITY_TOO_LARGE;
+            std:: cout << "hona body max size = " << bodyMaxSize << " , client size = " << clientMaxBodySize << std::endl;
             return (PARSE_ERROR);
         }
         return (PARSE_BODY_LENGTH);
+    }
+    else if (chunked->second != "chunked"){
+        status = NOT_IMPLEMENTED;
+        return (PARSE_ERROR);
     }
     return (PARSE_BODY_CHUNKED);
 }
@@ -245,7 +248,7 @@ HttpStatusCode      RequestParser::appendData(const char* _data, size_t size){
             status = parseRequest(std::string(body.begin(), body.begin() + headerEndPos));
             if (status != OK){
                 parseState = PARSE_ERROR;
-                return status;
+                return (resInfo.status = status);
             }
             resourceResolver.setLocations(server.locations);
             resourceResolver.setServer(server);

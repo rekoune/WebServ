@@ -31,6 +31,8 @@ class UploadHandler{
         std::map<std::string, std::string>  fileTypes;
         long long           uploadSize;
         size_t              currentTotalSize;
+        long                chunkSize;
+        bool                isSearchForBody;
 
         void                setFileTypes();
         void                setFullPathByType(std::string& path, PathTypes& pathType, std::string contentType);

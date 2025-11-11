@@ -94,45 +94,41 @@ std::string         Response::getStatusMessage(HttpStatusCode status){
     switch (status)
     {
         case CONTINUE:
-            return ("CONTINUE");
+            return ("Continue");
         case OK:
             return ("OK");
         case PARTIAL_CONTENT:
-            return ("PARTIAL_CONTENT");
+            return ("Partial Content");
         case MOVED_PERMANENTLY:
-            return ("MOVED_PERMANENTLY");
+            return ("Moved Permanently");
         case FOUND:
-            return ("FOUND");
+            return ("Found");
         case TEMPORARY_REDIRECT:
-            return ("TEMPORARY_REDIRECT");
+            return ("Temporary Redirect");
         case PERMANENT_REDIRECT:
-            return ("PERMANENT_REDIRECT");
+            return ("Permanent Redirect");
         case CREATED:
-            return ("CREATED");
+            return ("Created");
         case NO_CONTENT:
-            return ("NO_CONTENT");
+            return ("No Content");
         case BAD_REQUEST:
-            return ("BAD_REQUEST");
-        case UNAUTHORIZED:
-            return ("UNAUTHORIZED");
+            return ("Bad Request");
         case FORBIDDEN:
             return ("FORBIDDEN");
         case NOT_FOUND:
-            return ("NOT_FOUND");
+            return ("Not Found");
         case METHOD_NOT_ALLOWED:
-            return ("METHOD_NOT_ALLOWED");
+            return ("Method Not Allowed");
         case REQUEST_TIME_OUT:
-            return ("REQUEST_TIME_OUT");
-        case CONTENT_TOO_LARGE:
-            return ("CONTENT_TOO_LARGE");
+            return ("Request Time Out");
+        case REQUEST_ENTITY_TOO_LARGE:
+            return ("Rquest Entity Too Large");
         case INTERNAL_SERVER_ERROR:
-            return ("INTERNAL_SERVER_ERROR");
+            return ("Internal Server Error");
         case NOT_IMPLEMENTED:
-            return ("NOT_IMPLEMENTED");
+            return ("Not Implemented");
         case HTTP_VERSION_NOT_SUPPORTED:
-            return ("HTTP_VERSION_NOT_SUPPORTED");
-        case LOOP_DETECTED:
-            return ("LOOP_DETECTED");
+            return ("Http Version Not Supported");
     }
     return "DEFAUTL";
 }
@@ -156,16 +152,13 @@ std::vector<char>  Response::generateErrorBody(const HttpStatusCode& status){
 }
 
 std::map<std::string, std::string>  Response::generateHeaders(std::map<std::string, std::string>& headers){
-
     headers.insert(std::pair<std::string, std::string> ("Server", "WebServer"));
     headers.insert(std::pair<std::string, std::string> ("Date", Utils::getDate()));
     if (resInfo.status != NO_CONTENT && resElements.body.empty()){
         headers.insert(std::pair<std::string, std::string> ("Content-Type", Utils::getFileType(fileTypes, Utils::getFileName(resInfo.path))));
     }
     
-    if (resInfo.status != OK && resInfo.status != CREATED && resInfo.status != PARTIAL_CONTENT && 
-        resInfo.status != MOVED_PERMANENTLY && resInfo.status != FOUND && resInfo.status != TEMPORARY_REDIRECT
-        && resInfo.status != PERMANENT_REDIRECT){
+    if (resInfo.status == BAD_REQUEST ||resInfo.status == REQUEST_ENTITY_TOO_LARGE){
         headers.insert(std::pair<std::string, std::string> ("Connection", "close"));
         keepAlive = false;
     }
@@ -227,14 +220,20 @@ std::vector<char>   Response::getStatusResponse(const HttpStatusCode& statusCode
     headers.insert(std::pair<std::string, std::string> ("Server", "WebServer"));
     headers.insert(std::pair<std::string, std::string> ("Date", Utils::getDate()));
     headers.insert(std::pair<std::string, std::string> ("Content-Length", Utils::toString(body.size())));
-    headers.insert(std::pair<std::string, std::string> ("Connection", "close"));
+    if (resInfo.status == BAD_REQUEST || resInfo.status == REQUEST_ENTITY_TOO_LARGE){
+        headers.insert(std::pair<std::string, std::string> ("Connection", "close"));
+        keepAlive = false;
+    }
+    else{
+        headers.insert(std::pair<std::string, std::string> ("Connection", "keep-alive"));
+        keepAlive = true;
+    }
     headers.insert(std::pair<std::string, std::string> ("Content-Type", "text/html"));
 
     Utils::pushInVector(response, getStatusLine(statusCode));
     Utils::pushInVector(response, Utils::mapToString(headers));
     Utils::pushInVector(response, &body[0], body.size());
     done = true;
-    keepAlive = false;
     return (response);
 }
 
@@ -404,10 +403,21 @@ void Response::handle(){
 void Response::clear(){
     this->response.clear();
 }
+
+bool           Response::isRedirect(const HttpStatusCode& status){
+    if (status == MOVED_PERMANENTLY ||
+        status == FOUND ||
+        status == TEMPORARY_REDIRECT ||
+        status == PERMANENT_REDIRECT )
+        return true;
+    return (false);
+}
+
 std::vector<char> Response::getResponse () {
     std::vector<char> body;
 
     if (resInfo.type == SCRIPT && (resInfo.status == OK || resInfo.status == CREATED)){
+            
         body = cgiExecutor.readResult(DATA_SIZE).body;
         Utils::pushInVector(response, &body[0], body.size());
         body.clear();
@@ -431,7 +441,7 @@ std::vector<char> Response::getResponse () {
         }
     }
     else{
-        if ((this->resInfo.method != "GET" || !this->resElements.body.empty()) && (resInfo.status == OK || resInfo.status == CREATED)){
+        if ((this->resInfo.method != "GET" || !this->resElements.body.empty()) && (resInfo.status == OK || resInfo.status == CREATED || isRedirect(resInfo.status))){
             done = true;
             return (this->response);
         }

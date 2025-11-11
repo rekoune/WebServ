@@ -17,7 +17,6 @@ struct HttpResourceInfo{
     std::string     cgiBodyPath;
     PathTypes       type;
     LocationConfig  location;
-    std::string     prevLocation;
     ServerConfig    server;
     RequestLine     reqLine;
     std::string     method;

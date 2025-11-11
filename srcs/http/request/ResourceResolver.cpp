@@ -47,9 +47,7 @@ HttpStatusCode ResourceResolver::findLocation(std::vector<LocationConfig> locati
         return NOT_FOUND;
     }
     resultLocation = locations.at(matchedIndex);
-    if (!resultLocation.redirection_url.empty()){
-        if (resInfo.prevLocation == resultLocation.redirection_url)
-            return (LOOP_DETECTED);
+    if (!resultLocation.redirection_url.empty() && resInfo.method == "GET"){
         resInfo.path = resultLocation.redirection_url;
         return (static_cast<HttpStatusCode>(resultLocation.redirection_status));
     }
@@ -132,8 +130,8 @@ HttpResourceInfo ResourceResolver::handle(std::map<std::string, std::string> hea
     std::string path;
 
     
-    status = findLocation(locations, reqLine.target, location);
     this->resInfo.method = reqLine.method;
+    status = findLocation(locations, reqLine.target, location);
     this->resInfo.reqLine = reqLine;
     this->resInfo.headers = headers;
     if (status == OK)
@@ -152,6 +150,5 @@ HttpResourceInfo ResourceResolver::handle(std::map<std::string, std::string> hea
         this->resInfo.path = path;
     }
     this->resInfo.status = status;
-    this->resInfo.prevLocation = location.path;
     return (this->resInfo);
 }

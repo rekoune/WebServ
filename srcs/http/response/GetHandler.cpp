@@ -38,9 +38,13 @@ bool GetHandler::isDone(){
 }
 
 std::vector<char> GetHandler::get(size_t size){
+
+    if (!File.is_open())
+        return (std::vector<char>());
     if (position >= fileSize){
       position = 0;
       done = true;
+      File.close();
       return std::vector<char>();  
     }
         
@@ -51,7 +55,9 @@ std::vector<char> GetHandler::get(size_t size){
     std::vector<char> body(size);
     File.read(&body[0], size);
     position += size;
-    if (position >= fileSize - 1)
+    if (position >= fileSize - 1){
         done = true;
+        File.close();
+    }
     return body;
 }
