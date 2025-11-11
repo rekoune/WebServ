@@ -3,6 +3,8 @@
 UploadHandler::UploadHandler(): uploadSize(-1){
     currentState = SEARCHING_BOUNDARY;
     currentTotalSize = 0;
+    chunkSize = -1;
+    isSearchForBody = false;
     setFileTypes();
 };
 UploadHandler::~UploadHandler(){};
@@ -387,7 +389,7 @@ HttpStatusCode UploadHandler::contentLengthHandling(const char* data, size_t siz
         parseState = PARSE_ERROR;
         currentTotalSize = 0;
         currentState = SEARCHING_BOUNDARY;
-        return CONTENT_TOO_LARGE;
+        return REQUEST_ENTITY_TOO_LARGE;
     }
     status = handleByContentType(data, size);
     if (parseState == PARSE_ERROR)
@@ -427,8 +429,6 @@ ParseState     UploadHandler::singleChunk(std::vector<char>& oneChunk, size_t si
 }
 
 HttpStatusCode UploadHandler::chunkedBodyHandling(const char* data, size_t size){
-    static long chunkSize = -1;
-    static bool searchForBody = false;
     long        sizePos;
     HttpStatusCode status = OK;
 
@@ -448,33 +448,38 @@ HttpStatusCode UploadHandler::chunkedBodyHandling(const char* data, size_t size)
             return (INTERNAL_SERVER_ERROR);
         }
     }
-    if (!searchForBody){
+    if (!isSearchForBody){
         sizePos = Utils::isContainStr(&bodySaver[0], bodySaver.size(), "\r\n", 2);
         if (sizePos != -1){
             chunkSize = Utils::hexToDec(std::string(bodySaver.begin(), bodySaver.begin() + sizePos).c_str());
             if (chunkSize == -1)
                 return (BAD_REQUEST);
             bodySaver.erase(bodySaver.begin(), bodySaver.begin() + sizePos + 2);
-            searchForBody = true;
+            isSearchForBody = true;
         }
     }
-    if (searchForBody){
+    if (isSearchForBody){
         if (bodySaver.size() >= (size_t)(chunkSize + 2))
         {
             parseState = singleChunk(bodySaver, chunkSize);
             bodySaver.erase(bodySaver.begin(), bodySaver.begin() + chunkSize);
             if (bodySaver[0] != '\r' || bodySaver[1] != '\n'){
                 std::cout << "gia gia gia" << std::endl;
+                isSearchForBody = false;
+                chunkSize = -1;
                 return BAD_REQUEST;
             }
             bodySaver.erase(bodySaver.begin(), bodySaver.begin() + 2);
-            searchForBody = false;
+            isSearchForBody = false;
             if (!bodySaver.empty())
                 status = chunkedBodyHandling("", 0);
         }
     }
-    if (parseState == PARSE_ERROR)
+    if (parseState == PARSE_ERROR){
+        isSearchForBody = false;
+        chunkSize = -1;
         status = BAD_REQUEST;
+    }
     return (status);
 }
 
