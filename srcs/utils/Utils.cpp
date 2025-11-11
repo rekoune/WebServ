@@ -184,7 +184,6 @@ size_t       Utils::strToNumber(std::string& str){
 
 size_t       Utils::getFileSize(const std::string& filePath){
     size_t size = 0;
-    // std::cout << "file path = " << filePath << std::endl;
     std::ifstream file(filePath.c_str(), std::ios::binary | std::ios::ate); 
     if (!file)
     {
@@ -193,6 +192,38 @@ size_t       Utils::getFileSize(const std::string& filePath){
     size = file.tellg();
     file.close();
     return (size);
+}
+
+bool Utils::isScript(std::string& path, std::vector<std::string>& cgiExtentions){
+    std::string extention;
+    std::string fileName;
+    size_t      dotPos;
+
+    fileName = Utils::getFileName(path);
+    dotPos = fileName.find(".");
+    if (dotPos != std::string::npos){
+        extention.append(fileName.begin() + dotPos , fileName.end());
+        for (size_t i = 0; i < cgiExtentions.size(); i++)
+        {
+            if (cgiExtentions.at(i) == extention)
+                return (true);
+        }
+    }
+    return false;
+}
+
+std::vector<char>    Utils::readFile(std::string& filePath){
+    std::ifstream file;
+    size_t size = 0;
+
+    file.open(filePath.c_str(), std::ios::in | std::ios::binary);
+    if (!file.is_open())
+        return (std::vector<char>());
+    size = Utils::getFileSize(filePath);
+    std::vector<char> body(size);
+    file.read(&body[0], size);
+    file.close();
+    return (body);
 }
 
 // int main (){

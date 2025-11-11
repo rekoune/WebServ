@@ -19,13 +19,11 @@ class ResourceResolver{
         std::vector<LocationConfig> locations;
         HttpResourceInfo resInfo;
 
-        HttpStatusCode  findLocation(std::vector<LocationConfig> locations, std::string reqTarget, LocationConfig& resultLocation);
+        HttpStatusCode  findLocation(std::vector<LocationConfig> locations, std::string& reqTarget, LocationConfig& resultLocation);
         HttpStatusCode  resolveResourceType(std::string& path, PathTypes& pathType, LocationConfig& location);
         HttpStatusCode  dirHandling(std::string& path, PathTypes& pathType, LocationConfig& location);
         HttpStatusCode  fileHandling(std::string& path, PathTypes& pathType);
-        bool            isScript(std::string& path, std::map<std::string, std::string>& cgiExtentions);
         HttpStatusCode  isMethodAllowed(std::vector<std::string> allowedMethods, std::string reqMethod);
-        
     public:
         ResourceResolver();
         ResourceResolver (const RequestLine& reqLine, const std::vector<LocationConfig>& locations);
@@ -35,7 +33,7 @@ class ResourceResolver{
         void setRequestLine(const RequestLine& req);
         void setLocations(const std::vector<LocationConfig>& locations);
         void setServer(const ServerConfig&    server);
-        HttpResourceInfo handle();
+        HttpResourceInfo handle(std::map<std::string,std::string> headers);
         HttpResourceInfo getResponseInfo() const;
 
 };

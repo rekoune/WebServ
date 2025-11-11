@@ -14,16 +14,17 @@ struct RequestLine{
 struct HttpResourceInfo{
     HttpStatusCode status;
     std::string     path;
+    std::string     cgiBodyPath;
     PathTypes       type;
     LocationConfig  location;
     std::string     prevLocation;
     ServerConfig    server;
     RequestLine     reqLine;
     std::string     method;
-    std::string     cgiExecutorPath;
+    int             cgiFD;
     std::map<std::string, std::string>  headers;
 
-    HttpResourceInfo(): status(OK){};
+    HttpResourceInfo(): status(OK), cgiFD(-1){};
 };
 
 

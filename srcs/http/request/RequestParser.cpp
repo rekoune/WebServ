@@ -26,6 +26,7 @@ RequestParser& RequestParser::operator=(const RequestParser& other){
     this->resInfo = other.resInfo;
     this->uploadHandler = other.uploadHandler;
     this->clientMaxBodySize = other.clientMaxBodySize;
+    this->cgiExecutor = other.cgiExecutor;
     return (*this);
 }
 
@@ -41,6 +42,10 @@ std::map<std::string, std::string>  RequestParser::getHeaders() const{
 }
 HttpResourceInfo                    RequestParser::getResourceInfo()const{
     return(this->resInfo);
+}
+
+CgiExecutor                         RequestParser::getCgiExecutor(){
+    return (this->cgiExecutor);
 }
 
 HttpStatusCode RequestParser::setMethod(std::string& method){
@@ -61,7 +66,7 @@ void           RequestParser::extractQuery(std::string& target, std::string& que
     pos = target.find("?");
     if (pos == std::string::npos)
         return;
-    query.append(target.begin() + pos, target.end());
+    query.append(target.begin() + pos + 1, target.end());
     target.erase(target.begin() + pos, target.end());
 }
 
@@ -245,11 +250,11 @@ HttpStatusCode      RequestParser::appendData(const char* _data, size_t size){
             resourceResolver.setLocations(server.locations);
             resourceResolver.setServer(server);
             resourceResolver.setRequestLine(requestLine);
-            if ((resInfo = resourceResolver.handle()).status != OK){
+            resInfo.headers = headers;
+            if ((resInfo = resourceResolver.handle(resInfo.headers)).status != OK){
                 parseState = PARSE_ERROR;
                 return resInfo.status;
             }
-            resInfo.headers = headers;
             if (requestLine.method == "GET" || requestLine.method == "DELETE")
                   parseState = PARSE_COMPLETE;
             else{
@@ -264,6 +269,18 @@ HttpStatusCode      RequestParser::appendData(const char* _data, size_t size){
     else{
         parseState = uploadHandler.upload(_data, size);
         this -> resInfo = uploadHandler.getResourseInfo() ;
+    }
+    if (parseState == PARSE_COMPLETE && resInfo.type == SCRIPT){
+        RequestContext cgiInfo;
+
+        cgiInfo.req_line = resInfo.reqLine;
+        cgiInfo.script_path = resInfo.path;
+        cgiInfo.headers = resInfo.headers;
+        cgiInfo.body = Utils::readFile(resInfo.cgiBodyPath);
+        std::remove(resInfo.cgiBodyPath.c_str());
+        cgiExecutor.setContext(cgiInfo);
+
+        resInfo.cgiFD = cgiExecutor.run();
     }
     return resInfo.status;
 }

@@ -32,7 +32,7 @@ HttpResourceInfo ResourceResolver::getResponseInfo() const {
     return (this->resInfo);
 }
 
-HttpStatusCode ResourceResolver::findLocation(std::vector<LocationConfig> locations, std::string reqTarget, LocationConfig& resultLocation){
+HttpStatusCode ResourceResolver::findLocation(std::vector<LocationConfig> locations, std::string& reqTarget, LocationConfig& resultLocation){
     int matchedLenght = -1;
     int matchedIndex = -1;
     for(size_t i = 0; i < locations.size(); i++){
@@ -48,12 +48,11 @@ HttpStatusCode ResourceResolver::findLocation(std::vector<LocationConfig> locati
     }
     resultLocation = locations.at(matchedIndex);
     if (!resultLocation.redirection_url.empty()){
-        if (resInfo.prevLocation == resultLocation.redirection_url)
-            return (LOOP_DETECTED);
+    //     if (resInfo.prevLocation == resultLocation.redirection_url)
+    //         return (LOOP_DETECTED);
         resInfo.path = resultLocation.redirection_url;
         return (static_cast<HttpStatusCode>(resultLocation.redirection_status));
     }
-    // resInfo.prevLocation = resultLocation.path;
     return (OK);
 }
 
@@ -90,26 +89,9 @@ HttpStatusCode ResourceResolver::dirHandling(std::string& path, PathTypes& pathT
    return (OK);
 }
 
-bool ResourceResolver::isScript(std::string& path, std::map<std::string, std::string>& cgiExtentions){
-    std::string extention;
-    std::string fileName;
-    size_t      dotPos;
-
-    fileName = Utils::getFileName(path);
-    dotPos = fileName.find(".");
-    if (dotPos != std::string::npos){
-        extention.append(fileName.begin() + dotPos , fileName.end());
-        std::map<std::string, std::string>::iterator it = cgiExtentions.find(extention);
-        if (it != cgiExtentions.end()){
-            resInfo.cgiExecutorPath = it->second;
-            return (true);
-        }
-    }
-    return false;
-}
 
 HttpStatusCode ResourceResolver::fileHandling(std::string& path, PathTypes& pathType){
-    if (isScript(path, resInfo.server.cgi_extension)){
+    if (Utils::isScript(path, resInfo.location.cgi_extension)){
         pathType = SCRIPT;
         return (OK);
     }
@@ -130,6 +112,10 @@ HttpStatusCode ResourceResolver::resolveResourceType(std::string& path, PathType
         }
         return (NOT_FOUND);
     }
+    std::map<std::string, std::string>::iterator it = this->resInfo.headers.find("content-type");
+    if (S_ISREG(type.st_mode) && it != resInfo.headers.end() && it->second.find("multipart/form-data") != std::string::npos){
+        return (BAD_REQUEST);
+    }
     if (S_ISDIR(type.st_mode))
         status = dirHandling(path, pathType, location);
     else if (S_ISREG(type.st_mode))
@@ -139,29 +125,33 @@ HttpStatusCode ResourceResolver::resolveResourceType(std::string& path, PathType
     return (status);
 }
 
-HttpResourceInfo ResourceResolver::handle(){
+HttpResourceInfo ResourceResolver::handle(std::map<std::string, std::string> headers){
     LocationConfig location;
     HttpStatusCode status;
     PathTypes   pathType;
     std::string path;
 
+    
     status = findLocation(locations, reqLine.target, location);
     this->resInfo.method = reqLine.method;
     this->resInfo.reqLine = reqLine;
+    this->resInfo.headers = headers;
     if (status == OK)
         status = isMethodAllowed(location.allowed_methods, reqLine.method);
+    this->resInfo.location = location;
     if (status == OK){
         path = location.root;
 
         if (path.at(path.length() -1) == '/')
             path.erase(path.end() -1);
         path.append(reqLine.target);
+        if (location.path != "/")
+            path.erase(path.begin() + location.root.length() , path.begin() + location.path.length() + location.root.length());
         status = resolveResourceType(path, pathType, location);
         this->resInfo.type = pathType;
         this->resInfo.path = path;
     }
     this->resInfo.status = status;
-    this->resInfo.location = location;
     this->resInfo.prevLocation = location.path;
     return (this->resInfo);
 }

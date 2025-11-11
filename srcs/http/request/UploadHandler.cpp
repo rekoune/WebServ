@@ -92,6 +92,7 @@ HttpStatusCode    UploadHandler::getPathType(std::string path, PathTypes& type){
     char            lastChar;
     HttpStatusCode  status = NOT_FOUND;
 
+    
     if (access(path.c_str(), F_OK) == 0){
         stat(path.c_str(), &statType);
         if (S_ISREG(statType.st_mode))
@@ -123,11 +124,20 @@ HttpStatusCode    UploadHandler::getPathType(std::string path, PathTypes& type){
 
 void    UploadHandler::setFullPathByType(std::string& path, PathTypes& pathType, std::string contentType){
     if (pathType == F){
+        if (Utils::isScript(path, resInfo.location.cgi_extension) && access(path.c_str(), F_OK) == 0){
+            pathType = SCRIPT;
+            std::string prefix("");
+            resInfo.cgiBodyPath = path;
+            resInfo.cgiBodyPath.append(Utils::randomName(prefix));
+            return ;
+        }
         if (contentType.empty() || contentType == Utils::getFileType(fileTypes, Utils::getFileName(path))){
             return;
         }
-        else
-            path.append(Utils::findExtensionByMime(fileTypes, contentType));
+        else{
+            if (!Utils::isScript(path, resInfo.location.cgi_extension))
+                path.append(Utils::findExtensionByMime(fileTypes, contentType));
+        }
     }
     else if (pathType == DIR_LS){
         std::string prefix("File");
@@ -138,13 +148,11 @@ void    UploadHandler::setFullPathByType(std::string& path, PathTypes& pathType,
 
 HttpStatusCode     UploadHandler::getUploadPath(std::string& uploadPath){
     HttpStatusCode status;
-
     uploadPath.append(resInfo.location.root);
-    uploadPath.append(resInfo.location.path);
     uploadPath.append(resInfo.location.upload_store);
     if (access(uploadPath.c_str(), F_OK) != 0)
         return NOT_FOUND;
-    uploadPath.append(resInfo.path.begin() + resInfo.location.root.length() + resInfo.location.path.length(), resInfo.path.end());
+    uploadPath.append(resInfo.path.begin() + resInfo.location.root.length(), resInfo.path.end());
     status = getPathType(uploadPath, resInfo.type);
     if (status == OK)
         resInfo.path = uploadPath;
@@ -156,13 +164,18 @@ HttpStatusCode      UploadHandler::checkHeaders(std::map<std::string, std::strin
     PathTypes           pathType = DIR_LS;
     std::string         contentType;
     size_t              namePos;
+
+    //because i expect here to get a directory
+    if (resInfo.type == F){
+        parseState = PARSE_ERROR;
+        return NOT_FOUND;
+    }
     it = headers.find("content-disposition");
     if (it == headers.end() || it->second.find("form-data") == std::string::npos){
         parseState = PARSE_ERROR;
         return BAD_REQUEST;
     }
     uploadPath = std::string(resInfo.path);
-    
     if ((namePos = it->second.find("filename=\"")) != std::string::npos){
         uploadPath.append("/");
         if (it->second.begin() + namePos + 10 == it->second.end() - 1)
@@ -176,6 +189,15 @@ HttpStatusCode      UploadHandler::checkHeaders(std::map<std::string, std::strin
     if (it != headers.end())
         contentType = it->second;
     setFullPathByType(uploadPath, pathType, contentType);
+    if (pathType == SCRIPT){
+        return FORBIDDEN;
+        uploadPath = resInfo.cgiBodyPath;
+        pathType = F;
+    }
+    if (Utils::isScript(uploadPath, resInfo.location.cgi_extension)){
+        return (FORBIDDEN);
+    }
+    resInfo.type = pathType;
     bodyFile.close();
     bodyFile.open(uploadPath.c_str(), std::ios::out | std::ios::binary);
     if (!bodyFile){
@@ -311,11 +333,7 @@ HttpStatusCode      UploadHandler::searchForBody(){
 
 HttpStatusCode      UploadHandler::multipartHandling(const char* data, size_t size){
     HttpStatusCode status = OK;
-
-    if (resInfo.type != DIR_LS){
-        parseState = PARSE_ERROR;
-        return (NOT_FOUND);
-    }
+  
     Utils::pushInVector(bodySaver, data, size);
     if (currentState == SEARCHING_BOUNDARY){
         status = searchForBoundary();
@@ -344,7 +362,14 @@ HttpStatusCode      UploadHandler::handleByContentType(const char* data, size_t 
     else {
         if (!bodyFile.is_open()){
             setFullPathByType(resInfo.path, resInfo.type, contentType);
-            bodyFile.open(resInfo.path.c_str(), std::ios::out | std::ios::binary);
+            if (resInfo.type == F && Utils::isScript(resInfo.path, resInfo.location.cgi_extension)){
+                parseState = PARSE_ERROR;
+                return (FORBIDDEN);
+            }
+            if (resInfo.type == SCRIPT)
+                bodyFile.open(resInfo.cgiBodyPath.c_str(), std::ios::out | std::ios::binary);
+            else
+                bodyFile.open(resInfo.path.c_str(), std::ios::out | std::ios::binary);
         }
         if (!bodyFile){
             return (INTERNAL_SERVER_ERROR);
@@ -381,7 +406,6 @@ HttpStatusCode UploadHandler::contentLengthHandling(const char* data, size_t siz
                 parseState = PARSE_ERROR;
                 return BAD_REQUEST;
             }
-                
             currentState = SEARCHING_BOUNDARY;
             parseState = PARSE_COMPLETE;
             bodyFile.close();
@@ -411,7 +435,14 @@ HttpStatusCode UploadHandler::chunkedBodyHandling(const char* data, size_t size)
     Utils::pushInVector(bodySaver, data, size);
     if (!bodyFile.is_open()){
         setFullPathByType(resInfo.path, resInfo.type, contentType);
-        bodyFile.open(resInfo.path.c_str(), std::ios::out | std::ios::binary);
+        if (resInfo.type == F && Utils::isScript(resInfo.path, resInfo.location.cgi_extension)){
+            parseState = PARSE_ERROR;
+            return (FORBIDDEN);
+        }
+        if (resInfo.type == SCRIPT)
+                bodyFile.open(resInfo.cgiBodyPath.c_str(), std::ios::out | std::ios::binary);
+        else
+            bodyFile.open(resInfo.path.c_str(), std::ios::out | std::ios::binary);
         if (!bodyFile){
             std::cout << "ik ik ik" << std::endl;
             return (INTERNAL_SERVER_ERROR);
@@ -486,7 +517,9 @@ ParseState  UploadHandler::upload(const char* data, size_t size){
     }
     else if (parseState == PARSE_ERROR){
         bodyFile.close();
-        std::remove(resInfo.path.c_str());
+        std::cout << "ANA FORM REMOVEIG" << std::endl;
+        std::cout << "I will remove the file " << resInfo.path << std::endl;
+        std::cout << "status = " << resInfo.status << std::endl;
         clearFiles(openedFiles);
         openedFiles.clear();
     }

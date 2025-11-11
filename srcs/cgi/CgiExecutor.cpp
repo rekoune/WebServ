@@ -9,14 +9,32 @@ CgiExecutor::~CgiExecutor()
 {
 	if (this->pid > 0)
 		if (waitpid(this->pid, NULL, WNOHANG))
+		{
+			std::cout << "==================== IM KILLING ====================\n";
 			kill(this->pid, SIGKILL);
-	if (this->result_fd > 0)
-		close (result_fd);
+			waitpid(this->pid, NULL, 1);
+		}
+		
+	// if (this->result_fd > 0)
+	// 	close (result_fd);
 }
 
 CgiExecutor::CgiExecutor(RequestContext& req_context)
 	: req_context(req_context) , done(false)    						 //server_software  is which program/software this webserver is (nginx/apache...). ours be like "webserv/1.1" or some thing like that. I NEED IT IN THE ENVP FOR SCRIPT
 {}
+
+
+CgiExecutor& CgiExecutor::operator=(const CgiExecutor& other)
+{
+	req_context = other.req_context;
+	result = other.result;
+	pid = other.pid;
+	result_fd = other.result_fd;
+	done  = other.done;
+	
+	return (*this);
+}
+
 
 void	CgiExecutor::setContext(RequestContext&	req_context)
 {
@@ -178,6 +196,7 @@ int	CgiExecutor::executeScript(std::vector<char>& body, HttpStatusCode&	status, 
 		// 	execve
 		execve(const_cast<const char *>(req_context.script_path.c_str()), argv, envp);
 		std::cerr << "execve failed" << std::endl;
+		perror("====== > EXECVE: ");
 		exit(1);
 	}
 	else 
@@ -231,7 +250,10 @@ CgiResult	CgiExecutor::readResult(size_t buffer_size)
 		close (result_fd);
 		done = true;
 		if (waitpid(pid, NULL, WNOHANG) == 0)
+		{
 			kill (pid, SIGKILL);
+			waitpid(pid, NULL, 1);
+		}
 	}
 	else if (read_return == -1)
 	{

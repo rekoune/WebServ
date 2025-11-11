@@ -27,6 +27,7 @@ class CgiExecutor
 		std::string	getServerPort(std::string	host);
 		// Class
 		CgiExecutor();
+		CgiExecutor& operator=(const CgiExecutor& other);
 		~CgiExecutor();
 		CgiExecutor(RequestContext& req_context);
 		void	setContext(RequestContext&	req_context);

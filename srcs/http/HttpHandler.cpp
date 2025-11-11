@@ -38,6 +38,13 @@ bool HttpHandler::isKeepAlive(){
 bool HttpHandler::isResDone(){
     return response.isDone();
 }
+int HttpHandler::isScript(){
+    return (this->reqParser.getResourceInfo().cgiFD);
+}
+
+std::vector<char> HttpHandler::getStatusResponse(const HttpStatusCode& statusCode){
+    return (this->response.getStatusResponse(statusCode));
+}
 
 void HttpHandler::appendData(const char* data, size_t size){
     if (sameReq ==  false){
@@ -47,7 +54,7 @@ void HttpHandler::appendData(const char* data, size_t size){
         sameReq = true;
     }
     if (!isComplete()){
-    this->resInfo.status = this->reqParser.appendData(data, size);
+        this->resInfo.status = this->reqParser.appendData(data, size);
     if (isComplete())
         sameReq = false;
     }
@@ -57,12 +64,14 @@ std::vector<char> HttpHandler::getResponse(){
     if (sameRes){
         sameRes = false;
         this->response.setResInfo(reqParser.getResourceInfo());
+        this->response.setCgiExecutor(reqParser.getCgiExecutor());
         response.handle();
     }
 
     std::vector <char> res;
-    if (!response.isDone())
+    if (!response.isDone()){
         res = response.getResponse();
+    }
     if (response.isDone()){
         sameRes = true;
     }

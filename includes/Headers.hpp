@@ -1,6 +1,7 @@
 #ifndef HEADERS_HPP 
 #define HEADERS_HPP
 
+#include <ctime>
 #include <iostream>
 #include <vector>
 #include <deque>
@@ -17,6 +18,8 @@
 
 #include "config/configStructs.hpp"
 #include "HttpHandler.hpp"
+
+extern bool workFlage;
 
 
 #endif 

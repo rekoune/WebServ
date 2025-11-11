@@ -14,24 +14,21 @@ class HttpHandler{
         Response response;
         bool        sameReq;
         bool        sameRes;
-        // bool        resDone;
 
     public:
         HttpHandler();
-        // HttpHandler (std::vector<char> req, const ServerConfig& server);
         HttpHandler(const ServerConfig& server);
         HttpHandler (const HttpHandler& other);
         ~HttpHandler();
         HttpHandler& operator=(const HttpHandler& other);
-        // void setRequest(const Request& req);
         void setServer(const ServerConfig& server);
-        // void setResourceResolver(const ResourceResolver& reqHandler);
-        // void handle();
         void appendData(const char* data, size_t size);
         bool isComplete();
         std::vector<char> getResponse();
-        bool isKeepAlive();
-        bool isResDone();
+        std::vector<char> getStatusResponse(const HttpStatusCode& statusCode);
+        bool    isKeepAlive();
+        bool    isResDone();
+        int     isScript();
 };
 
 # endif

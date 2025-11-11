@@ -12,7 +12,7 @@ $(NAME) : $(OBJ)
 	c++ $(FLAGS) $(OBJ) -o $(NAME)
 
 
-%.o:%.cpp 
+%.o:%.cpp ../../includes/config/configStructs.hpp
 	c++ $(FLAGS) -c $< -o $@
 
 clean :

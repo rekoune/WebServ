@@ -1,4 +1,4 @@
-#include "../../includes/client.hpp"
+   #include "../../includes/client.hpp"
 
 client::~client() {}
 
@@ -13,13 +13,14 @@ client& client::operator=(const client& other){
 		totalsend = other.totalsend;
 		totalrecv = other.totalrecv;
 		fd = other.fd;
+		cgiFd = other.cgiFd;
 	}
 	return *this;
 }
 
 
 client::client(std::vector<ServerConfig>& myservers, int fd) : myServers(myservers) ,hostSeted(false),
-		responseComplete(true) ,totalsend(0),totalrecv(0) ,fd(fd) 
+		responseComplete(true) ,totalsend(0),totalrecv(0) ,fd(fd) ,cgiFd(-1)
 {
 	if(myServers.size() == 1){
 		clientHandler.setServer(myservers[0]);
@@ -31,7 +32,7 @@ client::client(std::vector<ServerConfig>& myservers, int fd) : myServers(myserve
 client::client(const client& other): 
 		clientHandler(other.clientHandler),myServers(other.myServers) ,requestData(other.requestData),
 		response(other.response) ,hostSeted(other.hostSeted),responseComplete(other.responseComplete) ,
-		totalsend(other.totalsend),totalrecv(other.totalrecv) , fd(other.fd) {}
+		totalsend(other.totalsend),totalrecv(other.totalrecv) , fd(other.fd), cgiFd(other.cgiFd) {}
 
 
 ssize_t client::ft_recv(short& event){
@@ -40,13 +41,16 @@ ssize_t client::ft_recv(short& event){
 
 
 	ssize_t read = recv(fd, buf, sizeof(buf), 0);
+	totalrecv += read;
 	if(read == -1){
 		std::cerr << "Error receiving data: " << strerror(errno) << std::endl; 
 		return 0;
 	}
 	else if(!isHostSeted()){
 		std::cout << "seting host...." << std::endl;
+		total = totalrecv;
 		if(appendFirstRequest(buf, read)){
+			cgiFd = clientHandler.isScript();
 			totalrecv = 0;
 			event = POLLOUT;
 		}
@@ -54,9 +58,9 @@ ssize_t client::ft_recv(short& event){
 	else if(read){
 		std::cout << "receving...." << std::endl;
 		clientHandler.appendData(buf, read);
-		totalrecv += read;
 		total = totalrecv;
 		if(clientHandler.isComplete()){
+			cgiFd = clientHandler.isScript(); // her the function that give's the cgi fd return ;
 			std::cout << "all has been receved" << std::endl;
 			totalrecv = 0;
  			event = POLLOUT;
@@ -94,6 +98,36 @@ ssize_t client::sending(short& event){
 	return nsend;
 }
 
+void client::setErrorResponse(){
+	response = clientHandler.getStatusResponse(REQUEST_TIME_OUT);
+	responseComplete = false;
+}
+
+void client::startTimer(){
+	cgiStartTime = std::time(NULL);
+}
+
+std::time_t client::timeDefrence(){
+	return std::time(NULL) - cgiStartTime;
+}
+
+bool client::checkTimeOut()
+{
+	std::time_t time = timeDefrence();
+	std::cout << "\033[34mTime elapsed: " << time << " seconds\033[0m" << std::endl;
+	if(time >= TIMEOUT)
+		return true;
+	return false;
+}
+
+int client::cgiRun(){
+	response = clientHandler.getResponse();	
+	if(!response.empty()){
+		responseComplete = false;
+		cgiFd = -1;
+	}
+	return cgiFd;
+}
 
 ssize_t client::ft_send(short& event){
 	if(responseComplete){
@@ -123,6 +157,8 @@ void client::setHost(std::string &host){
 				return ;
 			}
 		}
+	}
+	for(size_t i = 0; i < myServers.size() ; i++){
 		std::map<std::string, std::vector<std::string> >::iterator it = myServers[i].host_port.begin();
 		while (it != myServers[i].host_port.end()){
 			if(host == it->first){
@@ -167,6 +203,11 @@ bool client::appendFirstRequest(const char* buf, ssize_t read)
 	return false;
 }
 
+int client::getCgiFd(){
+	return cgiFd;
+}
 
-
+void client::resetCgiFd(){
+	cgiFd = -1;
+}
 

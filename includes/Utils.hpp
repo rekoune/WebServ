@@ -31,6 +31,9 @@ class Utils{
         static void         trimSpaces(std::string& str);
         static size_t       strToNumber(std::string& str);
         static size_t       getFileSize(const std::string& filePath);
+        static bool         isScript(std::string& path, std::vector<std::string>& cgiExtentions);
+        static std::vector<char>         readFile(std::string& filePath);
+
 };
 
 # endif
