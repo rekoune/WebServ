@@ -167,7 +167,6 @@ HttpStatusCode      UploadHandler::checkHeaders(std::map<std::string, std::strin
     std::string         contentType;
     size_t              namePos;
 
-    //because i expect here to get a directory
     if (resInfo.type == F){
         parseState = PARSE_ERROR;
         return NOT_FOUND;
@@ -193,13 +192,13 @@ HttpStatusCode      UploadHandler::checkHeaders(std::map<std::string, std::strin
     setFullPathByType(uploadPath, pathType, contentType);
     if (pathType == SCRIPT){
         return FORBIDDEN;
-        uploadPath = resInfo.cgiBodyPath;
-        pathType = F;
+        // uploadPath = resInfo.cgiBodyPath;
+        // pathType = F;
     }
     if (Utils::isScript(uploadPath, resInfo.location.cgi_extension)){
         return (FORBIDDEN);
     }
-    resInfo.type = pathType;
+    // resInfo.type = pathType;
     bodyFile.close();
     bodyFile.open(uploadPath.c_str(), std::ios::out | std::ios::binary);
     if (!bodyFile){
