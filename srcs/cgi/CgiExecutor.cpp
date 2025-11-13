@@ -170,6 +170,7 @@ int	CgiExecutor::executeScript(std::vector<char>& body, HttpStatusCode&	status, 
 	{
 		std::cerr << "pipe failed" << std::endl;
 		this->result.status = INTERNAL_SERVER_ERROR;
+		done = true;
 		return -1 ;
 	}
 
@@ -178,6 +179,7 @@ int	CgiExecutor::executeScript(std::vector<char>& body, HttpStatusCode&	status, 
 	{
 		std::cerr << "fork failed" << std::endl;
 		this->result.status = INTERNAL_SERVER_ERROR;
+		done = true;
 		return -1 ;
 	}
 	if (pid == 0)
@@ -230,6 +232,7 @@ int	CgiExecutor::executeScript(std::vector<char>& body, HttpStatusCode&	status, 
 		if (waitpid(pid, &status, WNOHANG) == pid)
 		{
 			result.status = INTERNAL_SERVER_ERROR;
+			done = true;
 			return -1 ;
 		}
 		
@@ -269,6 +272,7 @@ CgiResult	CgiExecutor::readResult(size_t buffer_size)
 	{
 		std::cerr << "hahaha\n";
 		result.status = INTERNAL_SERVER_ERROR;
+		done = true;
 		return result;
 	}
 	if (buffer_size > static_cast<size_t>(read_return))
@@ -285,6 +289,7 @@ int	CgiExecutor::run()
 	if ( access(req_context.script_path.c_str(), X_OK) == -1)
 	{
 		result.status = FORBIDDEN;
+		done = true;
 		return -1;
 	}
 	session.addSession(req_context.headers);
