@@ -24,6 +24,7 @@ private:
 	int cgiFd;
 
 	std::time_t cgiStartTime;
+	std::time_t clientLastActivity;
 	
 public:
 
@@ -42,6 +43,8 @@ public:
 	std::time_t timeDefrence();
 	bool checkTimeOut();
 	
+	void setupLastActivity();
+	bool clientTimeOut();
 	
 	bool appendFirstRequest(const char* buf, ssize_t read);
 	bool isHostSeted();

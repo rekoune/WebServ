@@ -38,7 +38,7 @@ public:
 	struct pollfd create_pollfd(int fd, short events);
 	int serverCore();
 
-	client& getClient(int& fd);
+	client* getClient(int& fd);
 	void acceptClient(int listenFd);
 	void rmClient(size_t &fdIndex);
 

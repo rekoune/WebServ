@@ -198,8 +198,11 @@ void server::rmClient(size_t &fdIndex)
 	fdIndex--;
 }
 
-client& server::getClient(int& fd){
-	return clients.find(fd)->second;
+client* server::getClient(int& fd){
+	std::map<int, client>::iterator it = clients.find(fd);
+	if (it != clients.end())
+		return &(it->second);
+	return NULL;
 }
 
 void server::cgiSetup(size_t& fdIndex, int cgiFd){
@@ -221,14 +224,15 @@ void server::pollin(size_t &fdIndex)
 	struct pollfd& pfd = socketFds[fdIndex];
 	std::cout << "POLLIN FD: " << pfd.fd << std::endl;
 	if(is_listener(pfd.fd))
-			acceptClient(pfd.fd);
+		acceptClient(pfd.fd);
 	else if(is_cgi(pfd.fd)){
 		int cgiStatus = cgi[pfd.fd]->cgiRun();
 		if(cgiStatus == -1)
-			rmCgi(fdIndex, true, OK);
+		rmCgi(fdIndex, true, OK);
 	}
-	else
+	else if(currentClient)
 	{
+		currentClient->setupLastActivity();
 		if(!currentClient->ft_recv(pfd.events)){
 			rmClient(fdIndex); 
 			return ;
@@ -245,11 +249,12 @@ void server::pollout(size_t& fdIndex)
 {
 	struct pollfd& pfd = socketFds[fdIndex];
 	std::cout << "POLLOUT FD: " << pfd.fd  << std::endl;
+	currentClient->setupLastActivity();
 	if(currentClient->getCgiFd() != -1){
 		if(currentClient->checkTimeOut()){
 			for(size_t i = 0; i < socketFds.size(); i++){
 				if(currentClient->getCgiFd() == socketFds[i].fd){
-					std::cout << "\033[33mTimeout occurred, setting error response.\033[0m" << std::endl;
+					std::cout << "\033[33mCgi timeout occurred\033[0m" << std::endl;
 					rmCgi(i, false, REQUEST_TIME_OUT);
 					if(i < fdIndex)
 						fdIndex--; 
@@ -282,14 +287,14 @@ int server::serverCore()
 	signal(SIGPIPE, SIG_IGN);	
 	while (workFlage)
 	{
-		sleep(1);
+		// sleep(1);
 		std::cout << "=======================================start the poll================================" << std::endl;
 		int NbrOfActiveSockets = poll(&socketFds[0], socketFds.size(), -1);
 		if(NbrOfActiveSockets < 0)
 			std::cerr << "Poll : " << strerror(errno) << std::endl;
-		for(size_t i = 0; i < socketFds.size() && NbrOfActiveSockets > 0 ; i++){
+		for(size_t i = 0; i < socketFds.size()  ; i++){
 			std::cout << "nbr of client left to handle : " << NbrOfActiveSockets << " this is fd : "<< socketFds[i].fd<< std::endl;
-			currentClient = &getClient(socketFds[i].fd);
+			currentClient = getClient(socketFds[i].fd);
 			if(workFlage && (socketFds[i].revents & POLLIN)){
 				NbrOfActiveSockets--;
 				pollin(i);
@@ -304,8 +309,14 @@ int server::serverCore()
 					rmCgi(i, false, INTERNAL_SERVER_ERROR);
 					continue;
 				}
+				std::cout << "****************************<<" <<std::endl;
 				rmClient(i);
 			}
+			else if(currentClient && currentClient->clientTimeOut()){
+				std::cout << "\033[31mTimeout occurred, closing client connection.\033[0m" << std::endl;
+				rmClient(i);
+			}
+
 		}
 	}
 	return 0;

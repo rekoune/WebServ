@@ -14,6 +14,7 @@ client& client::operator=(const client& other){
 		totalrecv = other.totalrecv;
 		fd = other.fd;
 		cgiFd = other.cgiFd;
+		clientLastActivity =other.clientLastActivity;
 	}
 	return *this;
 }
@@ -22,6 +23,7 @@ client& client::operator=(const client& other){
 client::client(std::vector<ServerConfig>& myservers, int fd) : myServers(myservers) ,hostSeted(false),
 		responseComplete(true) ,totalsend(0),totalrecv(0) ,fd(fd) ,cgiFd(-1)
 {
+	clientLastActivity = std::time(NULL);
 	if(myServers.size() == 1){
 		clientHandler.setServer(myservers[0]);
 		myServers.clear();
@@ -32,7 +34,7 @@ client::client(std::vector<ServerConfig>& myservers, int fd) : myServers(myserve
 client::client(const client& other): 
 		clientHandler(other.clientHandler),myServers(other.myServers) ,requestData(other.requestData),
 		response(other.response) ,hostSeted(other.hostSeted),responseComplete(other.responseComplete) ,
-		totalsend(other.totalsend),totalrecv(other.totalrecv) , fd(other.fd), cgiFd(other.cgiFd) {}
+		totalsend(other.totalsend),totalrecv(other.totalrecv) , fd(other.fd), cgiFd(other.cgiFd), clientLastActivity(other.clientLastActivity) {}
 
 
 ssize_t client::ft_recv(short& event){
@@ -42,6 +44,7 @@ ssize_t client::ft_recv(short& event){
 
 	ssize_t read = recv(fd, buf, sizeof(buf), 0);
 	totalrecv += read;
+	setupLastActivity();
 	if(read == -1){
 		std::cerr << "Error receiving data: " << strerror(errno) << std::endl; 
 		return 0;
@@ -75,10 +78,11 @@ ssize_t client::ft_recv(short& event){
 ssize_t client::sending(short& event){
 	ssize_t nsend;
 
-	std::cout << "resopons size = " << response.size() << "total send =" << totalsend << std::endl;
-	std::cout << "Response: " << std::string(response.begin(), response.end()) << std::endl;
+	// std::cout << "resopons size = " << response.size() << "total send =" << totalsend << std::endl;
+	// std::cout << "Response: " << std::string(response.begin(), response.end()) << std::endl;
 	
 	nsend = send(fd, &response[0] + totalsend, response.size() - totalsend, 0);
+	setupLastActivity();
 	if(nsend == -1){
 		std::cerr << "send error: " << strerror(errno) << std::endl;
 		return 0;
@@ -100,6 +104,15 @@ ssize_t client::sending(short& event){
 	return nsend;
 }
 
+ssize_t client::ft_send(short& event){
+	if(responseComplete){
+		response = clientHandler.getResponse();
+		responseComplete = false;
+	}
+	std::cout << "sending... " << std::endl;
+	return sending(event);
+}
+
 void client::setErrorResponse(HttpStatusCode& statuCode){
 	response = clientHandler.getStatusResponse(statuCode);
 	responseComplete = false;
@@ -111,6 +124,16 @@ void client::startTimer(){
 
 std::time_t client::timeDefrence(){
 	return std::time(NULL) - cgiStartTime;
+}
+
+void client::setupLastActivity(){
+	clientLastActivity = std::time(NULL);
+}
+
+bool client::clientTimeOut(){
+	if((std::time(NULL) - clientLastActivity) >= 2)
+		return true;
+	return false;
 }
 
 bool client::checkTimeOut()
@@ -131,14 +154,6 @@ int client::cgiRun(){
 	return cgiFd;
 }
 
-ssize_t client::ft_send(short& event){
-	if(responseComplete){
-		response = clientHandler.getResponse();
-		responseComplete = false;
-	}
-	std::cout << "sending... " << std::endl;
-	return sending(event);
-}
 
 bool client::isHostSeted(){
 	return hostSeted;
