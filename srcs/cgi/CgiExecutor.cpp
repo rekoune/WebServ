@@ -7,13 +7,13 @@ CgiExecutor::CgiExecutor() :  pid(-1), result_fd(-1), done(false)
 
 CgiExecutor::~CgiExecutor()
 {
-	if (this->pid > 0)
-		if (waitpid(this->pid, NULL, WNOHANG))
-		{
-			std::cout << "==================== IM KILLING ====================\n";
-			kill(this->pid, SIGKILL);
-			waitpid(this->pid, NULL, 1);
-		}
+	// if (this->pid > 0)
+	// 	if (waitpid(this->pid, NULL, WNOHANG))
+	// 	{
+	// 		std::cout << "==================== IM KILLING ====================\n";
+	// 		kill(this->pid, SIGKILL);
+	// 		waitpid(this->pid, NULL, 1);
+	// 	}
 		
 	// if (this->result_fd > 0)
 	// 	close (result_fd);
@@ -83,6 +83,7 @@ std::string	CgiExecutor::getServerPort(std::string	host)
 std::vector<std::string>	CgiExecutor::buildEnv()
 {
 	std::map<std::string, std::string> 		headers = req_context.headers;
+	session.fetchDataToHeaders(headers);
 	std::vector<std::string>				env;
 	std::string								host;
 	if ( headers.count("Host"))
@@ -244,9 +245,13 @@ CgiResult	CgiExecutor::readResult(size_t buffer_size)
 	
 
 	//if read is done close the FD or if it fails
+
 	int read_return = read(this->result_fd, &body[0], buffer_size);
 	if (read_return == 0)
 	{
+		result.headers.insert(std::make_pair("Set-Cookie",  "SESSION_ID=" + session.current_session_id + "Path=/; HttpOnlyRekoune"));
+
+		// handling the session above 
 		close (result_fd);
 		done = true;
 		if (waitpid(pid, NULL, WNOHANG) == 0)
@@ -264,6 +269,7 @@ CgiResult	CgiExecutor::readResult(size_t buffer_size)
 	if (buffer_size > static_cast<size_t>(read_return))
 		body.erase(body.begin() + read_return, body.end());
 	result.body = body;
+
 	result.status = OK;
 	return (result);
 }
@@ -276,6 +282,7 @@ int	CgiExecutor::run()
 		result.status = FORBIDDEN;
 		return -1;
 	}
+	session.addSession(req_context.headers);
 	std::vector<std::string>	env_vec = buildEnv();
 	// for ( std::vector< std::string>::iterator iter = env_vec.begin(); iter != env_vec.end(); iter++)
 	// {

@@ -30,11 +30,11 @@ std::string cleanLineUtil(std::string line)
 
 void printMapStr(std::map<std::string, std::string> map)
 {
-    std::cout << "printing map of string string \n";
+    std::cerr << "printing map of string string \n";
     for (std::map<std::string, std::string>::iterator i = map.begin(); i != map.end(); i++)
     {
-        std::cout << "i->first :" << i->first << std::endl;
-        std::cout << "i->second :" << i->second << std::endl;
+        std::cerr << "i->first :" << i->first << std::endl;
+        std::cerr << "i->second :" << i->second << std::endl;
     }
 
 }

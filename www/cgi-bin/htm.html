@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CGI Session Demos</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background: #f8f9fa;
+            color: #333;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .demo-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border-left: 6px solid #007bff;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .demo-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        }
+        .demo-card h2 {
+            margin-top: 0;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 0.5rem 0;
+            transition: background 0.2s ease;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 0.25rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .feature-list li:before {
+            content: "✅";
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        .header p {
+            color: #666;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 CGI Session & Cookie Demos</h1>
+            <p>Test your web server's session management capabilities with these interactive demos</p>
+        </div>
+        
+        <div class="demo-grid">
+            <div class="demo-card">
+                <h2>👤 Session Manager</h2>
+                <p>Full-featured session management demo with user preferences, themes, and persistent data storage.</p>
+                <ul class="feature-list">
+                    <li>User authentication simulation</li>
+                    <li>Theme persistence</li>
+                    <li>Language preferences</li>
+                    <li>Real-time debug info</li>
+                </ul>
+                <a href="/cgi-bin/session_demo.py" class="btn">Open Session Manager</a>
+            </div>
+            
+            <div class="demo-card">
+                <h2>🎨 Theme Switcher</h2>
+                <p>Simple theme persistence demo showing how cookies maintain UI preferences across requests.</p>
+                <ul class="feature-list">
+                    <li>Light/Dark mode toggle</li>
+                    <li>Cookie-based persistence</li>
+                    <li>Instant theme switching</li>
+                </ul>
+                <a href="/cgi-bin/theme.py" class="btn">Open Theme Demo</a>
+            </div>
+            
+            <div class="demo-card">
+                <h2>🔍 Cookie Inspector</h2>
+                <p>Technical view of all cookies and environment variables for debugging session issues.</p>
+                <ul class="feature-list">
+                    <li>Raw cookie inspection</li>
+                    <li>Environment variables</li>
+                    <li>Request/response headers</li>
+                </ul>
+                <a href="/cgi-bin/test.py" class="btn">Open Inspector</a>
+            </div>
+            
+            <div class="demo-card">
+                <h2>🔄 Visitor Counter</h2>
+                <p>Simple visit counter demonstrating session persistence across page refreshes.</p>
+                <ul class="feature-list">
+                    <li>Visit counting</li>
+                    <li>Last visit tracking</li>
+                    <li>Browser fingerprinting</li>
+                </ul>
+                <a href="/cgi-bin/counter.py" class="btn">Open Counter</a>
+            </div>
+            
+            <div class="demo-card">
+                <h2>🛒 Shopping Cart</h2>
+                <p>E-commerce cart simulation showing complex session data management.</p>
+                <ul class="feature-list">
+                    <li>Add/remove items</li>
+                    <li>Cart persistence</li>
+                    <li>Price calculations</li>
+                </ul>
+                <a href="/cgi-bin/cart.py" class="btn">Open Cart Demo</a>
+            </div>
+            
+            <div class="demo-card">
+                <h2>📝 Form Processor</h2>
+                <p>Form handling demo with session-based data validation and user feedback.</p>
+                <ul class="feature-list">
+                    <li>Form validation</li>
+                    <li>Error messages</li>
+                    <li>Success states</li>
+                </ul>
+                <a href="/cgi-bin/form.py" class="btn">Open Form Demo</a>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 3rem; color: #666;">
+            <h3>🧪 Testing Your Session Implementation</h3>
+            <p>To verify your session handling works correctly:</p>
+            <ol style="display: inline-block; text-align: left;">
+                <li>Open any demo and change settings</li>
+                <li>Refresh the page - data should persist</li>
+                <li>Open in a new tab - session should carry over</li>
+                <li>Clear cookies and refresh - new session should start</li>
+            </ol>
+        </div>
+    </div>
+</body>
+</html>

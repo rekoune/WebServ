@@ -3,11 +3,11 @@
 
 
 #include "../Utils.hpp"
-#include "../Headers.hpp"
+// #include "../Headers.hpp"
 #include <sstream>
 #include <iostream>
 #include <string>
-#include <array>
+
 
 
 class   SessionHandler
@@ -32,12 +32,15 @@ class   SessionHandler
 		
 		// PUT THE COOKIES INTO SESSION_DATA
 		void	fillDataFromHeaders(std::string ID, std::map<std::string, std::string>& headers);
+		void	appendDataCookies(std::string ID, std::map<std::string, std::string>& headers_cookies);
 
 
 		std::string current_session_id;
 		
 
 		void    printSessionData();
+		
+		bool					is_new_client;
 
 };
 

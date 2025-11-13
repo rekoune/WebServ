@@ -3,6 +3,7 @@
 
 SessionHandler::SessionHandler()
 {
+	this->is_new_client = false;
 	static bool seeded = false;
 	if (!seeded)
 	{
@@ -58,16 +59,23 @@ void SessionHandler::addSession(std::map<std::string, std::string>& headers)
 		if (cookies.count("SESSION_ID") && data.find(cookies["SESSION_ID"]) != data.end())
 		{
 			id = cookies["SESSION_ID"];
+			this->is_new_client = false;
 		}
+		else 
+			this->is_new_client = true;
 	}
+	else
+		this->is_new_client = true;
+	
 	std::cout << "id:" << id << std::endl;
-	if (id.empty())
+	if (id.empty() && is_new_client)
 	{
 		// MEANS NEW CLIENT: NEW ID , SET-COOKIE, SET SESSION_ID
 		// GENREATE ID 
 		std::cout << " GENERATE NEW ID =========\n";
 		id = generateID();
-		headers.insert(std::make_pair("Set-Cookie",  "SESSION_ID=" + id /* + "; Path=/; HttpOnly" */));
+		this->is_new_client = true;
+		headers.insert(std::make_pair("Set-Cookie",  "SESSION_ID=" + id + "; Path=/"));
 		if (!headers["Cookie"].empty())
 		{
 			headers["Cookie"] +=  "; SESSION_ID=" + id ;
@@ -80,7 +88,7 @@ void SessionHandler::addSession(std::map<std::string, std::string>& headers)
 	if (headers.empty())
 		return ;
 
-	fillDataFromHeaders(id, headers);
+	fillDataFromHeaders(current_session_id, headers);
 }
 
 bool	isSessionAvaible(std::string cookie_value_from_headers)
@@ -142,6 +150,19 @@ void    SessionHandler::printSessionData()
 	std::cout << "PRINTING SESSION DATA -FINISHED-" << std::endl;
 }
 
+void	SessionHandler::appendDataCookies(std::string ID, std::map<std::string, std::string>& headers_cookies)
+{
+	std::map<std::string, std::string>	cookie = this->data[ID];
+	for (std::map<std::string, std::string>::iterator i = cookie.begin(); i != cookie.end(); i++)
+	{
+		if (headers_cookies.count(i->first))
+			continue;
+		else 
+		{
+			headers_cookies.insert(std::make_pair(i->first, i->second));
+		}
+	}
+}
 
 void	SessionHandler::fillDataFromHeaders(std::string ID, std::map<std::string, std::string>& headers)
 {
@@ -152,6 +173,8 @@ void	SessionHandler::fillDataFromHeaders(std::string ID, std::map<std::string, s
 	std::string cookies = headers.find("Cookie")->second;
 	// split the cookie 
 	std::map<std::string, std::string> cookie_map = splitCookieIntoMap(cookies);
+	appendDataCookies(ID, cookie_map);
+
 
 	data[ID] = cookie_map;
 }
