@@ -2,7 +2,7 @@ HTTP_SRC = ../http/request/RequestParser.cpp ../http/request/ResourceResolver.cp
 # SERVER_SRC = ../server/server.cpp  srcs/server/client.cpp 
 # SERVER_SRC = ../server/server.cpp  ../server/client.cpp 
 CONFIG_SRC = ../config/configParser.cpp ../config/configValidate.cpp
-CGI_SRC = CgiExecutor.cpp 
+CGI_SRC = CgiExecutor.cpp SessionHandler.cpp SessionUtils.cpp
 SRC= ${HTTP_SRC} ${SERVER_SRC} ${CONFIG_SRC} ${CGI_SRC} main.cpp
 OBJ = $(SRC:.cpp=.o)
 NAME = webserv

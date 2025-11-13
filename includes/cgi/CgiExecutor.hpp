@@ -4,6 +4,9 @@
 #include <unistd.h>
 #include <string>
 #include <signal.h>
+#include "SessionHandler.hpp"
+
+static SessionHandler session = SessionHandler();
 
 class CgiExecutor
 {
@@ -14,7 +17,6 @@ class CgiExecutor
 		// size_t						start_time;
 		int							result_fd;
 		bool						done;
-
 
 
 		// INTERNAL UTILS
@@ -37,6 +39,8 @@ class CgiExecutor
 		CgiResult	readResult(size_t buffer_size);
 		CgiResult	getResult();
 		bool		isDone();
+
+		void cgiClean();
 
 
 };
