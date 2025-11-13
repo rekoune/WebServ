@@ -40,6 +40,8 @@ class CgiExecutor
 		CgiResult	getResult();
 		bool		isDone();
 
+		void cgiClean();
+
 
 };
 

@@ -2,22 +2,27 @@
 #include "../../includes/cgi/CgiExecutor.hpp"
 
 
+void CgiExecutor::cgiClean()
+{
+	if (this->pid > 0)
+	{
+		if (waitpid(this->pid, NULL, WNOHANG) == 0)
+		{
+			std::cout << "==================== IM KILLING ====================\n";
+			kill(this->pid, SIGKILL);
+			waitpid(this->pid, NULL, 1);  // TO CHECK
+		}
+	}
+	if (this->result_fd > 0)
+		close (result_fd);
+}
+
+
 CgiExecutor::CgiExecutor() :  pid(-1), result_fd(-1), done(false) 
 {}
 
 CgiExecutor::~CgiExecutor()
-{
-	// if (this->pid > 0)
-	// 	if (waitpid(this->pid, NULL, WNOHANG))
-	// 	{
-	// 		std::cout << "==================== IM KILLING ====================\n";
-	// 		kill(this->pid, SIGKILL);
-	// 		waitpid(this->pid, NULL, 1);
-	// 	}
-		
-	// if (this->result_fd > 0)
-	// 	close (result_fd);
-}
+{}
 
 CgiExecutor::CgiExecutor(RequestContext& req_context)
 	: req_context(req_context) , done(false)    						 //server_software  is which program/software this webserver is (nginx/apache...). ours be like "webserv/1.1" or some thing like that. I NEED IT IN THE ENVP FOR SCRIPT
@@ -257,7 +262,7 @@ CgiResult	CgiExecutor::readResult(size_t buffer_size)
 		if (waitpid(pid, NULL, WNOHANG) == 0)
 		{
 			kill (pid, SIGKILL);
-			waitpid(pid, NULL, 1);
+			// waitpid(pid, NULL, 1);
 		}
 	}
 	else if (read_return == -1)
