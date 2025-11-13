@@ -423,25 +423,35 @@ bool           Response::isRedirect(const HttpStatusCode& status){
 
 std::vector<char> Response::getResponse () {
     std::vector<char> body;
+    CgiResult   cgiResult;
 
     if (resInfo.type == SCRIPT && (resInfo.status == OK || resInfo.status == CREATED)){
             
-        body = cgiExecutor.readResult(DATA_SIZE).body;
+        cgiResult = cgiExecutor.readResult(DATA_SIZE);
+        body = cgiResult.body;
         Utils::pushInVector(response, &body[0], body.size());
         body.clear();
         done = cgiExecutor.isDone();
         if (done){
             long pos = Utils::isContainStr(&response[0], response.size(), "\n\n", 2);
-            CgiResult cgiResult = cgiExecutor.getResult();
+            cgiResult = cgiExecutor.getResult();
             std::string length;
+
+            this->resInfo.status = cgiResult.status ;
+            Utils::pushInVector(body, getStatusLine(resInfo.status));
+            if (!cgiResult.headers.empty()){
+                std::map<std::string, std::string>::iterator it = cgiResult.headers.begin();
+
+                for(; it != cgiResult.headers.end(); it++)
+                    Utils::pushInVector(body, it->first + ": " + it->second + "\r\n");
+            }
+
             if (pos != -1){
                 length = "Content-Length: " + Utils::toString(response.size() - pos - 2) + "\r\n";
             }
             else{
                 length = "Content-Length: " + Utils::toString(response.size()) + "\r\n\r\n";
             }
-            this->resInfo.status = cgiResult.status ;
-            Utils::pushInVector(body, getStatusLine(resInfo.status));
             Utils::pushInVector(body, length);
             Utils::pushInVector(body, &response[0], response.size());
             response.clear();

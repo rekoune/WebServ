@@ -240,6 +240,7 @@ HttpStatusCode      RequestParser::appendData(const char* _data, size_t size){
     long            headerEndPos;
     HttpStatusCode  status = OK;
 
+    body.clear();
     if (parseState == PARSE_START){
         Utils::pushInVector(body, _data, size);
         headerEndPos = Utils::isContainStr(&body[0], body.size(), "\r\n\r\n", 4);
@@ -259,7 +260,7 @@ HttpStatusCode      RequestParser::appendData(const char* _data, size_t size){
                 return resInfo.status;
             }
             if (requestLine.method == "GET" || requestLine.method == "DELETE")
-                  parseState = PARSE_COMPLETE;
+                parseState = PARSE_COMPLETE;
             else{
                 uploadHandler.setResInfo(resInfo);
                 uploadHandler.setParseState(parseState);

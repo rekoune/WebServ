@@ -39,8 +39,10 @@ bool GetHandler::isDone(){
 
 std::vector<char> GetHandler::get(size_t size){
 
-    if (!File.is_open())
+    if (!File.is_open()){
+        done = true;
         return (std::vector<char>());
+    }
     if (position >= fileSize){
       position = 0;
       done = true;
