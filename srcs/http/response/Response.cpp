@@ -427,14 +427,15 @@ std::vector<char> Response::getResponse () {
 
     if (resInfo.type == SCRIPT && (resInfo.status == OK || resInfo.status == CREATED)){
             
-        cgiResult = cgiExecutor.readResult(DATA_SIZE);
-        body = cgiResult.body;
-        Utils::pushInVector(response, &body[0], body.size());
-        body.clear();
+        cgiExecutor.readResult(DATA_SIZE);
+        // body = cgiResult.body;
+        // // Utils::pushInVector(response, &body[0], body.size());
+        // body.clear();
         done = cgiExecutor.isDone();
         if (done){
-            long pos = Utils::isContainStr(&response[0], response.size(), "\n\n", 2);
             cgiResult = cgiExecutor.getResult();
+            long pos = Utils::isContainStr(&cgiResult.body[0], cgiResult.body.size(), "\n\n", 2);
+            // cgiResult = cgiExecutor.getResult();
             std::string length;
 
             this->resInfo.status = cgiResult.status ;
@@ -447,15 +448,13 @@ std::vector<char> Response::getResponse () {
             }
 
             if (pos != -1){
-                length = "Content-Length: " + Utils::toString(response.size() - pos - 2) + "\r\n";
+                length = "Content-Length: " + Utils::toString(cgiResult.body.size() - pos - 2) + "\r\n";
             }
             else{
-                length = "Content-Length: " + Utils::toString(response.size()) + "\r\n\r\n";
+                length = "Content-Length: " + Utils::toString(cgiResult.body.size()) + "\r\n\r\n";
             }
             Utils::pushInVector(body, length);
-            Utils::pushInVector(body, &response[0], response.size());
-            response.clear();
-
+            Utils::pushInVector(body, &cgiResult.body[0], cgiResult.body.size());
         }
     }
     else{

@@ -8,7 +8,7 @@ void CgiExecutor::cgiClean()
 	{
 		if (waitpid(this->pid, NULL, WNOHANG) == 0)
 		{
-			std::cout << "==================== IM KILLING ====================\n";
+			std::cout << "=====*******************************=============== IM KILLING ====================\n";
 			kill(this->pid, SIGKILL);
 			waitpid(this->pid, NULL, 1);  // TO CHECK
 		}
@@ -259,6 +259,8 @@ CgiResult	CgiExecutor::readResult(size_t buffer_size)
 	{
 		result.headers.insert(std::make_pair("Set-Cookie",  "SESSION_ID=" + session.current_session_id + "Path=/; HttpOnlyRekoune"));
 
+		// PUT THE FUNCTION THAT WILL REPLACE THE COOKIES HEADER
+
 		// handling the session above 
 		close (result_fd);
 		done = true;
@@ -275,9 +277,9 @@ CgiResult	CgiExecutor::readResult(size_t buffer_size)
 		done = true;
 		return result;
 	}
-	if (buffer_size > static_cast<size_t>(read_return))
-		body.erase(body.begin() + read_return, body.end());
-	result.body = body;
+	// if (buffer_size > static_cast<size_t>(read_return))
+	// 	body.erase(body.begin() + read_return, body.end());
+	Utils::pushInVector(result.body, &body[0], read_return);
 
 	result.status = OK;
 	return (result);
