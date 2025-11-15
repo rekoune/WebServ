@@ -4,7 +4,7 @@
 #include"Headers.hpp"
 
 #define BUFFER 204800
-#define TIMEOUT 5
+#define TIMEOUT 20
 	
 class client{
 private:

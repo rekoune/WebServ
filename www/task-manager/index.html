@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebServer CGI Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #3498db;
+            --primary-dark: #2980b9;
+            --secondary: #2c3e50;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --gray: #95a5a6;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-left: 5px solid var(--primary);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .card h2 {
+            color: var(--secondary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card p {
+            color: var(--gray);
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .feature-list {
+            list-style: none;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-list li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .feature-list li:before {
+            content: "✓";
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-warning {
+            background: var(--warning);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .mini-card {
+            background: var(--light);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .mini-card:hover {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .mini-card h4 {
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .mini-card a {
+            color: inherit;
+            text-decoration: none;
+            display: block;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: var(--success);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .server-info {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            color: white;
+            margin-bottom: 2rem;
+        }
+
+        .server-info h3 {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .info-item {
+            background: rgba(255,255,255,0.1);
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .info-item strong {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+        .card:nth-child(4) { animation-delay: 0.4s; }
+        .card:nth-child(5) { animation-delay: 0.5s; }
+        .card:nth-child(6) { animation-delay: 0.6s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🚀 WebServer CGI Dashboard</h1>
+            <p>Manage your server sessions, tasks, and applications in style</p>
+            <div class="status-badge">Server Running</div>
+        </div>
+
+        <!-- Server Information -->
+        <div class="server-info">
+            <h3>📊 Server Status</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>Host</strong>
+                    <span id="server-host">localhost:8080</span>
+                </div>
+                <div class="info-item">
+                    <strong>Status</strong>
+                    <span>🟢 Online</span>
+                </div>
+                <div class="info-item">
+                    <strong>Protocol</strong>
+                    <span>HTTP/1.1</span>
+                </div>
+                <div class="info-item">
+                    <strong>CGI Enabled</strong>
+                    <span>✅ Yes</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard -->
+        <div class="dashboard">
+            <!-- Session Management Card -->
+            <div class="card">
+                <h2>🔐 Session Management</h2>
+                <p>Test and manage user sessions with cookie-based authentication and persistence.</p>
+                <ul class="feature-list">
+                    <li>Cookie-based session handling</li>
+                    <li>User authentication simulation</li>
+                    <li>Session persistence across requests</li>
+                    <li>Real-time session debugging</li>
+                </ul>
+                <div class="card-grid">
+                    <div class="mini-card">
+                        <a href="/cgi-bin/session_demo.py">
+                            <h4>Session Demo</h4>
+                            <small>Basic session test</small>
+                        </a>
+                    </div>
+                    <div class="mini-card">
+                        <a href="/cgi-bin/session_reader.py">
+                            <h4>Session Debug</h4>
+                            <small>Cookie inspection</small>
+                        </a>
+                    </div>
+                    <div class="mini-card">
+                        <a href="/cgi-bin/user_profile.py">
+                            <h4>User Profile</h4>
+                            <small>Profile management</small>
+                        </a>
+                    </div>
+                </div>
+                <a href="/cgi-bin/session_demo.py" class="btn">
+                    🚀 Launch Session Manager
+                </a>
+            </div>
+
+            <!-- Task Management Card -->
+            <div class="card">
+                <h2>✅ Task Manager</h2>
+                <p>Full-featured task management with session persistence and real-time updates.</p>
+                <ul class="feature-list">
+                    <li>Add, edit, and delete tasks</li>
+                    <li>Session-based persistence</li>
+                    <li>Real-time updates</li>
+                    <li>Category organization</li>
+                </ul>
+                <div class="card-grid">
+                    <div class="mini-card">
+                        <a href="/cgi-bin/task_manager.py">
+                            <h4>Task Manager</h4>
+                            <small>Full application</small>
+                        </a>
+                    </div>
+                    <div class="mini-card">
+                        <a href="/cgi-bin/task_api.py?action=get_tasks">
+                            <h4>API Test</h4>
+                            <small>JSON API</small>
+                        </a>
+                    </div>
+                </div>
+                <a href="/cgi-bin/task_manager.py" class="btn btn-success">
+                    📝 Open Task Manager
+                </a>
+            </div>
+
+            <!-- Theme & UI Card -->
+            <div class="card">
+                <h2>🎨 Theme Switcher</h2>
+                <p>Test cookie-based theme persistence with light and dark mode switching.</p>
+                <ul class="feature-list">
+                    <li>Light/Dark mode toggle</li>
+                    <li>Cookie-based persistence</li>
+                    <li>Instant theme switching</li>
+                    <li>Responsive design</li>
+                </ul>
+                <div class="card-grid">
+                    <div class="mini-card">
+                        <a href="/cgi-bin/theme.py">
+                            <h4>Theme Demo</h4>
+                            <small>Style switcher</small>
+                        </a>
+                    </div>
+                    <div class="mini-card">
+                        <a href="/cgi-bin/theme.py?theme=light">
+                            <h4>Light Mode</h4>
+                            <small>Set light theme</small>
+                        </a>
+                    </div>
+                    <div class="mini-card">
+                        <a href="/cgi-bin/theme.py?theme=dark">
+                            <h4>Dark Mode</h4>
+                            <small>Set dark theme</small>
+                        </a>
+                    </div>
+                </div>
+                <a href="/cgi-bin/theme.py" class="btn btn-warning">
+                    🎨 Open Theme Switcher
+                </a>
+            </div>
+
+            <!-- CGI Testing Card -->
+            <div class="card">
+                <h2>🧪 CGI Testing</h2>
+                <p>Test your CGI script execution with various debugging and inspection tools.</p>
+                <ul class="feature-list">
+                    <li>Environment variable inspection</li>
+                    <li>Request/response debugging</li>
+                    <li>Cookie handling tests</li>
+                    <li>Script execution verification</li>
+                </ul>
+                <div class="card-grid">
+                    <div class="mini-card">
+                        <a href="/cgi-bin/test.py">
+                            <h4>CGI Test</h4>
+                            <small>Basic test</small>
+                        </a>
+                    </div>
+                    <div class="mini-card">
+                        <a href="/cgi-bin/test1.py">
+                            <h4>JSON Test</h4>
+                            <small>API response</small>
+                        </a>
+                    </div>
+                    <div class="mini-card">
+                        <a href="/cgi-bin/while.py">
+                            <h4>Long Process</h4>
+                            <small>Streaming test</small>
+                        </a>
+                    </div>
+                </div>
+                <a href="/cgi-bin/test.py" class="btn btn-secondary">
+                    🔧 Run CGI Tests
+                </a>
+            </div>
+
+            <!-- File Management Card -->
+            <div class="card">
+                <h2>📁 File Browser</h2>
+                <p>Browse uploaded files and server content with auto-indexing capabilities.</p>
+                <ul class="feature-list">
+                    <li>Auto-indexed directories</li>
+                    <li>File upload handling</li>
+                    <li>Content browsing</li>
+                    <li>Download management</li>
+                </ul>
+                <div class="card-grid">
+                    <div class="mini-card">
+                        <a href="/content/">
+                            <h4>Content Browser</h4>
+                            <small>File explorer</small>
+                        </a>
+                    </div>
+                    <div class="mini-card">
+                        <a href="/upload/">
+                            <h4>Upload Area</h4>
+                            <small>File upload</small>
+                        </a>
+                    </div>
+                    <div class="mini-card">
+                        <a href="/home/">
+                            <h4>Home Directory</h4>
+                            <small>User home</small>
+                        </a>
+                    </div>
+                </div>
+                <a href="/content/" class="btn">
+                    📂 Open File Browser
+                </a>
+            </div>
+
+            <!-- System Tools Card -->
+            <div class="card">
+                <h2>⚙️ System Tools</h2>
+                <p>Advanced system utilities and debugging tools for server management.</p>
+                <ul class="feature-list">
+                    <li>Visitor counter</li>
+                    <li>Session analytics</li>
+                    <li>System information</li>
+                    <li>Performance monitoring</li>
+                </ul>
+                <div class="card-grid">
+                    <div class="mini-card">
+                        <a href="/cgi-bin/counter.py">
+                            <h4>Visitor Counter</h4>
+                            <small>Visit tracking</small>
+                        </a>
+                    </div>
+                    <div class="mini-card">
+                        <a href="/cgi-bin/script.py">
+                            <h4>System Info</h4>
+                            <small>Server details</small>
+                        </a>
+                    </div>
+                    <div class="mini-card">
+                        <a href="/cgi-bin/session_debug.py">
+                            <h4>Session Debug</h4>
+                            <small>Advanced debug</small>
+                        </a>
+                    </div>
+                </div>
+                <a href="/cgi-bin/counter.py" class="btn btn-danger">
+                    📊 System Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <h2>⚡ Quick Actions</h2>
+            <p>Common tasks and debugging actions for quick access.</p>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <a href="/cgi-bin/session_reader.py" class="btn btn-secondary">🔍 Debug Session</a>
+                <a href="/cgi-bin/test.py" class="btn btn-secondary">🧪 Test CGI</a>
+                <a href="/content/" class="btn btn-secondary">📁 Browse Files</a>
+                <a href="/cgi-bin/task_manager.py" class="btn btn-success">✅ Tasks</a>
+                <a href="/cgi-bin/theme.py" class="btn btn-warning">🎨 Themes</a>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>🚀 Powered by Your C++ WebServer | CGI Session Management Demo</p>
+            <p style="margin-top: 0.5rem; opacity: 0.8;">
+                Session ID: <span id="session-display">Not detected</span> | 
+                <a href="/cgi-bin/session_reader.py" style="color: white; text-decoration: underline;">Check Session</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Add some interactivity
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update server host display
+            document.getElementById('server-host').textContent = window.location.host;
+            
+            // Try to detect session from cookies
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+            
+            const sessionId = getCookie('SESSION_ID');
+            if (sessionId) {
+                document.getElementById('session-display').textContent = 
+                    sessionId.substring(0, 8) + '...';
+            }
+            
+            // Add loading states to buttons
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    if (this.href) {
+                        this.innerHTML = '⏳ Loading...';
+                        setTimeout(() => {
+                            this.innerHTML = this.getAttribute('data-original') || this.innerHTML;
+                        }, 2000);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

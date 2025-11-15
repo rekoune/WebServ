@@ -87,7 +87,7 @@ std::string	CgiExecutor::getServerPort(std::string	host)
 
 std::vector<std::string>	CgiExecutor::buildEnv()
 {
-	std::map<std::string, std::string> 		headers = req_context.headers;
+	std::map<std::string, std::string> 		headers = req_context.headers;;
 	session.fetchDataToHeaders(headers);
 	std::vector<std::string>				env;
 	std::string								host;
@@ -136,11 +136,10 @@ std::vector<std::string>	CgiExecutor::buildEnv()
 			env_name += "=";
 			env_name += value;
 			env.push_back(env_name);
-
-			std::cout << "env_name==========="  << env_name << std::endl;
 		}
 
 	}
+	
 	return env;
 }
 
@@ -245,6 +244,67 @@ int	CgiExecutor::executeScript(std::vector<char>& body, HttpStatusCode&	status, 
 }
 
 
+void parseSetCookie(std::map<std::string, std::string>& session_cookies, std::string header_line)
+{
+	std::cerr << "\033[36m PRINTING header_line=====\033[0m" << header_line << std::endl;
+
+
+	header_line = cleanLineUtil(header_line.substr(11, header_line.size() - 11));
+
+	long semi_colon  = header_line.find_first_of(";");
+	std::string cookie = header_line.substr(0, semi_colon);
+
+	std::cerr << "\033[36m PRINTING session_cookie BEFORE parsein / adding =====\033[0m" << std::endl;
+	printMapStr(session_cookies);
+	parseCookieDirective(session_cookies, cookie);
+	std::cerr << "\033[36m PRINTING session_cookie AFTER parsein / adding =====\033[0m" << std::endl;
+	printMapStr(session_cookies);
+	// sdt::string value = ; 
+
+
+}
+
+void	replaceCookieHeaders(std::map<std::string, std::string>& session_cookies, std::vector<char>& body)
+{
+	std::cerr << "\033[36m PRINTING THE SESSION COOKIEs\033[0m" << std::endl;
+	printMapStr(session_cookies);
+
+	long	header_pos = Utils::isContainStr(&body[0], body.size(), "\n\n", 2);
+	if (header_pos == -1)
+		return ;
+
+	std::stringstream old_headers_stream(std::string(body.begin(), body.begin() + header_pos));
+
+	std::string header_line;
+
+
+
+
+	std::cerr << "\033[36m PRINTING session_cookie BEFORE  PARSESETCOOKIES / adding =====\033[0m" << header_line << std::endl;
+	printMapStr(session_cookies);
+	std::vector<char>	new_body;
+	while (getline(old_headers_stream, header_line))
+	{
+		header_line += "\n";
+		if (header_line.find("Set-Cookie") == 0)
+		{
+			parseSetCookie(session_cookies, header_line);
+		}
+		else 
+		{
+			Utils::pushInVector(new_body, header_line);
+		}
+	}
+	Utils::pushInVector(new_body, "\n");
+
+	Utils::pushInVector(new_body, &body[header_pos + 2], body.size() - header_pos - 2);
+			
+	// std::cerr << "\033[36m PRINTINGheaderline===== \033[0m" << std::endl;
+	// std::cerr.write(new_body.data(), new_body.size());
+
+	body = new_body;
+}
+
 
 CgiResult	CgiExecutor::readResult(size_t buffer_size)
 {
@@ -257,10 +317,22 @@ CgiResult	CgiExecutor::readResult(size_t buffer_size)
 	int read_return = read(this->result_fd, &body[0], buffer_size);
 	if (read_return == 0)
 	{
-		result.headers.insert(std::make_pair("Set-Cookie",  "SESSION_ID=" + session.current_session_id + "Path=/; HttpOnlyRekoune"));
 
-		// PUT THE FUNCTION THAT WILL REPLACE THE COOKIES HEADER
 
+	// std::cerr << "\033[32mPRINTING sesssion in readResult \033[0m" << std::endl;
+	// printMapStr(session.getData()[session.current_session_id]);
+
+		// std::cerr << "\033[32mPRINTING resutl body in read result\033[0m" << std::endl;
+		// std::cerr.write(result.body.data(), result.body.size());
+
+		// PUT THE FUNCTION THAT WILL CUT THE COOKIES FROM THE BODY AND PUT THEM OR REPLACE THEM IN DATA IF ALREADY EXSITS 
+		std::map<std::string, std::string>& session_map = session.getData()[session.current_session_id];
+		replaceCookieHeaders(session_map, result.body);
+		result.headers.insert(std::make_pair("Set-Cookie",  "SESSION_ID=" + session.current_session_id + "; Path=/; HttpOnly"));
+
+	// std::cerr << "\033[32mPRINTING sesssion in readResult AFTER REPLACE \033[0m" << std::endl;
+	// printMapStr(session.getData()[session.current_session_id]);
+		
 		// handling the session above 
 		close (result_fd);
 		done = true;
@@ -294,11 +366,24 @@ int	CgiExecutor::run()
 		done = true;
 		return -1;
 	}
+	// std::cerr << "\033[32mPRINTING HEADER IN REQ-CONTEXT BEFORE ADD SESSION\033[0m" << std::endl;
+	// printMapStr(req_context.headers);
+	// std::cerr << "\033[32mPRINTING sesssion HEADER IN REQ-CONTEXT BEFORE ADD SESSION\033[0m" << std::endl;
+	// std::map<std::string, std::string> map = session.getData()[session.current_session_id];
+	// printMapStr(map);
 	session.addSession(req_context.headers);
+
+	// std::cerr << "PRINTING sesison content" << std::endl;
+	// std::map<std::string, std::map< std::string, std::string> >     data_cont = session.getData();
+	// std::map<std::string, std::string> map = data_cont[session.current_session_id];
+	// printMapStr(map);
+
+
 	std::vector<std::string>	env_vec = buildEnv();
+	// std::cerr << "\033[32m[PRINTING the env after buiild]\033[0m" << std::endl;
 	// for ( std::vector< std::string>::iterator iter = env_vec.begin(); iter != env_vec.end(); iter++)
 	// {
-	// 	std::cout << *iter << std::endl;
+	// 	std::cerr << *iter << std::endl;
 	// }
 
 	std::vector <char*> env_char_ptr_vec;

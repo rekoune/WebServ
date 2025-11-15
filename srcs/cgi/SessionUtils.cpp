@@ -33,8 +33,7 @@ void printMapStr(std::map<std::string, std::string> map)
     std::cerr << "printing map of string string \n";
     for (std::map<std::string, std::string>::iterator i = map.begin(); i != map.end(); i++)
     {
-        std::cerr << "i->first :" << i->first << std::endl;
-        std::cerr << "i->second :" << i->second << std::endl;
+        std::cerr <<  i->first << ":" << i->second << std::endl;
     }
 
 }
@@ -79,6 +78,7 @@ std::map<std::string, std::string>  splitCookieIntoMap(std::string cookie)
         // std::cout << "cookie_directive:" << cookie_directive << std::endl;
         parseCookieDirective(map, cookie_directive);
     }
+
     return map; 
 }
 

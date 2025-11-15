@@ -23,6 +23,8 @@ class   SessionHandler
 		~SessionHandler();
 		SessionHandler& operator=(const SessionHandler& other);
 
+
+		std::map<std::string, std::map< std::string, std::string> >&   getData();
 		// NEW CLIENT, WE ADD SESSION
 		void	addSession(std::map<std::string, std::string>& headers);
 
