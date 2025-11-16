@@ -50,8 +50,13 @@ server::~server()
 {
 	std::cout << "\033[31mDestroctor: closing socketFds\033[0m" << std::endl;
 	for(size_t i = 0; i < socketFds.size(); i++){
+		int fd = socketFds[i].fd;
 		std::cout << "closing fd : " <<  socketFds[i].fd << std::endl;;
-		close(socketFds[i].fd);
+
+		// if(is_cgi(fd))
+		// cgi.at(fd).clean()
+		// else
+		close(fd);
 	}
 }
 
@@ -140,9 +145,7 @@ void server::acceptClient(int listenFd)
 	
 	int clientFd;
 	
-	while((clientFd = accept(listenFd, (struct sockaddr*)&client_addr, &client_len)) >= 0)
-	{
-
+	while((clientFd = accept(listenFd, (struct sockaddr*)&client_addr, &client_len)) >= 0){
 		int flags = fcntl(clientFd, F_GETFL, 0);
 		if(flags == -1 || fcntl(clientFd, F_SETFL, flags | O_NONBLOCK) == -1){
 			std::cerr << "fcntl error: " << strerror(errno) << std::endl;
@@ -150,6 +153,12 @@ void server::acceptClient(int listenFd)
 			continue;
 		}
 
+		struct linger sl;
+        sl.l_onoff = 1;   
+        sl.l_linger = 0;  
+        if (setsockopt(clientFd, SOL_SOCKET, SO_LINGER, &sl, sizeof(sl)) < 0) {
+            std::cerr << "setsockopt(SO_LINGER) error: " << strerror(errno) << std::endl;
+        }
 		clients.insert(std::make_pair(clientFd, client(listenToHosts[listenFd], clientFd)));
 		socketFds.push_back(create_pollfd(clientFd, POLLIN));
 
@@ -178,13 +187,13 @@ void server::rmClient(size_t &fdIndex)
 	if (it != clients.end())
 		cgiFd = it->second.getCgiFd();
 		if(cgiFd != -1){
-		cgi.erase(cgiFd);
 		for(size_t i = 0; i < socketFds.size(); i++){
-			if(socketFds[i].fd == cgiFd)
-			socketFds.erase(socketFds.begin() + i);
-			if(i < fdIndex)
-			fdIndex--;
-			break;
+			if(socketFds[i].fd == cgiFd){
+				rmCgi(i, true, OK);
+				if(i < fdIndex)
+					fdIndex--;
+				break;
+			}
 		}
 	}
 	close(fd);
@@ -193,8 +202,11 @@ void server::rmClient(size_t &fdIndex)
 	fdIndex--;
 }
 
-client& server::getClient(int& fd){
-	return clients.find(fd)->second;
+client* server::getClient(int& fd){
+	std::map<int, client>::iterator it = clients.find(fd);
+	if (it != clients.end())
+		return &(it->second);
+	return NULL;
 }
 
 void server::cgiSetup(size_t& fdIndex, int cgiFd){
@@ -216,14 +228,15 @@ void server::pollin(size_t &fdIndex)
 	struct pollfd& pfd = socketFds[fdIndex];
 	std::cout << "POLLIN FD: " << pfd.fd << std::endl;
 	if(is_listener(pfd.fd))
-			acceptClient(pfd.fd);
+		acceptClient(pfd.fd);
 	else if(is_cgi(pfd.fd)){
 		int cgiStatus = cgi[pfd.fd]->cgiRun();
 		if(cgiStatus == -1)
-			rmCgi(fdIndex, true);
+		rmCgi(fdIndex, true, OK);
 	}
-	else
+	else if(currentClient)
 	{
+		currentClient->setupLastActivity();
 		if(!currentClient->ft_recv(pfd.events)){
 			rmClient(fdIndex); 
 			return ;
@@ -240,12 +253,13 @@ void server::pollout(size_t& fdIndex)
 {
 	struct pollfd& pfd = socketFds[fdIndex];
 	std::cout << "POLLOUT FD: " << pfd.fd  << std::endl;
+	currentClient->setupLastActivity();
 	if(currentClient->getCgiFd() != -1){
-		if(currentClient->checkTimeOut()){
+		if(currentClient->cgiTimeOut()){
 			for(size_t i = 0; i < socketFds.size(); i++){
 				if(currentClient->getCgiFd() == socketFds[i].fd){
-					std::cout << "\033[33mTimeout occurred, setting error response.\033[0m" << std::endl;
-					rmCgi(i, false);
+					std::cout << "\033[33mCgi timeout occurred\033[0m" << std::endl;
+					rmCgi(i, false, REQUEST_TIME_OUT);
 					if(i < fdIndex)
 						fdIndex--; 
 				}
@@ -257,11 +271,11 @@ void server::pollout(size_t& fdIndex)
 			rmClient(fdIndex);
 }
 
-void server::rmCgi(size_t& fdIndex, bool workDone){
+void server::rmCgi(size_t& fdIndex, bool workDone, HttpStatusCode statuCode){
 	struct pollfd& pfd = socketFds[fdIndex];
 	cgi[pfd.fd]->resetCgiFd();
 	if(!workDone)
-		cgi[pfd.fd]->setErrorResponse();
+		cgi[pfd.fd]->setErrorResponse(statuCode);
 	cgi.erase(socketFds[fdIndex].fd);
 	socketFds.erase(socketFds.begin() + fdIndex);
 	fdIndex--;
@@ -282,9 +296,9 @@ int server::serverCore()
 		int NbrOfActiveSockets = poll(&socketFds[0], socketFds.size(), -1);
 		if(NbrOfActiveSockets < 0)
 			std::cerr << "Poll : " << strerror(errno) << std::endl;
-		for(size_t i = 0; i < socketFds.size() && NbrOfActiveSockets > 0 ; i++){
+		for(size_t i = 0; i < socketFds.size()  ; i++){
 			std::cout << "nbr of client left to handle : " << NbrOfActiveSockets << " this is fd : "<< socketFds[i].fd<< std::endl;
-			currentClient = &getClient(socketFds[i].fd);
+			currentClient = getClient(socketFds[i].fd);
 			if(workFlage && (socketFds[i].revents & POLLIN)){
 				NbrOfActiveSockets--;
 				pollin(i);
@@ -296,11 +310,17 @@ int server::serverCore()
 			else if(socketFds[i].revents & (POLLHUP | POLLERR | POLLNVAL)){
 				NbrOfActiveSockets--;
 				if(is_cgi(socketFds[i].fd)){
-					rmCgi(i, false);
+					rmCgi(i, false, INTERNAL_SERVER_ERROR);
 					continue;
 				}
+				std::cout << "****************************<<" <<std::endl;
 				rmClient(i);
 			}
+			else if(currentClient && currentClient->clientTimeOut()){
+				std::cout << "\033[31mTimeout occurred, closing client connection.\033[0m" << std::endl;
+				rmClient(i);
+			}
+
 		}
 	}
 	return 0;

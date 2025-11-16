@@ -27,7 +27,7 @@ private:
 	void pollout(size_t &fdIndex);
 
 	void cgiSetup(size_t& fdIndex, int cigFd);
-	void rmCgi(size_t& fdIndex, bool workDone);
+	void rmCgi(size_t& fdIndex, bool workDone, HttpStatusCode statuCode);
 public:
 	server(std::vector<ServerConfig>&	servers);
 	server(const server& other);
@@ -38,7 +38,7 @@ public:
 	struct pollfd create_pollfd(int fd, short events);
 	int serverCore();
 
-	client& getClient(int& fd);
+	client* getClient(int& fd);
 	void acceptClient(int listenFd);
 	void rmClient(size_t &fdIndex);
 
