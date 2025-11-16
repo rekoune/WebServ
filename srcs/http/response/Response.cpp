@@ -409,7 +409,7 @@ void Response::handle(){
 }
 
 void Response::cleanCGI(){
-    // this->cgiExecutor.;
+    this->cgiExecutor.cgiClean();
 }
 
 bool           Response::isRedirect(const HttpStatusCode& status){
