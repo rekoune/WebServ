@@ -145,9 +145,7 @@ void server::acceptClient(int listenFd)
 	
 	int clientFd;
 	
-	while((clientFd = accept(listenFd, (struct sockaddr*)&client_addr, &client_len)) >= 0)
-	{
-
+	while((clientFd = accept(listenFd, (struct sockaddr*)&client_addr, &client_len)) >= 0){
 		int flags = fcntl(clientFd, F_GETFL, 0);
 		if(flags == -1 || fcntl(clientFd, F_SETFL, flags | O_NONBLOCK) == -1){
 			std::cerr << "fcntl error: " << strerror(errno) << std::endl;
@@ -155,6 +153,12 @@ void server::acceptClient(int listenFd)
 			continue;
 		}
 
+		struct linger sl;
+        sl.l_onoff = 1;   
+        sl.l_linger = 0;  
+        if (setsockopt(clientFd, SOL_SOCKET, SO_LINGER, &sl, sizeof(sl)) < 0) {
+            std::cerr << "setsockopt(SO_LINGER) error: " << strerror(errno) << std::endl;
+        }
 		clients.insert(std::make_pair(clientFd, client(listenToHosts[listenFd], clientFd)));
 		socketFds.push_back(create_pollfd(clientFd, POLLIN));
 
@@ -251,7 +255,7 @@ void server::pollout(size_t& fdIndex)
 	std::cout << "POLLOUT FD: " << pfd.fd  << std::endl;
 	currentClient->setupLastActivity();
 	if(currentClient->getCgiFd() != -1){
-		if(currentClient->checkTimeOut()){
+		if(currentClient->cgiTimeOut()){
 			for(size_t i = 0; i < socketFds.size(); i++){
 				if(currentClient->getCgiFd() == socketFds[i].fd){
 					std::cout << "\033[33mCgi timeout occurred\033[0m" << std::endl;

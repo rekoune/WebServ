@@ -40,8 +40,7 @@ public:
 	void setErrorResponse(HttpStatusCode& statuCode);
 
 	void startTimer();
-	std::time_t timeDefrence();
-	bool checkTimeOut();
+	bool cgiTimeOut();
 	
 	void setupLastActivity();
 	bool clientTimeOut();
