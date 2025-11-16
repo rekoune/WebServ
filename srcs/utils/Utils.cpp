@@ -226,6 +226,18 @@ std::vector<char>    Utils::readFile(std::string& filePath){
     return (body);
 }
 
+void    Utils::decodeUrl(std::string& url, std::string encodedCharacter, std::string toReplaceWith){
+    int pos;
+    pos = Utils::isContainStr(&url[0], url.length(), &encodedCharacter[0], encodedCharacter.length());
+
+    for(; pos != -1; ){
+        url.erase(pos, encodedCharacter.length());
+        url.insert(pos, toReplaceWith);
+        pos = Utils::isContainStr(&url[0], url.length(), &encodedCharacter[0], encodedCharacter.length());
+    }
+}
+
+
 // int main (){
 //     std::ofstream file("test");
 //     file << "abdellah";

@@ -29,6 +29,7 @@ class HttpHandler{
         bool    isKeepAlive();
         bool    isResDone();
         int     isScript();
+        void    cleanCGI();
 };
 
 # endif

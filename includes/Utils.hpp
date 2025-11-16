@@ -33,6 +33,7 @@ class Utils{
         static size_t       getFileSize(const std::string& filePath);
         static bool         isScript(std::string& path, std::vector<std::string>& cgiExtentions);
         static std::vector<char>         readFile(std::string& filePath);
+        static void                      decodeUrl(std::string& url, std::string encodedCharacter, std::string toReplaceWith);
 
 };
 
