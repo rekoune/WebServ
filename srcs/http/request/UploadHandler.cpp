@@ -123,7 +123,6 @@ HttpStatusCode    UploadHandler::getPathType(std::string path, PathTypes& type){
     return status;
 }
 
-
 void    UploadHandler::setFullPathByType(std::string& path, PathTypes& pathType, std::string contentType){
     if (pathType == F){
         if (Utils::isScript(path, resInfo.location.cgi_extension) && access(path.c_str(), F_OK) == 0){

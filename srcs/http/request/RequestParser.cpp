@@ -98,6 +98,7 @@ HttpStatusCode RequestParser::setTarget(std::string& target){
     if (target.length() > 1 && target.at(target.length() - 1) == '/' && target.at(target.length() - 2) != '/' )
         this->requestLine.target.append("/");
     extractQuery(requestLine.target, requestLine.query);
+    Utils::decodeUrl(this->requestLine.target, "%20", " ");
     return (OK);
 }
 
