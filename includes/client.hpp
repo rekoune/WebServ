@@ -44,6 +44,7 @@ public:
 	
 	void setupLastActivity();
 	bool clientTimeOut();
+	void cgiCleaner();
 	
 	bool appendFirstRequest(const char* buf, ssize_t read);
 	bool isHostSeted();

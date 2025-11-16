@@ -53,10 +53,10 @@ server::~server()
 		int fd = socketFds[i].fd;
 		std::cout << "closing fd : " <<  socketFds[i].fd << std::endl;;
 
-		// if(is_cgi(fd))
-		// cgi.at(fd).clean()
-		// else
-		close(fd);
+		if(is_cgi(fd))
+			cgi[fd]->cgiCleaner();
+		else
+			close(fd);
 	}
 }
 
@@ -259,6 +259,7 @@ void server::pollout(size_t& fdIndex)
 			for(size_t i = 0; i < socketFds.size(); i++){
 				if(currentClient->getCgiFd() == socketFds[i].fd){
 					std::cout << "\033[33mCgi timeout occurred\033[0m" << std::endl;
+					currentClient->cgiCleaner();
 					rmCgi(i, false, REQUEST_TIME_OUT);
 					if(i < fdIndex)
 						fdIndex--; 

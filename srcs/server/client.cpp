@@ -223,3 +223,6 @@ void client::resetCgiFd(){
 	cgiFd = -1;
 }
 
+void client::cgiCleaner(){
+	clientHandler.cleanCGI();
+}
