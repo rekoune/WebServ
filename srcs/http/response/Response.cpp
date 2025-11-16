@@ -405,7 +405,7 @@ void Response::handle(){
         return;
     resElements.statusLine = getStatusLine(resInfo.status);
     generateHeaders(resElements.headers);
-    buildResponse();
+    buildResponse(); 
 }
 
 void Response::cleanCGI(){
