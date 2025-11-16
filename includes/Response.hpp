@@ -59,7 +59,7 @@ class Response{
         std::vector<char>   getResponse();
         std::vector<char>   getStatusResponse(const HttpStatusCode& statusCode);
         void                handle();
-        void                clear();
+        void                cleanCGI();
         bool                isDone();
 };
 

@@ -408,8 +408,8 @@ void Response::handle(){
     buildResponse();
 }
 
-void Response::clear(){
-    this->response.clear();
+void Response::cleanCGI(){
+    // this->cgiExecutor.;
 }
 
 bool           Response::isRedirect(const HttpStatusCode& status){

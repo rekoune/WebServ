@@ -41,6 +41,9 @@ bool HttpHandler::isResDone(){
 int HttpHandler::isScript(){
     return (this->reqParser.getResourceInfo().cgiFD);
 }
+void HttpHandler::cleanCGI(){
+    response.cleanCGI();
+}
 
 std::vector<char> HttpHandler::getStatusResponse(const HttpStatusCode& statusCode){
     return (this->response.getStatusResponse(statusCode));
