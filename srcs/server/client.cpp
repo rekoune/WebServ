@@ -37,20 +37,19 @@ client::client(const client& other):
 		totalsend(other.totalsend),totalrecv(other.totalrecv) , fd(other.fd), cgiFd(other.cgiFd), clientLastActivity(other.clientLastActivity) {}
 
 
-ssize_t client::ft_recv(short& event){
+ssize_t client::ft_recv(short& event)
+{
 	char buf[BUFFER];
 	size_t total = 0;
-
 
 	ssize_t read = recv(fd, buf, sizeof(buf), 0);
 	totalrecv += read;
 	setupLastActivity();
 	if(read == -1){
-		std::cerr << "Error receiving data: " << strerror(errno) << std::endl; 
+		std::cerr << "Failed to receive data on fd (" << fd << ")" << std::endl;
 		return 0;
 	}
 	else if(!isHostSeted()){
-		std::cout << "seting host...." << std::endl;
 		total = totalrecv;
 		if(appendFirstRequest(buf, read)){
 			cgiFd = clientHandler.isScript();
@@ -63,34 +62,25 @@ ssize_t client::ft_recv(short& event){
 		clientHandler.appendData(buf, read);
 		total = totalrecv;
 		if(clientHandler.isComplete()){
-			cgiFd = clientHandler.isScript(); // her the function that give's the cgi fd return ;
-			std::cout << "all has been receved" << std::endl;
+			cgiFd = clientHandler.isScript();
 			totalrecv = 0;
  			event = POLLOUT;
 		}
 	}
-	// std::cout << "\033[95mthe recevide is :\n" << buf << "\033[0m" << std::endl;
-	std::cout << "total recv is on fd: ("<< fd  << ") is : " << total << "B" <<  std::endl;
-
 	return read;
 }
 
+
 ssize_t client::sending(short& event){
 	ssize_t nsend;
-
-	// std::cout << "resopons size = " << response.size() << "total send =" << totalsend << std::endl;
-	// std::cout << "Response: " << std::string(response.begin(), response.end()) << std::endl;
-	
 	nsend = send(fd, &response[0] + totalsend, response.size() - totalsend, 0);
 	setupLastActivity();
 	if(nsend == -1){
-		std::cerr << "send error: " << strerror(errno) << std::endl;
+		std::cerr << "Failed to send data on fd (" << fd << ")" << std::endl;
 		return 0;
 	}
+	std::cout << "sending... " << std::endl;
 	totalsend += nsend;
-	// std::cout << "\033[95mSend: " << std::string(response.begin() + totalsend - nsend, response.begin() + totalsend).substr(0, 256) << (nsend > 99 ? "..." : "") << "\033[0m" << std::endl;
-	// std::cout << "\033[95mSend: " << std::string(response.begin() + totalsend - nsend, response.begin() + totalsend) << "\033[0m" << std::endl;
-	std::cout << "total data from Post of fd:  ("<< fd << ") is :" << totalsend << "B" << std::endl;
 	if(totalsend == response.size()){
 		if(!clientHandler.isKeepAlive())
 			return 0;
@@ -99,7 +89,6 @@ ssize_t client::sending(short& event){
 			event = POLLIN;
 		totalsend = 0;
 		response.clear();
-		std::cout << "succufly send everyting !!!" << std::endl;
 	}
 	return nsend;
 }
@@ -109,11 +98,10 @@ ssize_t client::ft_send(short& event){
 		response = clientHandler.getResponse();
 		responseComplete = false;
 	}
-	std::cout << "sending... " << std::endl;
 	return sending(event);
 }
 
-void client::setErrorResponse(HttpStatusCode& statuCode){
+void client::setErrorResponse(HttpStatusCode statuCode){
 	response = clientHandler.getStatusResponse(statuCode);
 	responseComplete = false;
 }
@@ -194,7 +182,6 @@ bool client::appendFirstRequest(const char* buf, ssize_t read)
 	requestData.insert(requestData.end(), buf, buf + read);
 	std::string requestLine(requestData.begin(), requestData.end());
 	
-	std::cout << "requestline: "<< requestLine << std::endl;
 	size_t pos = requestLine.find("\r\n\r\n");
 	if (pos != std::string::npos) {
 		size_t hostPos = requestLine.find("Host: ");
@@ -205,7 +192,6 @@ bool client::appendFirstRequest(const char* buf, ssize_t read)
 			size_t colonPos = hostName.find(':');
             hostName = hostName.substr(0, colonPos);
 			setHost(hostName);
-			std::cout << "found host name: " << hostName << std::endl;
 			clientHandler.appendData(&requestData[0], requestData.size());
 			requestData.clear(); 
 			if(clientHandler.isComplete())

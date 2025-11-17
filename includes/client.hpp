@@ -4,7 +4,7 @@
 #include"Headers.hpp"
 
 #define BUFFER 204800
-#define TIMEOUT 5
+#define TIMEOUT 6
 	
 class client{
 private:
@@ -37,7 +37,7 @@ public:
 	int getCgiFd();
 	void resetCgiFd();
 	int cgiRun();
-	void setErrorResponse(HttpStatusCode& statuCode);
+	void setErrorResponse(HttpStatusCode statuCode);
 
 	void startTimer();
 	bool cgiTimeOut();
