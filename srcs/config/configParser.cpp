@@ -300,9 +300,15 @@ bool	parseLocationDirective(std::string line, LocationConfig& current_loc)
 			} 
 		}
 		else if ( directive.find("upload_store") == 0 && directive.length() > 12 &&  isitspace (directive[12]))
+		{
 			current_loc.upload_store = cleanLine(directive.substr(12));
-		// else if ( directive.find("cgi_pass") == 0)
-		// 	current_loc.cgi_pass = cleanLine(directive.substr(directive.find(" ") + 1)); 			//TO REMOVE
+			if (current_loc.upload_store[0] != '/')
+			{
+				std::string tmp("/");
+				tmp += current_loc.upload_store;
+				current_loc.upload_store = tmp;
+			}
+		}
 		else if ( directive.find("allowed_methods") == 0 && directive.length() > 15 &&  isitspace (directive[15]))
 		{
 			std::string		methods = cleanLine(directive.substr(15));
@@ -474,7 +480,7 @@ bool	parseLocationBlock(ServerConfig&	currentserver, std::ifstream& file, std::s
 	size_t	brace_pos = line.find("{", loc_start);
 	// if ( loc_start == std::string::npos )
 	// {
-	// 	std::cerr << "ig its wrong error message here : ==CONFIG FILE ERROR: Malformed location block better use opening brace in the first line \n";
+	// 	std::cerr << "CONFIG FILE ERROR: Malformed location block better use opening brace in the first line \n";
 	// 	continue ;  
 	// }
 	// current_loc.path = cleanLine(brace_pos != std::string::npos ? line.substr(loc_start, brace_pos - loc_start)
@@ -488,6 +494,14 @@ bool	parseLocationBlock(ServerConfig&	currentserver, std::ifstream& file, std::s
 			return false;
 		}
 		current_loc.path = cleanLine (line.substr(loc_start, brace_pos - loc_start));
+		if (current_loc.path[0] != '/')
+		{
+			std::string tmp("/");
+			tmp += current_loc.path;
+			current_loc.path =  tmp;
+
+		}
+		std::cout << "current_loc.path: " << current_loc.path << std::endl;
 	}
 	else 
 	{
@@ -554,7 +568,7 @@ bool parseServerBlock(GlobaConfig& globalConfig, std::ifstream& file, bool& wait
     {
 		// std::cout << "we reading agin and eof: " << file.eof() << std::endl;
 		line = cleanLine(line);     //	triming and removing comments 
-		if (line.empty())           //  checking if the line is empty
+		if (line.empty())
 			continue;
 		// std::cout << line << std::endl; 	// Print for debug
 		if (!in_server_block)
@@ -624,6 +638,3 @@ bool parseConfig(const std::string& configFilePath, GlobaConfig& globalConfig)
 		return false ;
 	return true;
 }
-
-
-// 	RETURN A DEFAULT CONFIG FILE AS A FALL BACK 
