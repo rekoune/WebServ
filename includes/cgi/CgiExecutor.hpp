@@ -21,7 +21,7 @@ class CgiExecutor
 
 		// INTERNAL UTILS
 		std::vector<std::string>	buildEnv();
-		int							executeScript(std::vector<char>& result, HttpStatusCode& status,  char** envp, char **argv);
+		int							executeScript(char** envp, char **argv);
 
 
 	public :
