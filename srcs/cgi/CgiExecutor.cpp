@@ -9,7 +9,7 @@ void CgiExecutor::cgiClean()
 		if (waitpid(this->pid, NULL, WNOHANG) == 0)
 		{
 			kill(this->pid, SIGKILL);
-			waitpid(this->pid, NULL, 1);  // TO CHECK
+			waitpid(this->pid, NULL, 0);
 		}
 	}
 	if (this->result_fd > 0)
@@ -296,7 +296,7 @@ CgiResult	CgiExecutor::readResult(size_t buffer_size)
 		if (waitpid(pid, NULL, WNOHANG) == 0)
 		{
 			kill (pid, SIGKILL);
-			waitpid(pid, NULL, 1);
+			waitpid(pid, NULL, 0);
 		}
 	}
 	else if (read_return == -1)
