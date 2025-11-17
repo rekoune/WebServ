@@ -24,6 +24,13 @@ SessionHandler::~SessionHandler()
 
 }
 
+
+std::map<std::string, std::map< std::string, std::string> >&   SessionHandler::getData()
+{
+	return data;
+
+}
+
 SessionHandler& SessionHandler::operator=(const SessionHandler& other)
 {
 	if (this == &other)
@@ -52,11 +59,10 @@ void SessionHandler::addSession(std::map<std::string, std::string>& headers)
 	std::string id;
 
 	// CHECK IF CLIENT SENT SESSION ID , LIKE ITS AN OLD CLIENT THAT ALREADY HAS A SESSION, JUST NEEDS TO UPDATE
-	if (headers.count("Cookie"))
+	if (headers.count("cookie"))
 	{
-		std::map<std::string, std::string> cookies = splitCookieIntoMap(headers["Cookie"]);
-		// std::map<std::string, std::map<std::string, std::string> >::iterator i = data.begin();
-		if (cookies.count("SESSION_ID") && data.find(cookies["SESSION_ID"]) != data.end())
+		std::map<std::string, std::string> cookies = splitCookieIntoMap(headers["cookie"]);
+		if (cookies.count("SESSION_ID") /* && data.find(cookies["SESSION_ID"]) != data.end() */)
 		{
 			id = cookies["SESSION_ID"];
 			this->is_new_client = false;
@@ -67,12 +73,9 @@ void SessionHandler::addSession(std::map<std::string, std::string>& headers)
 	else
 		this->is_new_client = true;
 	
-	std::cout << "id:" << id << std::endl;
 	if (id.empty() && is_new_client)
 	{
-		// MEANS NEW CLIENT: NEW ID , SET-COOKIE, SET SESSION_ID
 		// GENREATE ID 
-		std::cout << " GENERATE NEW ID =========\n";
 		id = generateID();
 		this->is_new_client = true;
 		headers.insert(std::make_pair("Set-Cookie",  "SESSION_ID=" + id + "; Path=/"));
@@ -97,21 +100,28 @@ bool	isSessionAvaible(std::string cookie_value_from_headers)
 		return true;
 	return false;
 }
+bool	isDuplacated(std::string key, std::string cookie_value)
+{
+	if (cookie_value.find(key) != std::string::npos)
+		return true;
+	return false;
+}
 
 void    SessionHandler::fetchDataToHeaders(std::map<std::string, std::string>& headers)
 {
-
-	std::string&	cookie_value = headers["Cookie"];
 	bool			adding_semicolon = true;
+	if (!headers.count("cookie"))
+	{
+		headers["cookie"];
+		adding_semicolon = false;
+	}
+	std::string&	cookie_value = headers["cookie"];
 	if ( cookie_value.empty())
 		adding_semicolon = false;
 
-	std::cout << "cookie_value:" << cookie_value << std::endl;
-	for (std::map<std::string, std::map< std::string, std::string> >::iterator i = this->data.begin(); i != this->data.end(); i++)
-	{
 
-		std::cout << "sission :" << i->first << std::endl << "COOOKIES" << std::endl;
-		for (std::map< std::string, std::string>::iterator im = i->second.begin(); im != i->second.end(); im++)
+		std::map<std::string, std::string> ses = data[current_session_id];
+		for (std::map< std::string, std::string>::iterator im = ses.begin(); im != ses.end(); im++)
 		{
 			if (!adding_semicolon)
 			{
@@ -119,35 +129,29 @@ void    SessionHandler::fetchDataToHeaders(std::map<std::string, std::string>& h
 			}
 			else 
 				cookie_value += "; ";
-			if (im->first == "SESSION_ID" && isSessionAvaible(cookie_value))
+			if ((im->first == "SESSION_ID" && isSessionAvaible(cookie_value)) || isDuplacated(im->first, cookie_value))
+			{
+				adding_semicolon = false;
 				continue ;
-			cookie_value += (im->first + "=" + im->second);
-			std::cout << "after adding" << cookie_value << std::endl;
+			}
+			else 
+			{
+				std::string sum = im->first + "=" + im->second;
+				cookie_value += sum;
+			}
+			
 		}
-	}
 }
-
-
-// void	SessionHandler::appendHeaders(std::map<std::string, std::string> headers)
-// {
-//     (void)headers;
-// }
-
-
-
 
 void    SessionHandler::printSessionData()
 {
-	std::cout << "PRINTING SESSION DATA" << std::endl;
 	for (std::map<std::string, std::map< std::string, std::string> >::iterator i = this->data.begin(); i != this->data.end(); i++)
 	{
-		std::cout << "sission :" << i->first << std::endl;
 		for (std::map< std::string, std::string>::iterator im = i->second.begin(); im != i->second.end(); im++)
 		{
 			std::cout << im->first << ":" << im->second << std::endl ;
 		}
 	}
-	std::cout << "PRINTING SESSION DATA -FINISHED-" << std::endl;
 }
 
 void	SessionHandler::appendDataCookies(std::string ID, std::map<std::string, std::string>& headers_cookies)
@@ -156,7 +160,9 @@ void	SessionHandler::appendDataCookies(std::string ID, std::map<std::string, std
 	for (std::map<std::string, std::string>::iterator i = cookie.begin(); i != cookie.end(); i++)
 	{
 		if (headers_cookies.count(i->first))
+		{
 			continue;
+		}
 		else 
 		{
 			headers_cookies.insert(std::make_pair(i->first, i->second));
@@ -166,15 +172,12 @@ void	SessionHandler::appendDataCookies(std::string ID, std::map<std::string, std
 
 void	SessionHandler::fillDataFromHeaders(std::string ID, std::map<std::string, std::string>& headers)
 {
-	(void)headers;
 
 	if (headers.empty())
 		return ;
-	std::string cookies = headers.find("Cookie")->second;
+	std::string cookies = headers.find("cookie")->second;
 	// split the cookie 
 	std::map<std::string, std::string> cookie_map = splitCookieIntoMap(cookies);
 	appendDataCookies(ID, cookie_map);
-
-
 	data[ID] = cookie_map;
 }

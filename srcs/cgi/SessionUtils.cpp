@@ -33,8 +33,7 @@ void printMapStr(std::map<std::string, std::string> map)
     std::cerr << "printing map of string string \n";
     for (std::map<std::string, std::string>::iterator i = map.begin(); i != map.end(); i++)
     {
-        std::cerr << "i->first :" << i->first << std::endl;
-        std::cerr << "i->second :" << i->second << std::endl;
+        std::cerr <<  i->first << ":" << i->second << std::endl;
     }
 
 }
@@ -48,11 +47,9 @@ void        parseCookieDirective(std::map<std::string, std::string>& map, std::s
 
     std::getline(iss, name, '=');
     name  = cleanLineUtil(name);
-    // std::cout << "name:" << name << std::endl;
 
     std::getline(iss, value);
     value  = cleanLineUtil(value);
-    // std::cout << "value:" << value << std::endl;
 
     map[name] = value;
 }
@@ -69,16 +66,15 @@ std::map<std::string, std::string>  splitCookieIntoMap(std::string cookie)
     {
         cookie_directive = cookie.substr(pos, semic_pos - pos);
         pos = semic_pos + 1;
-        // std::cout << "cookie_directive:" << cookie_directive << std::endl;
         parseCookieDirective(map, cookie_directive);
 
     }
     if ( pos < cookie.size())
     {
         cookie_directive = cookie.substr(pos, cookie.size() - pos);
-        // std::cout << "cookie_directive:" << cookie_directive << std::endl;
         parseCookieDirective(map, cookie_directive);
     }
+
     return map; 
 }
 
