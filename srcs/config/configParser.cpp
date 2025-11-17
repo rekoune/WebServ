@@ -148,6 +148,10 @@ bool	parseServerDirective(std::string line, ServerConfig& currentServer, std::ve
 				{
 					currentServer.host_port[ip_str].push_back(port_str);
 				}
+				else
+				{
+					std::cout << "\033[36;1mDuplacated listen directive detected, one is ignored.\033[0m" << std::endl;
+				}
 			}
 			else 
 				currentServer.host_port[value].push_back("80");

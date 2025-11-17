@@ -115,33 +115,17 @@ bool	validateLocDuplication(std::vector<ServerConfig>::iterator serv_iter, Globa
 	
 }
 
-// bool	validateIpPortDup(std::vector<ServerConfig>::iterator serv_iter, GlobaConfig& globalConfig)
-// {
-// 	for (; serv_iter != globalConfig.servers.end(); serv_iter++)
-// 	{
-		
-// 	}
-	
-
-// }
-
-
-
 bool	validateConfig(GlobaConfig& globalConfig)
 {
-	// std::cout << "vaaaaaaaaaaaaaaaaaalidate ============= \n";
 	//Validate the methods
 	std::vector<ServerConfig>::iterator serv_iter = globalConfig.servers.begin();
 	if (!validateMethods(serv_iter, globalConfig))
 		return false;
-	serv_iter = globalConfig.servers.begin();
 	//Validate the ips format
 	if (!validateIpFormat(serv_iter, globalConfig))
 		return false;
 	serv_iter = globalConfig.servers.begin();
 	if ( !validateLocDuplication(serv_iter, globalConfig))
 		return false ;
-	// if ( !validateIpPortDup)
-	// 	return false ;
 	return true;
 }
