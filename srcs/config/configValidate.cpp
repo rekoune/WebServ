@@ -50,7 +50,6 @@ bool	validateIpFormat(std::vector<ServerConfig>::iterator serv_iter, GlobaConfig
 
 		for (std::map<std::string, std::vector<std::string> >::iterator host_iter =  serv_iter->host_port.begin(); host_iter != serv_iter->host_port.end(); host_iter++)
 		{
-			// std::string host_str = host_iter->first;
 			std::istringstream iss(host_iter->first);
 			char 				dot = 'd';
 			int 				num;
