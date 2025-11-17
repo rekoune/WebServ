@@ -501,7 +501,6 @@ bool	parseLocationBlock(ServerConfig&	currentserver, std::ifstream& file, std::s
 			current_loc.path =  tmp;
 
 		}
-		std::cout << "current_loc.path: " << current_loc.path << std::endl;
 	}
 	else 
 	{
