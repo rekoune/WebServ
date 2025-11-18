@@ -8,9 +8,8 @@ void CgiExecutor::cgiClean()
 	{
 		if (waitpid(this->pid, NULL, WNOHANG) == 0)
 		{
-			std::cout << "=====*******************************=============== IM KILLING ====================\n";
 			kill(this->pid, SIGKILL);
-			waitpid(this->pid, NULL, 1);  // TO CHECK
+			waitpid(this->pid, NULL, 0);
 		}
 	}
 	if (this->result_fd > 0)
@@ -25,7 +24,7 @@ CgiExecutor::~CgiExecutor()
 {}
 
 CgiExecutor::CgiExecutor(RequestContext& req_context)
-	: req_context(req_context) , done(false)    						 //server_software  is which program/software this webserver is (nginx/apache...). ours be like "webserv/1.1" or some thing like that. I NEED IT IN THE ENVP FOR SCRIPT
+	: req_context(req_context) , done(false)    			
 {}
 
 
@@ -87,16 +86,12 @@ std::string	CgiExecutor::getServerPort(std::string	host)
 
 std::vector<std::string>	CgiExecutor::buildEnv()
 {
-	std::map<std::string, std::string> 		headers = req_context.headers;
+	std::map<std::string, std::string> 		headers = req_context.headers;;
 	session.fetchDataToHeaders(headers);
 	std::vector<std::string>				env;
 	std::string								host;
 	if ( headers.count("Host"))
 		host = headers["Host"];
-	// std::cout << "host: " << host << std::endl;
-	
-	// std::cout << "script_name: " << req_context.script_name << std::endl;
-	// std::cout << "query: " << req_context.query << std::endl;
 
 
 	env.push_back("REQUEST_METHOD=" + req_context.req_line.method);
@@ -136,11 +131,10 @@ std::vector<std::string>	CgiExecutor::buildEnv()
 			env_name += "=";
 			env_name += value;
 			env.push_back(env_name);
-
-			std::cout << "env_name==========="  << env_name << std::endl;
 		}
 
 	}
+	
 	return env;
 }
 
@@ -158,10 +152,8 @@ char ** 	vectorToEnvp(std::vector<std::string>& env_vec, std::vector <char*>& en
 }
 
 
-int	CgiExecutor::executeScript(std::vector<char>& body, HttpStatusCode&	status, char** envp, char **argv)
+int	CgiExecutor::executeScript(char** envp, char **argv)
 {
-	(void)body;
-	(void)status;
 
 	int 	body_fd[2];
 	int		reslt_fd[2];
@@ -184,7 +176,7 @@ int	CgiExecutor::executeScript(std::vector<char>& body, HttpStatusCode&	status, 
 	}
 	if (pid == 0)
 	{
-		//	child
+		//	CHILD
 		if (dup2(reslt_fd[1], 1) == -1)
 		{
 			std::cerr << "dup2 failed" << std::endl;
@@ -201,26 +193,21 @@ int	CgiExecutor::executeScript(std::vector<char>& body, HttpStatusCode&	status, 
 
 		close (body_fd[0]);
 		close (body_fd[1]);
-		// 	execve
+		// 	EXECVE
 		execve(const_cast<const char *>(req_context.script_path.c_str()), argv, envp);
-		std::cerr << "execve failed" << std::endl;
-		perror("====== > EXECVE: ");
+		std::cerr << "execve failed: " << strerror(errno) <<  std::endl;
 		exit(1);
 	}
 	else 
 	{
-		//	parent
+		//	PARENT
 		// get the body ready into a char*
 		// write the body in the pipe 
 		char *body_buffer = &req_context.body[0];
 
-		size_t	len = std::atoi(const_cast<const char *>(req_context.headers["content-length"].c_str()));
+		size_t	len = req_context.body.size();
 		
 
-		// TO_CHECK
-		/* CHECK IS LEN IN THE SAME AS LENGTH IN HEADERS (CONTENT-LENGTH) */
-		// if ( len > req_context.body.size())
-		// 	len = req_context.body.size();
 
 		write (body_fd[1], body_buffer,  len);
 		close(body_fd[1]);
@@ -245,29 +232,71 @@ int	CgiExecutor::executeScript(std::vector<char>& body, HttpStatusCode&	status, 
 }
 
 
+void parseSetCookie(std::map<std::string, std::string>& session_cookies, std::string header_line)
+{
+	header_line = cleanLineUtil(header_line.substr(11, header_line.size() - 11));
+
+	long semi_colon  = header_line.find_first_of(";");
+	std::string cookie = header_line.substr(0, semi_colon);
+
+
+	parseCookieDirective(session_cookies, cookie);
+}
+
+void	replaceCookieHeaders(std::map<std::string, std::string>& session_cookies, std::vector<char>& body)
+{
+	long	header_pos = Utils::isContainStr(&body[0], body.size(), "\n\n", 2);
+	if (header_pos == -1)
+		return ;
+
+	std::stringstream old_headers_stream(std::string(body.begin(), body.begin() + header_pos));
+
+	std::string header_line;
+
+	std::vector<char>	new_body;
+	while (getline(old_headers_stream, header_line))
+	{
+		header_line += "\n";
+		if (header_line.find("Set-Cookie") == 0)
+		{
+			parseSetCookie(session_cookies, header_line);
+		}
+		else 
+		{
+			Utils::pushInVector(new_body, header_line);
+		}
+	}
+	Utils::pushInVector(new_body, "\n");
+
+	Utils::pushInVector(new_body, &body[header_pos + 2], body.size() - header_pos - 2);
+
+	body = new_body;
+}
+
 
 CgiResult	CgiExecutor::readResult(size_t buffer_size)
 {
-	// read from the restl_pipe()
-	std::vector<char> body(buffer_size);
-	
 
-	//if read is done close the FD or if it fails
+	std::vector<char> body(buffer_size);
+
 
 	int read_return = read(this->result_fd, &body[0], buffer_size);
 	if (read_return == 0)
 	{
-		result.headers.insert(std::make_pair("Set-Cookie",  "SESSION_ID=" + session.current_session_id + "Path=/; HttpOnlyRekoune"));
 
-		// PUT THE FUNCTION THAT WILL REPLACE THE COOKIES HEADER
+		// PUT THE FUNCTION THAT WILL CUT THE COOKIES FROM THE BODY AND PUT THEM OR REPLACE THEM IN DATA IF ALREADY EXSITS 
+		std::map<std::string, std::string>& session_map = session.getData()[session.current_session_id];
+		replaceCookieHeaders(session_map, result.body);
+		result.headers.insert(std::make_pair("Set-Cookie",  "SESSION_ID=" + session.current_session_id + "; Path=/; HttpOnly"));
 
+		
 		// handling the session above 
 		close (result_fd);
 		done = true;
 		if (waitpid(pid, NULL, WNOHANG) == 0)
 		{
 			kill (pid, SIGKILL);
-			// waitpid(pid, NULL, 1);
+			waitpid(pid, NULL, 0);
 		}
 	}
 	else if (read_return == -1)
@@ -277,8 +306,6 @@ CgiResult	CgiExecutor::readResult(size_t buffer_size)
 		done = true;
 		return result;
 	}
-	// if (buffer_size > static_cast<size_t>(read_return))
-	// 	body.erase(body.begin() + read_return, body.end());
 	Utils::pushInVector(result.body, &body[0], read_return);
 
 	result.status = OK;
@@ -294,12 +321,10 @@ int	CgiExecutor::run()
 		done = true;
 		return -1;
 	}
+
 	session.addSession(req_context.headers);
+
 	std::vector<std::string>	env_vec = buildEnv();
-	// for ( std::vector< std::string>::iterator iter = env_vec.begin(); iter != env_vec.end(); iter++)
-	// {
-	// 	std::cout << *iter << std::endl;
-	// }
 
 	std::vector <char*> env_char_ptr_vec;
 	char **envp = vectorToEnvp(env_vec,  env_char_ptr_vec);
@@ -311,26 +336,10 @@ int	CgiExecutor::run()
 	char **argv = &args_vector[0];
 
 	// Executing script
-	result_fd = executeScript(result.body, result.status, envp, argv);
+	result_fd = executeScript(envp, argv);
 	
 	return result_fd;
 }
-
-
-// REQUEST_METHOD 		√
-// SCRIPT_NAME			√
-// QUERY_STRING			√
-// SERVER_PROTOCOL		√
-// GATEWAY_INTERFACE	√
-// SERVER_SOFTWARE		√
-// SERVER_NAME	/* \ */
-// SERVER_PORT  - >	from config file
-// REMOTE_ADDR	/
-// CONTENT_TYPE (for POST/PUT)		√
-// CONTENT_LENGTH (for POST/PUT)	√
-// All HTTP headers as HTTP_*		
-
-
 
 
 

@@ -23,3 +23,7 @@ if content_length:
         print(f"[Error reading body: {e}]")
 else:
     print("(No body)")
+
+while True :
+    print("")
+
