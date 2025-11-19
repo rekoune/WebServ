@@ -246,25 +246,14 @@ void    Response::buildResponse(){
 
 void    Response::errorHandling(){
     std::map<int, std::string>::iterator errorPage;
-    if (resInfo.status == MOVED_PERMANENTLY || resInfo.status == FOUND || resInfo.status == TEMPORARY_REDIRECT || resInfo.status == PERMANENT_REDIRECT){
+    if (isRedirect(resInfo.status))
         resElements.headers.insert(std::pair<std::string, std::string>("Location", resInfo.path));
-        if (resInfo.method == "POST"){
-        // std::cout << isRedirect(resInfo.status) << std::endl;
-        // std::cout << "status = " << resInfo.status << std::endl;
-        // // exit(2);
-            resElements.headers.insert(std::pair<std::string, std::string>("Connection", "close"));
-            std::cout << "conection seted to false "<< std::endl;
-            keepAlive = false;
-        }
-    }
     if ((errorPage = resInfo.server.error_pages.find(resInfo.status)) != resInfo.server.error_pages.end()){
         std::string errorPath;
         errorPath.append(resInfo.server.root);
         errorPath.append(errorPage->second);
         resInfo.path = errorPath;
         if (access(errorPath.c_str(), F_OK) == -1){
-            std::cout << "qwr qwr qwr" << std::endl;
-            std::cout << "error path = " << errorPath << std::endl;
             resInfo.status = NOT_FOUND;
             resElements.body = generateErrorBody(resInfo.status);
         }   
@@ -428,14 +417,10 @@ std::vector<char> Response::getResponse () {
     if (resInfo.type == SCRIPT && (resInfo.status == OK || resInfo.status == CREATED)){
             
         cgiExecutor.readResult(DATA_SIZE);
-        // body = cgiResult.body;
-        // // Utils::pushInVector(response, &body[0], body.size());
-        // body.clear();
         done = cgiExecutor.isDone();
         if (done){
             cgiResult = cgiExecutor.getResult();
             long pos = Utils::isContainStr(&cgiResult.body[0], cgiResult.body.size(), "\n\n", 2);
-            // cgiResult = cgiExecutor.getResult();
             std::string length;
 
             this->resInfo.status = cgiResult.status ;

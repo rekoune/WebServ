@@ -192,13 +192,10 @@ HttpStatusCode      UploadHandler::checkHeaders(std::map<std::string, std::strin
     setFullPathByType(uploadPath, pathType, contentType);
     if (pathType == SCRIPT){
         return FORBIDDEN;
-        // uploadPath = resInfo.cgiBodyPath;
-        // pathType = F;
     }
     if (Utils::isScript(uploadPath, resInfo.location.cgi_extension)){
         return (FORBIDDEN);
     }
-    // resInfo.type = pathType;
     bodyFile.close();
     bodyFile.open(uploadPath.c_str(), std::ios::out | std::ios::binary);
     if (!bodyFile){
@@ -443,7 +440,6 @@ HttpStatusCode UploadHandler::chunkedBodyHandling(const char* data, size_t size)
         else
             bodyFile.open(resInfo.path.c_str(), std::ios::out | std::ios::binary);
         if (!bodyFile){
-            std::cout << "ik ik ik" << std::endl;
             return (INTERNAL_SERVER_ERROR);
         }
     }
@@ -463,7 +459,6 @@ HttpStatusCode UploadHandler::chunkedBodyHandling(const char* data, size_t size)
             parseState = singleChunk(bodySaver, chunkSize);
             bodySaver.erase(bodySaver.begin(), bodySaver.begin() + chunkSize);
             if (bodySaver[0] != '\r' || bodySaver[1] != '\n'){
-                std::cout << "gia gia gia" << std::endl;
                 isSearchForBody = false;
                 chunkSize = -1;
                 return BAD_REQUEST;
@@ -521,9 +516,6 @@ ParseState  UploadHandler::upload(const char* data, size_t size){
     }
     else if (parseState == PARSE_ERROR){
         bodyFile.close();
-        std::cout << "ANA FORM REMOVEIG" << std::endl;
-        std::cout << "I will remove the file " << resInfo.path << std::endl;
-        std::cout << "status = " << resInfo.status << std::endl;
         clearFiles(openedFiles);
         openedFiles.clear();
     }

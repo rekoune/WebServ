@@ -2,7 +2,7 @@
 # define HTTPHANDLER_HPP
 
 # include "RequestParser.hpp"
-// # include "ResourceResolver.hpp"
+# include "ResourceResolver.hpp"
 # include "Response.hpp"
 
 class HttpHandler{

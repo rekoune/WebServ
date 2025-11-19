@@ -88,7 +88,6 @@ std::string Utils::getFileType(std::map<std::string, std::string>& fileTypes, st
     return ("text/plain");
 }
 
-//if the file Path is a directory it returns an empty string
 std::string Utils::getFileName(std::string filePath){
     std::stringstream ss(filePath);
     std::string fileName;
@@ -236,11 +235,4 @@ void    Utils::decodeUrl(std::string& url, std::string encodedCharacter, std::st
         pos = Utils::isContainStr(&url[0], url.length(), &encodedCharacter[0], encodedCharacter.length());
     }
 }
-
-
-// int main (){
-//     std::ofstream file("test");
-//     file << "abdellah";
-//     std::cout << "size  = " << Utils::getFileSize("test") << std::endl;
-// }
 

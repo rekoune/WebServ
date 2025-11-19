@@ -1,8 +1,6 @@
 # ifndef RESOURCERESOLVER_HPP
 # define RESOURCERESOLVER_HPP
 
-// # include "HttpStatusCode.hpp"
-// # include "Request.hpp"
 # include "config/configStructs.hpp"
 # include "Utils.hpp"
 # include <sys/stat.h>
