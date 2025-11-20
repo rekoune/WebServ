@@ -233,7 +233,6 @@ void server::rmCgi(size_t& fdIndex, bool workDone, HttpStatusCode statuCode){
 void server::pollin(size_t &fdIndex)
 {
 	struct pollfd& pfd = socketFds[fdIndex];
-	std::cout << "POLLIN FD: " << pfd.fd << std::endl;
 	if(currentClient){
 		if(!currentClient->ft_recv(pfd.events)){
 			rmClient(fdIndex); 
@@ -257,7 +256,6 @@ void server::pollin(size_t &fdIndex)
 void server::pollout(size_t& fdIndex)
 {
 	struct pollfd& pfd = socketFds[fdIndex];
-	std::cout << "POLLOUT FD: " << pfd.fd  << std::endl;
 	currentClient->setupLastActivity();
 	if(currentClient->getCgiFd() != -1){
 		if(currentClient->cgiTimeOut()){
@@ -288,9 +286,7 @@ int server::serverCore()
 	while (workFlage)
 	{
 		int NbrOfActiveSockets = poll(&socketFds[0], socketFds.size(), 2000);
-		if(NbrOfActiveSockets > 0)
-			std::cout << "Number of active clients: " << NbrOfActiveSockets << std::endl;
-		else if(NbrOfActiveSockets < 0)
+		if(NbrOfActiveSockets < 0)
 			std::cerr << "Poll : " << strerror(errno) << std::endl;
 		for(size_t i = 0; i < socketFds.size()  ; i++){
 			currentClient = getClient(socketFds[i].fd);

@@ -58,7 +58,6 @@ ssize_t client::ft_recv(short& event)
 		}
 	}
 	else if(read){
-		std::cout << "receving...." << std::endl;
 		clientHandler.appendData(buf, read);
 		total = totalrecv;
 		if(clientHandler.isComplete()){
@@ -79,7 +78,6 @@ ssize_t client::sending(short& event){
 		std::cerr << "Failed to send data on fd (" << fd << ")" << std::endl;
 		return 0;
 	}
-	std::cout << "sending... " << std::endl;
 	totalsend += nsend;
 	if(totalsend == response.size()){
 		if(!clientHandler.isKeepAlive())
