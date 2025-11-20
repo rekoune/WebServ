@@ -4,16 +4,33 @@
 
 void CgiExecutor::cgiClean()
 {
+	int ret;
 	if (this->pid > 0)
 	{
-		if (waitpid(this->pid, NULL, WNOHANG) == 0)
+		if ((ret = waitpid(this->pid, NULL, WNOHANG)) == 0)
 		{
-			kill(this->pid, SIGKILL);
-			waitpid(this->pid, NULL, 0);
+			if (kill(this->pid, SIGKILL) == -1)
+			{
+				std::cerr << "kill failed: " << strerror(errno) << std::endl;
+			}
+
+			if (waitpid(this->pid, NULL, 0))
+			{
+				std::cerr << "waitpid failed: " << strerror(errno) << std::endl;
+			}
+		}
+		else if (ret == -1)
+		{
+			std::cerr << "waitpid(WNOHANG) failed: " << strerror(errno) << std::endl;
 		}
 	}
 	if (this->result_fd > 0)
-		close (result_fd);
+	{
+		if (close (result_fd) == -1)
+		{
+				std::cerr << "close() failed: " << strerror(errno) << std::endl;
+		}
+	}
 }
 
 
@@ -201,8 +218,6 @@ int	CgiExecutor::executeScript(char** envp, char **argv)
 	else 
 	{
 		//	PARENT
-		// get the body ready into a char*
-		// write the body in the pipe 
 		char *body_buffer = &req_context.body[0];
 
 		size_t	len = req_context.body.size();
@@ -293,15 +308,22 @@ CgiResult	CgiExecutor::readResult(size_t buffer_size)
 		// handling the session above 
 		close (result_fd);
 		done = true;
-		if (waitpid(pid, NULL, WNOHANG) == 0)
+		int ret;
+		if ((ret = waitpid(pid, NULL, WNOHANG)) == 0)
 		{
-			kill (pid, SIGKILL);
-			waitpid(pid, NULL, 0);
+			if (kill (pid, SIGKILL) == -1)
+				std::cerr << "kill failed in readResult " << strerror(errno) << std::endl;
+			if (waitpid(pid, NULL, 0) == -1 )
+				std::cerr << "waitpid failed in readResult " << strerror(errno) << std::endl;
+
 		}
+		else if (ret == -1)
+			std::cerr << "waitpid(WNOHANG) failed: " << strerror(errno) << std::endl;
+
 	}
 	else if (read_return == -1)
 	{
-		std::cerr << "hahaha\n";
+		std::cerr << "read failed in readResult" << std::endl;
 		result.status = INTERNAL_SERVER_ERROR;
 		done = true;
 		return result;
