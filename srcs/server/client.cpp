@@ -116,14 +116,14 @@ void client::setupLastActivity(){
 }
 
 bool client::clientTimeOut(){
-	if((std::time(NULL) - clientLastActivity) >= TIMEOUT)
+	if((std::time(NULL) - clientLastActivity) >= CLIENT_TIMEOUT)
 		return true;
 	return false;
 }
 
 bool client::cgiTimeOut()
 {
-	if((std::time(NULL) - cgiStartTime) >= TIMEOUT)
+	if((std::time(NULL) - cgiStartTime) >= CGI_TIMEOUT)
 		return true;
 	return false;
 }

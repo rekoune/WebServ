@@ -15,8 +15,9 @@ server& server::operator=(const server& other){
 	return *this;
 }
 
-server::server(std::vector<ServerConfig>&	servers)  {
-	std::map<std::string, int> iportToSocket; //ip:port -> socket;p
+server::server(std::vector<ServerConfig>&	servers)  
+{
+	std::map<std::string, int> iportToSocket; //ip:port -> socket;
 	std::map<std::string, int>::iterator socketIt; // |^| there iterotor
 
 	for(size_t i = 0; i < servers.size(); i++)
@@ -28,10 +29,8 @@ server::server(std::vector<ServerConfig>&	servers)  {
 			for(size_t j = 0; j < ipPortIt->second.size(); j++){
 				std::string ipPortStr = ipPortIt->first + ":" + ipPortIt->second[j];
 				socketIt = iportToSocket.find(ipPortStr);
-				if(socketIt != iportToSocket.end()){
-					socketToServers[socketIt->second].push_back(servers[i]); //listenToHost => socketfd -> serversconfig
-					//it's a listening socket to it's possible servers;
-				}
+				if(socketIt != iportToSocket.end())
+					socketToServers[socketIt->second].push_back(servers[i]); //it's a listening socket and servers that can connect from ;
 				else
 				{
 					int socketfd;
@@ -47,6 +46,7 @@ server::server(std::vector<ServerConfig>&	servers)  {
 	std::cout << "\033[1;34mServer configuration setup completed.\033[0m" << std::endl;
 }
 
+
 server::~server()
 {
 	std::cout << "\033[31mDestructor: shutting down the server\033[0m" << std::endl;
@@ -58,6 +58,7 @@ server::~server()
 			close(fd);
 	}
 }
+
 
 int server::listen_socket(const std::string& ip, const std::string& port)
 {
@@ -190,6 +191,7 @@ void server::cgiSetup(int cgiFd){
 		close(cgiFd);
 		currentClient->setErrorResponse(INTERNAL_SERVER_ERROR);
 		currentClient->cgiCleaner();
+		currentClient->resetCgiFd();
 		return ;
 	}
 	socketFds.push_back(create_pollfd(cgiFd, POLLIN));
@@ -232,16 +234,7 @@ void server::pollin(size_t &fdIndex)
 {
 	struct pollfd& pfd = socketFds[fdIndex];
 	std::cout << "POLLIN FD: " << pfd.fd << std::endl;
-	if(is_listener(pfd.fd))
-		acceptClient(pfd.fd);
-	else if(is_cgi(pfd.fd)){
-		int cgiStatus = cgi[pfd.fd]->cgiRun();
-		if(cgiStatus == -1)
-			rmCgi(fdIndex, true, OK);
-	}
-	else if(currentClient)
-	{
-		currentClient->setupLastActivity();
+	if(currentClient){
 		if(!currentClient->ft_recv(pfd.events)){
 			rmClient(fdIndex); 
 			return ;
@@ -251,6 +244,13 @@ void server::pollin(size_t &fdIndex)
 			cgiSetup(cgiFd);
 			currentClient->startTimer();
 		}
+	}
+	else if(is_listener(pfd.fd))
+		acceptClient(pfd.fd);
+	else if(is_cgi(pfd.fd)){
+		int cgiStatus = cgi[pfd.fd]->cgiRun();
+		if(cgiStatus == -1)
+			rmCgi(fdIndex, true, OK);
 	}
 }
 
@@ -280,19 +280,18 @@ void server::pollout(size_t& fdIndex)
 int server::serverCore()
 {
 	if(socketToServers.empty()){
-		std::cerr << "Error: no listen Fds" << std::endl;
+		std::cerr << "\033[1;31mError: no listen socket\033[0m" << std::endl;
 		return 1;
 	}
 	std::cout << "\033[1;35mThe server starts\033[0m" << std::endl; 
 	signal(SIGPIPE, SIG_IGN);	
 	while (workFlage)
 	{
-		// std::cout << "\033[1;36mWaiting for events... Polling active connections.\033[0m" << std::endl;
 		int NbrOfActiveSockets = poll(&socketFds[0], socketFds.size(), 2000);
 		if(NbrOfActiveSockets > 0)
 			std::cout << "Number of active clients: " << NbrOfActiveSockets << std::endl;
-		if(NbrOfActiveSockets < 0)
-		std::cerr << "Poll : " << strerror(errno) << std::endl;
+		else if(NbrOfActiveSockets < 0)
+			std::cerr << "Poll : " << strerror(errno) << std::endl;
 		for(size_t i = 0; i < socketFds.size()  ; i++){
 			currentClient = getClient(socketFds[i].fd);
 			if(workFlage && (socketFds[i].revents & POLLIN)){
