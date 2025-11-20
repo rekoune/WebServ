@@ -17,7 +17,7 @@ private:
 	std::map<int, client> clients;
 	std::map<int, client*> cgi;
 
-	std::map<int, std::vector<ServerConfig> > listenToHosts; 
+	std::map<int, std::vector<ServerConfig> > socketToServers; 
 	client* currentClient;
 
 	bool is_listener(int fd);
@@ -26,7 +26,7 @@ private:
 	void pollin(size_t &fdIndex);
 	void pollout(size_t &fdIndex);
 
-	void cgiSetup(size_t& fdIndex, int cigFd);
+	void cgiSetup(int cigFd);
 	void rmCgi(size_t& fdIndex, bool workDone, HttpStatusCode statuCode);
 public:
 	server(std::vector<ServerConfig>&	servers);

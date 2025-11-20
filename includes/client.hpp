@@ -4,7 +4,8 @@
 #include"Headers.hpp"
 
 #define BUFFER 204800
-#define TIMEOUT 5
+#define CGI_TIMEOUT 6
+#define CLIENT_TIMEOUT 60
 	
 class client{
 private:
@@ -34,17 +35,20 @@ public:
 	~client();
 
 	int getFd();
+
 	int getCgiFd();
 	void resetCgiFd();
-	int cgiRun();
-	void setErrorResponse(HttpStatusCode& statuCode);
 
+	int cgiRun();
+	void cgiCleaner();
+	
 	void startTimer();
 	bool cgiTimeOut();
 	
 	void setupLastActivity();
 	bool clientTimeOut();
-	void cgiCleaner();
+	
+	void setErrorResponse(HttpStatusCode statuCode);
 	
 	bool appendFirstRequest(const char* buf, ssize_t read);
 	bool isHostSeted();
