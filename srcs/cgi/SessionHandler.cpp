@@ -61,7 +61,7 @@ void SessionHandler::addSession(std::map<std::string, std::string>& headers)
 	if (headers.count("cookie"))
 	{
 		std::map<std::string, std::string> cookies = splitCookieIntoMap(headers["cookie"]);
-		if (cookies.count("SESSION_ID") /* && data.find(cookies["SESSION_ID"]) != data.end() */)
+		if (cookies.count("SESSION_ID") )
 		{
 			id = cookies["SESSION_ID"];
 			this->is_new_client = false;

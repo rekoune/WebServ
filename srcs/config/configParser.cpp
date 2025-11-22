@@ -130,7 +130,7 @@ bool	parseServerDirective(std::string line, ServerConfig& currentServer)
 					std::cerr << "CONFIG FILE ERROR : port is not a valid port number" << std::endl;
 					return false ;
 				}
-				if ( !duplicated(ip_str, port_str, currentServer.host_port)/*  && !duplicatedInOtherServ(servers, ip_str, port_str) */)
+				if ( !duplicated(ip_str, port_str, currentServer.host_port))
 				{
 					currentServer.host_port[ip_str].push_back(port_str);
 				}
@@ -432,7 +432,7 @@ void	fillDefaults(GlobaConfig& globalConfig)
 	}
 }
 
-bool	parseLocationBlock(ServerConfig&	currentserver, std::ifstream& file, std::string& line/* , bool& is_loc_brace_closed */)
+bool	parseLocationBlock(ServerConfig&	currentserver, std::ifstream& file, std::string& line)
 {
 	bool			is_loc_brace_closed = false;
 
@@ -443,14 +443,14 @@ bool	parseLocationBlock(ServerConfig&	currentserver, std::ifstream& file, std::s
 
 	if ( brace_pos != std::string::npos)
 	{
-		std::string after_brace = cleanLine(line.substr(brace_pos + 1));				
+		std::string after_brace = cleanLine(line.substr(brace_pos + 1));		
 		if  (!after_brace.empty())
 		{
 			std::cerr << "CONFIG FILE ERROR: Syntax : location <path/> {" << std::endl;
 			return false;
 		}
 		current_loc.path = cleanLine (line.substr(loc_start, brace_pos - loc_start));
-		if (current_loc.path[0] != '/')
+		if (!current_loc.path.empty() && current_loc.path[0] != '/')
 		{
 			std::string tmp("/");
 			tmp += current_loc.path;
@@ -567,7 +567,7 @@ bool parseConfig(const std::string& configFilePath, GlobaConfig& globalConfig)
 		return false;
 	if (waiting_for_brace)
 		std::cerr << "CONFIG FILE ERROR: NO SERVER BLOCK\n";
-	if (!is_serv_brace_closed /* || in_server_block */)
+	if (!is_serv_brace_closed )
 	{
 		std::cerr << "CONFIG FILE ERROR: server braces not close" << std::endl;
 		return false;
