@@ -33,9 +33,6 @@ class   SessionHandler
 
 		std::string current_session_id;
 		
-
-		void    printSessionData();
-		
 		bool					is_new_client;
 
 };

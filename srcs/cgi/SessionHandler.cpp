@@ -141,16 +141,6 @@ void    SessionHandler::fetchDataToHeaders(std::map<std::string, std::string>& h
 		}
 }
 
-void    SessionHandler::printSessionData()
-{
-	for (std::map<std::string, std::map< std::string, std::string> >::iterator i = this->data.begin(); i != this->data.end(); i++)
-	{
-		for (std::map< std::string, std::string>::iterator im = i->second.begin(); im != i->second.end(); im++)
-		{
-			std::cout << im->first << ":" << im->second << std::endl ;
-		}
-	}
-}
 
 void	SessionHandler::appendDataCookies(std::string ID, std::map<std::string, std::string>& headers_cookies)
 {

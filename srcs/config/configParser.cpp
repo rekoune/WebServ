@@ -425,7 +425,6 @@ void	fillDefaults(GlobaConfig& globalConfig)
 					loc_iter->index = serv_iter->index;
 				else 
 				{
-						std::cout << "hheeeeere\n";
 					loc_iter->index.push_back("index.html");
 				}
 			}

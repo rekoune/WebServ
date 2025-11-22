@@ -185,9 +185,7 @@ size_t       Utils::getFileSize(const std::string& filePath){
     size_t size = 0;
     std::ifstream file(filePath.c_str(), std::ios::binary | std::ios::ate); 
     if (!file)
-    {
-        std::cout << "file fail to open" << std::endl;
-    }
+        return 0;
     size = file.tellg();
     file.close();
     return (size);

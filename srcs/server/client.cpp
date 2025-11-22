@@ -46,7 +46,6 @@ ssize_t client::ft_recv(short& event)
 	totalrecv += read;
 	setupLastActivity();
 	if(read == -1){
-		std::cerr << "Failed to receive data on fd (" << fd << ")" << std::endl;
 		return 0;
 	}
 	else if(!isHostSeted()){
@@ -75,7 +74,6 @@ ssize_t client::sending(short& event){
 	nsend = send(fd, &response[0] + totalsend, response.size() - totalsend, 0);
 	setupLastActivity();
 	if(nsend == -1){
-		std::cerr << "Failed to send data on fd (" << fd << ")" << std::endl;
 		return 0;
 	}
 	totalsend += nsend;

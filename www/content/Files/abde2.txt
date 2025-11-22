@@ -1,8 +1,0 @@
-HTTP/1.1 200 OK
-Connection: keep-alive
-Content-Length: 16
-Content-Type: text/plain
-Date: Thu, 18 Sep 2025 21:12:34 GMT
-Server: WebServer
-
-abdellah rekoune

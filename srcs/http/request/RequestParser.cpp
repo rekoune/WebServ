@@ -163,7 +163,6 @@ ParseState  RequestParser::checkPostHeaders(HttpStatusCode& status){
         }
         else if (bodyMaxSize > (long long)clientMaxBodySize){
             status = REQUEST_ENTITY_TOO_LARGE;
-            std:: cout << "hona body max size = " << bodyMaxSize << " , client size = " << clientMaxBodySize << std::endl;
             return (PARSE_ERROR);
         }
         return (PARSE_BODY_LENGTH);

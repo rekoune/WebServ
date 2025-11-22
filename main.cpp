@@ -13,7 +13,7 @@ int main(int c, char **v)
 {
 	signal(SIGINT, handleSigint);
 	if(c > 2){	
-		std::cout << "Entry one config file or non to use the default one" << std::endl; 
+		std::cerr << "Too many files enter one config file or none to use the default one !!" << std::endl; 
 		return 1;
 	}
 	std::string path("config/default.conf");

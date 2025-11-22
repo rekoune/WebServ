@@ -3,8 +3,8 @@
 
 #include"Headers.hpp"
 
-#define BUFFER 204800
-#define CGI_TIMEOUT 6
+#define BUFFER 4096
+#define CGI_TIMEOUT 10
 #define CLIENT_TIMEOUT 60
 	
 class client{
