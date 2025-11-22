@@ -116,14 +116,15 @@ bool	validateLocDuplication(std::vector<ServerConfig>::iterator serv_iter, Globa
 
 bool	validateConfig(GlobaConfig& globalConfig)
 {
-	//Validate the methods
 	std::vector<ServerConfig>::iterator serv_iter = globalConfig.servers.begin();
 	if (!validateMethods(serv_iter, globalConfig))
 		return false;
-	//Validate the ips format
+
 	if (!validateIpFormat(serv_iter, globalConfig))
 		return false;
+	
 	serv_iter = globalConfig.servers.begin();
+	
 	if ( !validateLocDuplication(serv_iter, globalConfig))
 		return false ;
 	return true;

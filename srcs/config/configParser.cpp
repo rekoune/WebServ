@@ -64,9 +64,8 @@ bool	duplicated_server_name(std::string current_server_name, ServerConfig curren
 
 }
 
-bool	parseServerDirective(std::string line, ServerConfig& currentServer, std::vector<ServerConfig>& servers)
+bool	parseServerDirective(std::string line, ServerConfig& currentServer)
 {
-	(void)servers;
 	bool	valid_directive = true;
 	if (line.find("server") == 0 && line.find("server_name") == std::string::npos)
 	{
@@ -78,7 +77,7 @@ bool	parseServerDirective(std::string line, ServerConfig& currentServer, std::ve
 		std::cerr << "CONFIG FILE ERROR : EVERY SERVER DIRECTIVE SHOULD END WITH ';' " << std::endl;
 		return false;
 	}
-	//filling the struct of server
+
 	std::size_t  pos = 0, end;
 	while ((end = line.find(";", pos)) != std::string::npos)
 	{
@@ -374,7 +373,7 @@ searchServerStatus	searchForServer(bool &in_server_block,  std::string& line, Se
 				currentserver = ServerConfig();
 			}
 			else 
-				parseServerDirective(remaining, currentserver, globalConfig.servers);
+				parseServerDirective(remaining, currentserver);
 		}
 		return CONTINUE_SRV ;
 	}
@@ -387,7 +386,6 @@ searchServerStatus	searchForServer(bool &in_server_block,  std::string& line, Se
 	{
 		in_server_block = true;
 		waiting_for_brace = false ; 
-		//SKIP the {
 		size_t		brace_pos = line.find("{");
 		std::string	remaining = line.substr(brace_pos + 1);
 		remaining = cleanLine(remaining);
@@ -399,7 +397,7 @@ searchServerStatus	searchForServer(bool &in_server_block,  std::string& line, Se
 				globalConfig.servers.push_back(currentserver);
 			}
 			else 
-				parseServerDirective(remaining , currentserver, globalConfig.servers);
+				parseServerDirective(remaining , currentserver);
 		}
 		return CONTINUE_SRV ;
 	}
@@ -446,7 +444,7 @@ bool	parseLocationBlock(ServerConfig&	currentserver, std::ifstream& file, std::s
 
 	if ( brace_pos != std::string::npos)
 	{
-		std::string after_brace = cleanLine(line.substr(brace_pos + 1));				//throwig error if anything after {
+		std::string after_brace = cleanLine(line.substr(brace_pos + 1));				
 		if  (!after_brace.empty())
 		{
 			std::cerr << "CONFIG FILE ERROR: Syntax : location <path/> {" << std::endl;
@@ -521,7 +519,7 @@ bool parseServerBlock(GlobaConfig& globalConfig, std::ifstream& file, bool& wait
     
 	while (std::getline(file, line))
     {
-		line = cleanLine(line);     //	triming and removing comments 
+		line = cleanLine(line);    
 		if (line.empty())
 			continue;
 		if (!in_server_block)
@@ -547,7 +545,7 @@ bool parseServerBlock(GlobaConfig& globalConfig, std::ifstream& file, bool& wait
 				if (!parseLocationBlock(currentserver, file, line))
 					return false;
 			}
-			else if (!parseServerDirective(line, currentserver, globalConfig.servers))
+			else if (!parseServerDirective(line, currentserver))
 				return false;
 		}
     }
