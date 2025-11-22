@@ -12,7 +12,7 @@ void handleSigint(int sig) {
 int main(int c, char **v)
 {
 	signal(SIGINT, handleSigint);
-	if(c > 2){
+	if(c > 2){	
 		std::cout << "Entry one config file or non to use the default one" << std::endl; 
 		return 1;
 	}
