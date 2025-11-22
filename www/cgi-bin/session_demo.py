@@ -144,7 +144,6 @@ def main():
         <div>
             <button onclick="location.reload()">🔄 Refresh Page</button>
             <button onclick="location.href='?test=123'">🧪 Test with Query</button>
-            <button onclick="clearVisits()">🗑️ Clear Visit Counter</button>
         </div>
 
         <div class="debug">
@@ -153,7 +152,7 @@ def main():
             <p><strong>Expected Behavior:</strong> Session ID should remain constant across refreshes, visit count should increment.</p>
         </div>
 
-        <p><em>💡 This demo shows your WebServer's session management in action. The session ID is managed by your C++ server and should persist across requests.</em></p>
+        <p><em>💡 This demo shows  WebServer's session management in action. The session ID is managed by your C++ server and should persist across requests.</em></p>
     </div>
 
     <script>
