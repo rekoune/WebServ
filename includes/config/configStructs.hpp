@@ -33,7 +33,7 @@ struct LocationConfig
 
 
     LocationConfig()
-        :  /* index(1, "index.html") , */autoindex(false), redirection_status(0) {}
+        :  autoindex(false), redirection_status(0) {}
 
 };
 
@@ -58,7 +58,6 @@ struct	GlobaConfig
 	std::vector<ServerConfig>	servers;
 };
 
-// GlobaConfig parseConfig(const std::string& configFilePath);
 bool    parseConfig(const std::string& configFilePath, GlobaConfig& globalConfig);
 bool	validateConfig(GlobaConfig& globalConfig);
 
