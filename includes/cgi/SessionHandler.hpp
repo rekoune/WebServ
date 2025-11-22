@@ -3,7 +3,6 @@
 
 
 #include "../Utils.hpp"
-// #include "../Headers.hpp"
 #include <sstream>
 #include <iostream>
 #include <string>
@@ -25,14 +24,9 @@ class   SessionHandler
 
 
 		std::map<std::string, std::map< std::string, std::string> >&   getData();
-		// NEW CLIENT, WE ADD SESSION
 		void	addSession(std::map<std::string, std::string>& headers);
 
-		// EMPTY COOKIES FROM SESSION_DATA INTO HEADERS
-		void    fetchDataToHeaders(std::map<std::string, std::string>& headers);
-		// void	appendHeaders(std::map<std::string, std::string> headers); // UTILS OF FETCH
-		
-		// PUT THE COOKIES INTO SESSION_DATA
+		void    fetchDataToHeaders(std::map<std::string, std::string>& headers);		
 		void	fillDataFromHeaders(std::string ID, std::map<std::string, std::string>& headers);
 		void	appendDataCookies(std::string ID, std::map<std::string, std::string>& headers_cookies);
 
