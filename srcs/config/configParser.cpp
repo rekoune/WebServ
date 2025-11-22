@@ -84,7 +84,10 @@ bool	parseServerDirective(std::string line, ServerConfig& currentServer)
 		std::string directive = cleanLine( line.substr(pos, end - pos));
 		pos = end + 1;
 		if ( directive.empty())
-			continue;
+		{
+			std::cerr << "CONFIG FILE ERROR : EMPTY SERVER DIRECTIVE " << std::endl;
+			return false;
+		}
 		if (directive.find("server_name") == 0 && directive.length() > 11 && isitspace(directive[11]))
 		{
 			std::string	server_name;
@@ -251,7 +254,10 @@ bool	parseLocationDirective(std::string line, LocationConfig& current_loc)
 		std::string directive = cleanLine(line.substr(pos, end - pos));
 		pos = end + 1;
 		if ( directive.empty())
-			continue;
+		{
+			std::cerr << "CONFIG FILE ERROR : EMPTY LOCATION DIRECTIVE " << std::endl;
+			return false;
+		}
 		if (directive.find("root") == 0 && directive.length() > 4 &&  isitspace (directive[4]))
 			current_loc.root = cleanLine(directive.substr(4));
 		else if (directive.find ("index") == 0 && directive.length() > 5 &&  isitspace (directive[5]))
@@ -403,7 +409,7 @@ searchServerStatus	searchForServer(bool &in_server_block,  std::string& line, Se
 	}
 	else 
 	{
-		std::cerr << "CONFIG FILE ERROR: SYNTAX ERROR uknown config keyword\n";
+		std::cerr << "CONFIG FILE ERROR: SYNTAX ERROR, UKNOWN CONFIG KEYWORD\n";
 		return FALSE_RETURN;
 	}
 }

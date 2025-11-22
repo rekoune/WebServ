@@ -511,6 +511,11 @@ ParseState  UploadHandler::upload(const char* data, size_t size){
         bodyFile.close();
         if (Utils::getFileSize(resInfo.path) == 0)
             std::remove(resInfo.path.c_str());
+        else if (Utils::getFileSize(resInfo.path) > resInfo.server.client_max_body_size){
+            std::remove(resInfo.path.c_str());
+            status = REQUEST_ENTITY_TOO_LARGE;
+            return (PARSE_ERROR);
+        }
         openedFiles.clear();
         status = CREATED;
     }
