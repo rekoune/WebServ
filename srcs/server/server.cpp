@@ -17,20 +17,20 @@ server& server::operator=(const server& other){
 
 server::server(std::vector<ServerConfig>&	servers)  
 {
-	std::map<std::string, int> iportToSocket; //ip:port -> socket;
-	std::map<std::string, int>::iterator socketIt; // |^| there iterotor
+	std::map<std::string, int> iportToSocket; 
+	std::map<std::string, int>::iterator socketIt; 
 
 	for(size_t i = 0; i < servers.size(); i++)
 	{
-		std::map<std::string, std::vector<std::string> >& ipToPorts = servers[i].host_port; //host(ip) -> port
-		std::map<std::string, std::vector<std::string> >::iterator ipPortIt= ipToPorts.begin(); // |^| there iterotor
+		std::map<std::string, std::vector<std::string> >& ipToPorts = servers[i].host_port; 
+		std::map<std::string, std::vector<std::string> >::iterator ipPortIt= ipToPorts.begin(); 
 
 		while(ipPortIt != ipToPorts.end()){
 			for(size_t j = 0; j < ipPortIt->second.size(); j++){
 				std::string ipPortStr = ipPortIt->first + ":" + ipPortIt->second[j];
 				socketIt = iportToSocket.find(ipPortStr);
 				if(socketIt != iportToSocket.end())
-					socketToServers[socketIt->second].push_back(servers[i]); //it's a listening socket and servers that can connect from ;
+					socketToServers[socketIt->second].push_back(servers[i]); 
 				else
 				{
 					int socketfd;
@@ -68,7 +68,7 @@ int server::listen_socket(const std::string& ip, const std::string& port)
 	std::memset(&info, 0, sizeof(info));
 	info.ai_family = AF_INET;       
 	info.ai_socktype = SOCK_STREAM; 
-	info.ai_flags = AI_PASSIVE;     // That is For binding
+	info.ai_flags = AI_PASSIVE;     
 	
 	int status = getaddrinfo(ip.c_str(), port.c_str(), &info, &res);
 	if(status){
@@ -124,19 +124,15 @@ struct pollfd server::create_pollfd(int fd, short events)
 
 void server::acceptClient(int listenFd)
 {
-	struct sockaddr_in client_addr;
-    socklen_t client_len = sizeof(client_addr);
-	
 	int clientFd;
 	
-	while((clientFd = accept(listenFd, (struct sockaddr*)&client_addr, &client_len)) >= 0){
+	while((clientFd = accept(listenFd, NULL, 0)) >= 0){
 		int flags = fcntl(clientFd, F_GETFL, 0);
 		if(flags == -1 || fcntl(clientFd, F_SETFL, flags | O_NONBLOCK) == -1){
 			std::cerr << "fcntl error: " << strerror(errno) << std::endl;
 			close(clientFd);
 			continue;
 		}
-		
 		struct linger sl;
         sl.l_onoff = 1;   
         sl.l_linger = 0;  
@@ -147,7 +143,6 @@ void server::acceptClient(int listenFd)
 		socketFds.push_back(create_pollfd(clientFd, POLLIN));
 		
 		std::cout << "\033[32mNew connection Fd : "<< clientFd <<"\033[0m" << std::endl;
-		std::memset(&client_addr, 0, client_len);
 	}
 }
 bool server::is_listener(int fd)
@@ -300,10 +295,10 @@ int server::serverCore()
 			}
 			else if(socketFds[i].revents & (POLLHUP | POLLERR | POLLNVAL)){
 				NbrOfActiveSockets--;
-				if(is_cgi(socketFds[i].fd))
-					rmCgi(i, false, INTERNAL_SERVER_ERROR);
-				else
+				if(currentClient)
 					rmClient(i);
+				else if(is_cgi(socketFds[i].fd))
+					rmCgi(i, false, INTERNAL_SERVER_ERROR);
 			}
 			else if(currentClient && currentClient->clientTimeOut()){
 				std::cout << "\033[31mTimeout occurred, closing client connection.\033[0m" << std::endl;
