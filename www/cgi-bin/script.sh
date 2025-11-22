@@ -1,4 +1,4 @@
 #!/bin/bash
 
-read a
-echo $a
+
+echo "blabla"
