@@ -58,7 +58,6 @@ void SessionHandler::addSession(std::map<std::string, std::string>& headers)
 {
 	std::string id;
 
-	// CHECK IF CLIENT SENT SESSION ID , LIKE ITS AN OLD CLIENT THAT ALREADY HAS A SESSION, JUST NEEDS TO UPDATE
 	if (headers.count("cookie"))
 	{
 		std::map<std::string, std::string> cookies = splitCookieIntoMap(headers["cookie"]);
@@ -75,7 +74,6 @@ void SessionHandler::addSession(std::map<std::string, std::string>& headers)
 	
 	if (id.empty() && is_new_client)
 	{
-		// GENREATE ID 
 		id = generateID();
 		this->is_new_client = true;
 		headers.insert(std::make_pair("Set-Cookie",  "SESSION_ID=" + id + "; Path=/"));
@@ -176,7 +174,7 @@ void	SessionHandler::fillDataFromHeaders(std::string ID, std::map<std::string, s
 	if (headers.empty())
 		return ;
 	std::string cookies = headers.find("cookie")->second;
-	// split the cookie 
+	
 	std::map<std::string, std::string> cookie_map = splitCookieIntoMap(cookies);
 	appendDataCookies(ID, cookie_map);
 	data[ID] = cookie_map;

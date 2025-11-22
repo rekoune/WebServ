@@ -14,7 +14,7 @@ void CgiExecutor::cgiClean()
 				std::cerr << "kill failed: " << strerror(errno) << std::endl;
 			}
 
-			if (waitpid(this->pid, NULL, 0))
+			if (waitpid(this->pid, NULL, 0) == -1)
 			{
 				std::cerr << "waitpid failed: " << strerror(errno) << std::endl;
 			}
@@ -210,14 +210,13 @@ int	CgiExecutor::executeScript(char** envp, char **argv)
 
 		close (body_fd[0]);
 		close (body_fd[1]);
-		// 	EXECVE
+		
 		execve(const_cast<const char *>(req_context.script_path.c_str()), argv, envp);
 		std::cerr << "execve failed: " << strerror(errno) <<  std::endl;
 		exit(1);
 	}
 	else 
 	{
-		//	PARENT
 		char *body_buffer = &req_context.body[0];
 
 		size_t	len = req_context.body.size();
@@ -229,7 +228,6 @@ int	CgiExecutor::executeScript(char** envp, char **argv)
 		close(body_fd[0]);
 
 
-		// HANDLE EXITING OF THE CHILD IN THE BEGINNIG
 		int	status;
 		if (waitpid(pid, &status, WNOHANG) == pid)
 		{
@@ -298,14 +296,10 @@ CgiResult	CgiExecutor::readResult(size_t buffer_size)
 	int read_return = read(this->result_fd, &body[0], buffer_size);
 	if (read_return == 0)
 	{
-
-		// PUT THE FUNCTION THAT WILL CUT THE COOKIES FROM THE BODY AND PUT THEM OR REPLACE THEM IN DATA IF ALREADY EXSITS 
 		std::map<std::string, std::string>& session_map = session.getData()[session.current_session_id];
 		replaceCookieHeaders(session_map, result.body);
 		result.headers.insert(std::make_pair("Set-Cookie",  "SESSION_ID=" + session.current_session_id + "; Path=/; HttpOnly"));
 
-		
-		// handling the session above 
 		close (result_fd);
 		done = true;
 		int ret;
@@ -351,13 +345,11 @@ int	CgiExecutor::run()
 	std::vector <char*> env_char_ptr_vec;
 	char **envp = vectorToEnvp(env_vec,  env_char_ptr_vec);
 
-	// * preparing argv
 	std::vector<char *> args_vector;
 	args_vector.push_back(const_cast<char*>(req_context.script_path.c_str()));
 	args_vector.push_back(NULL);
 	char **argv = &args_vector[0];
 
-	// Executing script
 	result_fd = executeScript(envp, argv);
 	
 	return result_fd;
