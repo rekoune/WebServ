@@ -119,8 +119,8 @@ std::string         Response::getStatusMessage(HttpStatusCode status){
             return ("Not Found");
         case METHOD_NOT_ALLOWED:
             return ("Method Not Allowed");
-        case REQUEST_TIME_OUT:
-            return ("Request Time Out");
+        case GATEWAY_TIMEOUT:
+            return ("Gateway Timeout");
         case REQUEST_ENTITY_TOO_LARGE:
             return ("Rquest Entity Too Large");
         case INTERNAL_SERVER_ERROR:
