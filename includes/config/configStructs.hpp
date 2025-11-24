@@ -1,0 +1,65 @@
+#ifndef CONFIGSTRUCTS_HPP
+#define CONFIGSTRUCTS_HPP
+
+#include <map>
+#include <vector>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <stdlib.h>
+#include <sstream>
+
+enum searchServerStatus{
+	CONTINUE_SRV,
+	FALSE_RETURN
+};
+
+struct LocationConfig
+{
+    std::string					path;
+    std::string					root;
+    std::vector<std::string>	index;
+
+    bool						autoindex;
+    
+	std::string					upload_store;
+
+    std::vector<std::string>	allowed_methods;
+
+    std::string                 redirection_url;
+    int                         redirection_status;
+
+    std::vector<std::string>  				            cgi_extension;
+
+
+    LocationConfig()
+        :  autoindex(false), redirection_status(0) {}
+
+};
+
+struct ServerConfig
+{
+    std::vector<std::string>                            index;
+	std::vector<std::string>							server_name;
+	std::map<std::string, std::vector<std::string> >	host_port;
+    std::string					        				root;
+	size_t												duplicated_host_index;
+    size_t						        				client_max_body_size;
+    std::map<int, std::string>	        				error_pages;
+	std::vector<LocationConfig>	        				locations;
+    ServerConfig() 
+        :  root("./www"),  client_max_body_size(1024 * 1024)  
+		{}	
+};
+
+
+struct	GlobaConfig
+{
+	std::vector<ServerConfig>	servers;
+};
+
+bool    parseConfig(const std::string& configFilePath, GlobaConfig& globalConfig);
+bool	validateConfig(GlobaConfig& globalConfig);
+
+
+#endif
