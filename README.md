@@ -33,7 +33,7 @@ WebServ is a lightweight, efficient HTTP server that supports multiple server co
   - Static file serving
 
 - **Advanced Features**
-  - Non-blocking I/O with kqueue/epoll
+  - Non-blocking I/O with poll
   - Request parsing and validation
   - Resource resolution
   - MIME type detection
